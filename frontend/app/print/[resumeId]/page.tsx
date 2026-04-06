@@ -1,22 +1,8 @@
 'use client'
 import { useEffect, useState, use } from 'react'
 import { getResume } from '@/lib/db/database'
-import { ClassicTemplate } from '@/components/templates/ClassicTemplate'
-import { ModernTemplate } from '@/components/templates/ModernTemplate'
-import { MinimalTemplate } from '@/components/templates/MinimalTemplate'
-import { TokyoTemplate } from '@/components/templates/TokyoTemplate'
-import { CrispTemplate } from '@/components/templates/CrispTemplate'
-import { EliteTemplate } from '@/components/templates/EliteTemplate'
-import type { Resume, TemplateId } from '@/lib/store/types'
-import type { ComponentType } from 'react'
-
-const TEMPLATES: Record<TemplateId, ComponentType<{ resume: Resume }>> = {
-  classic:  ClassicTemplate,
-  modern:   ModernTemplate,
-  minimal:  MinimalTemplate,
-  crisp:    CrispTemplate,
-  tokyo:    TokyoTemplate,
-}
+import { MasterTemplate } from '@/components/templates'
+import type { Resume } from '@/lib/store/types'
 
 export default function PrintPage({ params }: { params: Promise<{ resumeId: string }> }) {
   const { resumeId } = use(params)
@@ -40,8 +26,6 @@ export default function PrintPage({ params }: { params: Promise<{ resumeId: stri
   if (!resume) {
     return <div style={{ padding: 32, fontFamily: 'sans-serif' }}>Loading…</div>
   }
-
-  const Template = TEMPLATES[resume.template] ?? ClassicTemplate
 
   return (
     <>
@@ -71,7 +55,7 @@ export default function PrintPage({ params }: { params: Promise<{ resumeId: stri
         * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       `}</style>
       <div data-template-root>
-        <Template resume={resume} />
+        <MasterTemplate resume={resume} />
       </div>
     </>
   )

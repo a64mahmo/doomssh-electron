@@ -6,33 +6,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { ZoomIn, ZoomOut, Download } from 'lucide-react'
 import { useUIStore } from '@/lib/store/uiStore'
 import { downloadResumePDF } from '@/lib/utils/export'
-import { ClassicTemplate } from '@/components/templates/ClassicTemplate'
-import { ModernTemplate } from '@/components/templates/ModernTemplate'
-import { MinimalTemplate } from '@/components/templates/MinimalTemplate'
-import { TokyoTemplate } from '@/components/templates/TokyoTemplate'
-import { CrispTemplate } from '@/components/templates/CrispTemplate'
-import type { Resume, TemplateId } from '@/lib/store/types'
-import type { ComponentType } from 'react'
+import { MasterTemplate, TemplateFooter } from '@/components/templates'
+import type { Resume } from '@/lib/store/types'
 
 // Page dimensions at 96 dpi (1 mm = 3.7795 px)
 const PAGE_W = { a4: 793.7, letter: 816 }
 const PAGE_H = { a4: 1122.5, letter: 1056 }
 
-type TemplateComponent = ComponentType<{ resume: Resume; pads?: number[] }>
-
-const TEMPLATES: Record<TemplateId, TemplateComponent> = {
-  classic:  ClassicTemplate,
-  modern:   ModernTemplate,
-  minimal:  MinimalTemplate,
-  crisp:    CrispTemplate,
-  tokyo:    TokyoTemplate,
-}
-
 // ─── Page-break algorithm ─────────────────────────────────────────────────────
-// Scans [data-section] elements inside a rendered (unpaddded) page root.
-// For each section that would be split across a page boundary, computes the
-// whitespace (px) to insert before it so it starts cleanly on the next page.
-// Uses a greedy single-pass so cascading shifts are handled in one shot.
 function computePads(pageRoot: HTMLElement, pageH: number): number[] {
   const sections = Array.from(
     pageRoot.querySelectorAll('[data-section]')
@@ -42,18 +23,15 @@ function computePads(pageRoot: HTMLElement, pageH: number): number[] {
 
   const rootRect = pageRoot.getBoundingClientRect()
   const pads: number[] = []
-  let accumulated = 0   // total pad added so far (shifts all subsequent sections)
+  let accumulated = 0
 
   for (const el of sections) {
     const rect = el.getBoundingClientRect()
-    const top    = rect.top - rootRect.top   // position relative to page root
+    const top    = rect.top - rootRect.top
     const height = rect.height
-
-    // Account for pads that would have been added before this section
     const adjustedTop  = top + accumulated
     const posOnPage    = adjustedTop % pageH
 
-    // Only nudge if: section crosses a boundary AND fits on a single page
     if (posOnPage > 1 && height < pageH && posOnPage + height > pageH) {
       const pad = pageH - posOnPage
       pads.push(pad)
@@ -62,7 +40,6 @@ function computePads(pageRoot: HTMLElement, pageH: number): number[] {
       pads.push(0)
     }
   }
-
   return pads
 }
 
@@ -75,14 +52,13 @@ function arePadsEqual(a: number[], b: number[]): boolean {
 // ─── Template wrappers ────────────────────────────────────────────────────────
 
 function TemplateClean({ resume }: { resume: Resume }) {
-  const Template = TEMPLATES[resume.template] ?? ClassicTemplate
-  // No pads — used only for measurement
-  return <Template resume={resume} />
+  // isMeasurement uses minHeight: auto and removes extra padding for precise height measurement
+  return <MasterTemplate resume={resume} hideFooter isMeasurement />
 }
 
 function TemplateWithPads({ resume, pads }: { resume: Resume; pads: number[] }) {
-  const Template = TEMPLATES[resume.template] ?? ClassicTemplate
-  return <Template resume={resume} pads={pads} />
+  // Actual rendering keeps minHeight so background color fills the page sheet
+  return <MasterTemplate resume={resume} pads={pads} hideFooter />
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -94,7 +70,6 @@ function PreviewInner({ resume }: { resume: Resume }) {
   const w    = PAGE_W[size]
   const h    = PAGE_H[size]
 
-  // Measurement state (from hidden render — always pads-free)
   const measureRef = useRef<HTMLDivElement>(null)
   const [naturalH, setNaturalH] = useState(h)
   const [pads, setPads]         = useState<number[]>([])
@@ -108,7 +83,6 @@ function PreviewInner({ resume }: { resume: Resume }) {
       if (!pageRoot || pageRoot.scrollHeight === 0) return
 
       setNaturalH(pageRoot.scrollHeight)
-
       const next = computePads(pageRoot, h)
       setPads(prev => arePadsEqual(prev, next) ? prev : next)
     }
@@ -117,9 +91,12 @@ function PreviewInner({ resume }: { resume: Resume }) {
     ro.observe(el)
     update()
     return () => ro.disconnect()
-  }, [resume, h]) // re-measure whenever resume or page size changes
+  }, [resume, h])
 
-  const numPages = Math.max(1, Math.ceil(naturalH / h))
+  // Calculate pages based on natural content height + shifts from page breaks
+  const totalPads = pads.reduce((acc, p) => acc + p, 0)
+  // Use a 20px tolerance to avoid ghost pages from tiny overflows or padding
+  const numPages = Math.max(1, Math.ceil((naturalH + totalPads - 20) / h))
 
   return (
     <div className="flex flex-col h-full bg-zinc-100 dark:bg-zinc-900">
@@ -152,11 +129,6 @@ function PreviewInner({ resume }: { resume: Resume }) {
         </Tooltip>
       </div>
 
-      {/*
-        Hidden measurement container.
-        Renders at native page width, no height constraint, no pads.
-        ResizeObserver reads [data-section] positions from here.
-      */}
       <div
         aria-hidden
         ref={measureRef}
@@ -174,7 +146,7 @@ function PreviewInner({ resume }: { resume: Resume }) {
       </div>
 
       {/* Scrollable page stack */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto" style={{ overscrollBehavior: 'contain' }}>
         <div className="flex flex-col items-center py-8 gap-6 px-6">
           {Array.from({ length: numPages }).map((_, i) => (
             <div
@@ -190,10 +162,6 @@ function PreviewInner({ resume }: { resume: Resume }) {
                 background: '#fff',
               }}
             >
-              {/*
-                Shift content up by (i × h × zoom) so this clip window
-                shows exactly page i of the rendered output.
-              */}
               <div style={{
                 position:        'absolute',
                 top:             -(i * h * previewZoom),
@@ -203,6 +171,18 @@ function PreviewInner({ resume }: { resume: Resume }) {
                 transform:       `scale(${previewZoom})`,
               }}>
                 <TemplateWithPads resume={resume} pads={pads} />
+              </div>
+
+              <div style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                width: w,
+                transformOrigin: 'bottom left',
+                transform: `scale(${previewZoom})`,
+              }}>
+                <TemplateFooter resume={resume} pageNumber={i + 1} />
               </div>
             </div>
           ))}

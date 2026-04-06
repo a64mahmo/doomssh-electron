@@ -1,6 +1,7 @@
-import type { TemplateId } from '@/lib/store/types'
+import type { TemplateId, ResumeSettings } from '@/lib/store/types'
 import type { ComponentType } from 'react'
 import type { Resume } from '@/lib/store/types'
+import { MasterTemplate } from './MasterTemplate'
 
 // Registry — add new templates here only
 export const TEMPLATE_META: Record<TemplateId, { label: string; description: string }> = {
@@ -12,27 +13,87 @@ export const TEMPLATE_META: Record<TemplateId, { label: string; description: str
   elite: { label: 'Elite', description: 'Bold executive design' },
 }
 
+export { MasterTemplate, TemplateFooter } from './MasterTemplate'
 export interface TemplateProps {
   resume: Resume
+  pads?: number[]
+  hideFooter?: boolean
+  isMeasurement?: boolean
 }
 
+// All templates now use the MasterTemplate, but with different initial settings
 export async function getTemplateComponent(
-  id: TemplateId
+  _id: TemplateId
 ): Promise<ComponentType<TemplateProps>> {
+  return MasterTemplate
+}
+
+/**
+ * Returns the setting overrides for a specific template preset.
+ * When a user clicks a template, we apply these settings to their resume.
+ */
+export function getTemplateSettings(id: TemplateId): Partial<ResumeSettings> {
   switch (id) {
     case 'modern':
-      return (await import('./ModernTemplate')).ModernTemplate
+      return {
+        columnLayout: 'two',
+        headerAlignment: 'left',
+        sectionHeadingCapitalization: 'uppercase',
+        sectionHeadingSize: 'M',
+        nameSize: 'L',
+        accentColor: '#1e3a5f',
+      }
     case 'classic':
-      return (await import('./ClassicTemplate')).ClassicTemplate
+      return {
+        columnLayout: 'one',
+        headerAlignment: 'center',
+        sectionHeadingCapitalization: 'uppercase',
+        sectionHeadingSize: 'S',
+        nameSize: 'XL',
+        accentColor: '#111111',
+        fontFamily: 'Merriweather',
+      }
     case 'minimal':
-      return (await import('./MinimalTemplate')).MinimalTemplate
+      return {
+        columnLayout: 'one',
+        headerAlignment: 'left',
+        sectionHeadingCapitalization: 'none',
+        sectionHeadingSize: 'M',
+        nameSize: 'M',
+        accentColor: '#444444',
+        fontFamily: 'Inter',
+        lineHeight: 1.6,
+      }
     case 'crisp':
-      return (await import('./CrispTemplate')).CrispTemplate
+      return {
+        columnLayout: 'mix',
+        headerAlignment: 'left',
+        sectionHeadingCapitalization: 'uppercase',
+        sectionHeadingSize: 'S',
+        nameSize: 'L',
+        accentColor: '#059669',
+      }
     case 'tokyo':
-      return (await import('./TokyoTemplate')).TokyoTemplate
+      return {
+        columnLayout: 'two',
+        headerAlignment: 'center',
+        sectionHeadingCapitalization: 'uppercase',
+        sectionHeadingSize: 'L',
+        nameSize: 'XL',
+        accentColor: '#dc2626',
+        fontFamily: 'Roboto',
+      }
     case 'elite':
-      return (await import('./EliteTemplate')).EliteTemplate
+      return {
+        columnLayout: 'one',
+        headerAlignment: 'right',
+        sectionHeadingCapitalization: 'uppercase',
+        sectionHeadingSize: 'XL',
+        nameSize: 'XL',
+        accentColor: '#18181b',
+        fontFamily: 'Playfair Display',
+      }
     default:
-      return (await import('./ModernTemplate')).ModernTemplate
+      return {}
   }
 }

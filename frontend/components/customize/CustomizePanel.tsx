@@ -1,5 +1,5 @@
 'use client'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Slider } from '@/components/ui/slider'
@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { useResume } from '@/hooks/useResume'
-import { TEMPLATE_META } from '@/components/templates'
+import { TEMPLATE_META, getTemplateSettings } from '@/components/templates'
 import type {
   FontOption, DateFormat, PaperSize, ColumnLayout, ListStyle,
   SubtitleStyle, SubtitlePlacement, SectionHeadingSize, SectionHeadingCapitalization,
@@ -16,6 +16,25 @@ import type {
   SkillDisplayOption, EducationOrder, ExperienceOrder,
 } from '@/lib/store/types'
 import type { TemplateId } from '@/lib/store/types'
+
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+  defaultDropAnimationSideEffects,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { GripVertical } from 'lucide-react'
 
 const TEMPLATE_IDS = Object.keys(TEMPLATE_META) as TemplateId[]
 
@@ -103,14 +122,102 @@ function ToggleRow({
   )
 }
 
+// ── D&D Helpers ───────────────────────────────────────────────────────────────
+
+function SortableSectionItem({ id, title }: { id: string; title: string }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="group flex items-center gap-2 px-2 py-1.5 bg-background border border-border rounded-md shadow-sm mb-1.5 touch-none"
+    >
+      <div {...attributes} {...listeners} className="cursor-grab text-muted-foreground/30 group-hover:text-muted-foreground/60 transition-colors">
+        <GripVertical size={12} />
+      </div>
+      <span className="text-[10px] font-medium truncate select-none">{title}</span>
+    </div>
+  )
+}
+
+function DroppableColumn({ id, title, items, resumeSections }: { id: string; title: string; items: string[]; resumeSections: any[] }) {
+  const { setNodeRef } = useSortable({ id })
+
+  return (
+    <div className="flex-1 min-w-0">
+      <div className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider mb-2 px-1">{title}</div>
+      <div
+        ref={setNodeRef}
+        className="min-h-[100px] p-2 rounded-lg bg-muted/30 border border-dashed border-border/60"
+      >
+        <SortableContext items={items} strategy={verticalListSortingStrategy}>
+          {items.map((sectionId) => {
+            const sec = resumeSections.find(s => s.id === sectionId)
+            return <SortableSectionItem key={sectionId} id={sectionId} title={sec?.title || 'Unknown'} />
+          })}
+        </SortableContext>
+      </div>
+    </div>
+  )
+}
+
 // ── Main panel ────────────────────────────────────────────────────────────────
 
 export function CustomizePanel() {
   const { resume, updateSettings, setResume } = useResume()
   const scrollRef = useRef<HTMLDivElement>(null)
+  const [activeId, setActiveId] = useState<string | null>(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
 
   if (!resume) return null
   const s = resume.settings
+
+  const sidebarTypes = ['skills', 'education', 'languages', 'certifications', 'awards', 'references']
+  const sections = resume.sections.filter(sec => sec.type !== 'header')
+  
+  const mainIds = sections.filter(sec => {
+    const col = s.sectionColumns?.[sec.id]
+    if (col) return col === 'main'
+    return !sidebarTypes.includes(sec.type)
+  }).map(s => s.id)
+
+  const sidebarIds = sections.filter(sec => {
+    const col = s.sectionColumns?.[sec.id]
+    if (col) return col === 'sidebar'
+    return sidebarTypes.includes(sec.type)
+  }).map(s => s.id)
+
+  function handleDragStart(event: any) {
+    setActiveId(event.active.id)
+  }
+
+  function handleDragOver(event: any) {
+    const { active, over } = event
+    if (!over) return
+
+    const activeContainer = mainIds.includes(active.id) ? 'main' : 'sidebar'
+    const overContainer = over.id === 'main-col' || mainIds.includes(over.id) ? 'main' : 
+                         over.id === 'sidebar-col' || sidebarIds.includes(over.id) ? 'sidebar' : null
+
+    if (overContainer && activeContainer !== overContainer) {
+      const newMap = { ...(s.sectionColumns || {}), [active.id]: overContainer as 'main' | 'sidebar' }
+      updateSettings({ sectionColumns: newMap })
+    }
+  }
+
+  function handleDragEnd() {
+    setActiveId(null)
+  }
 
   function scrollTo(id: string) {
     const el = scrollRef.current?.querySelector(`#style-${id}`)
@@ -189,7 +296,14 @@ export function CustomizePanel() {
               {TEMPLATE_IDS.map((id) => (
                 <button
                   key={id}
-                  onClick={() => setResume({ ...resume, template: id })}
+                  onClick={() => {
+                    const overrides = getTemplateSettings(id)
+                    setResume({ 
+                      ...resume, 
+                      template: id,
+                      settings: { ...resume.settings, ...overrides }
+                    })
+                  }}
                   className={cn(
                     'aspect-[3/4] rounded-lg border-2 overflow-hidden transition-all',
                     resume.template === id
@@ -261,6 +375,55 @@ export function CustomizePanel() {
                 <Slider min={0.5} max={2.0} step={0.1} value={[s.entrySpacing]} onValueChange={slider('entrySpacing')} />
               </div>
             </Row>
+
+            <SectionHeading>Section Columns</SectionHeading>
+            <div className="mb-6">
+              {s.columnLayout === 'one' ? (
+                <div className="p-4 rounded-lg bg-muted/30 border border-dashed border-border text-center">
+                  <p className="text-[10px] text-muted-foreground italic">
+                    One-column layout ignores column assignments.
+                  </p>
+                </div>
+              ) : (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragStart={handleDragStart}
+                  onDragOver={handleDragOver}
+                  onDragEnd={handleDragEnd}
+                >
+                  <div className="flex gap-4">
+                    <DroppableColumn 
+                      id="main-col" 
+                      title="Main" 
+                      items={mainIds} 
+                      resumeSections={sections} 
+                    />
+                    <DroppableColumn 
+                      id="sidebar-col" 
+                      title="Sidebar" 
+                      items={sidebarIds} 
+                      resumeSections={sections} 
+                    />
+                  </div>
+
+                  <DragOverlay dropAnimation={{
+                    sideEffects: defaultDropAnimationSideEffects({
+                      styles: { active: { opacity: '0.5' } }
+                    })
+                  }}>
+                    {activeId ? (
+                      <div className="flex items-center gap-2 px-2 py-1.5 bg-background border-2 border-primary rounded-md shadow-xl opacity-90 scale-105">
+                        <GripVertical size={12} className="text-primary" />
+                        <span className="text-[10px] font-bold truncate">
+                          {sections.find(s => s.id === activeId)?.title}
+                        </span>
+                      </div>
+                    ) : null}
+                  </DragOverlay>
+                </DndContext>
+              )}
+            </div>
 
             <SectionHeading>Entry Layout</SectionHeading>
             <Row>

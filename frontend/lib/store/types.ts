@@ -253,6 +253,9 @@ export interface ResumeSettings {
   educationOrder: EducationOrder
   experienceOrder: ExperienceOrder
   groupPromotions: boolean
+
+  // Section Column Mapping (sectionId -> 'main' | 'sidebar')
+  sectionColumns: Record<string, 'main' | 'sidebar'>
 }
 
 // ─── Resume ───────────────────────────────────────────────────────────────────
@@ -352,6 +355,7 @@ export const DEFAULT_SETTINGS: ResumeSettings = {
   educationOrder: 'degree-school',
   experienceOrder: 'title-employer',
   groupPromotions: false,
+  sectionColumns: {},
 }
 
 export const DEFAULT_HEADER: HeaderItem = {

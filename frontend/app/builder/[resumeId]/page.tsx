@@ -83,7 +83,7 @@ export default function BuilderPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-background">
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-background overscroll-none" style={{ overscrollBehavior: 'none' }}>
 
       {/* ── Top bar ─────────────────────────────────────────────────── */}
       <header className="h-11 flex items-center gap-3 px-3 border-b border-border shrink-0 bg-background">
@@ -170,6 +170,7 @@ export default function BuilderPage() {
                 <motion.div
                   key="content"
                   className="h-full overflow-auto p-3"
+                  style={{ overscrollBehavior: 'contain' }}
                   initial={{ opacity: 0, x: -6 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -6 }}
