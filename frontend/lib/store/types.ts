@@ -45,7 +45,9 @@ export type SubtitleStyle = 'normal' | 'bold' | 'italic'
 export type SubtitlePlacement = 'same-line' | 'next-line'
 export type SectionHeadingSize = 'S' | 'M' | 'L' | 'XL'
 export type SectionHeadingCapitalization = 'capitalize' | 'uppercase' | 'none'
-export type SectionHeadingIcon = 'none' | 'outline' | 'filled'
+export type SectionHeadingIcon = 'none' | 'simple' | 'filled'
+export type SectionHeadingStyle = 'none' | 'underline' | 'overline' | 'top-bottom' | 'box' | 'background' | 'left-bar'
+export type SectionHeadingIconStyle = 'lucide' | 'nerd'
 export type HeaderAlignment = 'left' | 'center' | 'right'
 export type HeaderArrangement = 'icon' | 'bullet' | 'pipe' | 'bar'
 export type NameSize = 'XS' | 'S' | 'M' | 'L' | 'XL'
@@ -234,6 +236,10 @@ export interface ResumeSettings {
   sectionHeadingSize: SectionHeadingSize
   sectionHeadingCapitalization: SectionHeadingCapitalization
   sectionHeadingIcon: SectionHeadingIcon
+  sectionHeadingStyle: SectionHeadingStyle
+  sectionHeadingIconStyle: SectionHeadingIconStyle
+  sectionHeadingIconSize: number // multiplier e.g. 1.0
+  sectionHeadingLineThickness: number
   linkUnderline: boolean
   linkBlue: boolean
 
@@ -336,6 +342,10 @@ export const DEFAULT_SETTINGS: ResumeSettings = {
   sectionHeadingSize: 'M',
   sectionHeadingCapitalization: 'uppercase',
   sectionHeadingIcon: 'none',
+  sectionHeadingStyle: 'underline',
+  sectionHeadingIconStyle: 'lucide',
+  sectionHeadingIconSize: 1.0,
+  sectionHeadingLineThickness: 1.5,
   linkUnderline: false,
   linkBlue: false,
 

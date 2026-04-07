@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, safeStorage, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, safeStorage, shell, dialog } from 'electron'
 import { spawn, type ChildProcess } from 'child_process'
 import path from 'path'
 import fs from 'fs'
@@ -32,6 +32,7 @@ function startNextJs(): Promise<void> {
       cwd: frontendRoot,
       env: { ...process.env, NODE_ENV: isDev ? 'development' : 'production' },
       stdio: ['ignore', 'pipe', 'pipe'],
+      shell: true,
     })
 
     nextProc.stdout?.on('data', (data: Buffer) => {
@@ -121,6 +122,47 @@ async function createWindow(): Promise<void> {
 // ── IPC: API key management ───────────────────────────────────────────────────
 ipcMain.handle('set-api-key', (_event, key: string) => storeApiKey(key))
 ipcMain.handle('get-api-key', () => getStoredApiKey())
+
+ipcMain.handle('export-pdf', async (_event, { resumeId, fileName, paperSize }: { resumeId: string, fileName: string, paperSize: 'a4' | 'letter' }) => {
+  const workerWindow = new BrowserWindow({
+    show: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+    }
+  })
+
+  try {
+    await workerWindow.loadURL(`http://127.0.0.1:${NEXT_PORT}/print/${resumeId}`)
+    
+    // Give Next.js a moment to hydrate and render
+    await new Promise(r => setTimeout(r, 1500))
+
+    const pdfData = await workerWindow.webContents.printToPDF({
+      pageSize: paperSize === 'a4' ? 'A4' : 'Letter',
+      printBackground: true,
+      displayHeaderFooter: false,
+      preferCSSPageSize: true,
+    })
+
+    const { filePath } = await dialog.showSaveDialog({
+      title: 'Export Resume',
+      defaultPath: fileName,
+      filters: [{ name: 'PDF Documents', extensions: ['pdf'] }]
+    })
+
+    if (filePath) {
+      fs.writeFileSync(filePath, pdfData)
+      return { success: true, path: filePath }
+    }
+    return { success: false, cancelled: true }
+  } catch (error) {
+    console.error('PDF Export Error:', error)
+    return { success: false, error: String(error) }
+  } finally {
+    workerWindow.close()
+  }
+})
 
 // ── IPC: AI streaming ─────────────────────────────────────────────────────────
 // Frontend sends: ipcMain.emit('ai:start', { id, messages, maxTokens })

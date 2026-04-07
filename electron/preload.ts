@@ -5,6 +5,9 @@ contextBridge.exposeInMainWorld('electron', {
   setApiKey: (key: string): Promise<void> => ipcRenderer.invoke('set-api-key', key),
   getApiKey: (): Promise<string | null> => ipcRenderer.invoke('get-api-key'),
 
+  exportPdf: (args: { resumeId: string, fileName: string, paperSize: 'a4' | 'letter' }): Promise<{ success: boolean, path?: string, error?: string, cancelled?: boolean }> => 
+    ipcRenderer.invoke('export-pdf', args),
+
   // ── AI streaming ───────────────────────────────────────────────────────────
   // Returns a cleanup function that removes the listeners for this request.
   aiStream: (

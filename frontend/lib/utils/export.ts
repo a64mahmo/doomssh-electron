@@ -1,10 +1,33 @@
 // PDF download — single place for all export logic
 import type { Resume } from '@/lib/store/types'
 
-export function downloadResumePDF(resume: Resume): void {
-  // Opens a dedicated print page; the browser's print dialog handles PDF export.
-  // In Electron this can be replaced with IPC + printToPDF for a save dialog.
-  window.open(`/print/${resume.id}`, '_blank')
+export async function downloadResumePDF(resume: Resume): Promise<void> {
+  const fileName = `${resume.name.replace(/\s+/g, '_')}_Resume.pdf`
+  const paperSize = resume.settings.paperSize === 'a4' ? 'a4' : 'letter'
+
+  // If in Electron, use the native high-quality export
+  if (window.electron?.exportPdf) {
+    try {
+      const result = await window.electron.exportPdf({
+        resumeId: resume.id,
+        fileName,
+        paperSize,
+      })
+      
+      if (result.success) {
+        console.log('Export successful:', result.path)
+      } else if (!result.cancelled) {
+        alert(`Export failed: ${result.error}`)
+      }
+    } catch (err) {
+      console.error('Export error:', err)
+      // Fallback
+      window.open(`/print/${resume.id}`, '_blank')
+    }
+  } else {
+    // Standard browser fallback
+    window.open(`/print/${resume.id}`, '_blank')
+  }
 }
 
 export function exportResumeJSON(resume: Resume): void {

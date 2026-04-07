@@ -4,6 +4,28 @@ import { parseBullets } from '@/lib/pdf/pdfStyles'
 import { formatDateRange } from '@/lib/utils/dates'
 import type { TemplateCtx } from '@/lib/pdf/templateCtx'
 
+// ─── Markdown Renderer ────────────────────────────────────────────────────────
+function renderMarkdown(text: string): React.ReactNode[] {
+  if (!text) return []
+  const parts: React.ReactNode[] = []
+  
+  // Simple bold/italic regex
+  // **bold** | _italic_
+  const tokens = text.split(/(\*\*.*?\*\*|_.*?_)/g)
+  
+  tokens.forEach((token, i) => {
+    if (token.startsWith('**') && token.endsWith('**')) {
+      parts.push(<strong key={i} style={{ fontWeight: 700 }}>{token.slice(2, -2)}</strong>)
+    } else if (token.startsWith('_') && token.endsWith('_')) {
+      parts.push(<em key={i} style={{ fontStyle: 'italic' }}>{token.slice(1, -1)}</em>)
+    } else if (token) {
+      parts.push(token)
+    }
+  })
+  
+  return parts
+}
+
 // ─── Shared primitive ─────────────────────────────────────────────────────────
 // A standard two-line entry used by experience, education, projects, etc.
 function Entry({
@@ -61,7 +83,7 @@ function Entry({
             color: colors.text,
           }}>
             <span style={{ marginRight: '6pt', shrink: 0, color: colors.accent }}>{bullet}</span>
-            <span>{b}</span>
+            <span>{renderMarkdown(b)}</span>
           </div>
         ))}
       </div>
@@ -158,7 +180,7 @@ function SummarySection({ section, ctx, renderHeading }: { section: ResumeSectio
   return (
     <div>
       {renderHeading(section.title)}
-      <div style={{ fontSize: ctx.pt(ctx.base), lineHeight: ctx.lh }}>{text}</div>
+      <div style={{ fontSize: ctx.pt(ctx.base), lineHeight: ctx.lh }}>{renderMarkdown(text)}</div>
     </div>
   )
 }
