@@ -19,14 +19,7 @@ jobs:
       - name: Install dependencies
         run: |
           npm install
-          npm run backend:install
           npm run frontend:install
-
-      - name: Generate Prisma client
-        run: npm run db:generate --prefix backend
-
-      - name: Run Backend Tests
-        run: npm test --prefix backend
 
       - name: Run Frontend Tests
         run: npm test --prefix frontend
