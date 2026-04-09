@@ -52,6 +52,11 @@ const SOURCES: Record<FontOption, FontSrc> = {
     bold:    `${CDN}/@fontsource/ibm-plex-serif/files/ibm-plex-serif-latin-700-normal.woff`,
     italic:  `${CDN}/@fontsource/ibm-plex-serif/files/ibm-plex-serif-latin-400-italic.woff`,
   },
+  'IBM Plex Mono': {
+    regular: `${CDN}/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff`,
+    bold:    `${CDN}/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-700-normal.woff`,
+    italic:  `${CDN}/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-italic.woff`,
+  },
 }
 
 const registered = new Set<string>()

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Document, Page, View, Text } from '@react-pdf/renderer'
+import { Document, Page, View, Text, Image } from '@react-pdf/renderer'
 import type { Resume, SectionType } from '@/lib/store/types'
 import { buildCtx } from '@/lib/pdf/templateCtx'
 import { registerFont } from './fonts'
@@ -189,6 +189,9 @@ export function ResumePDF({ resume }: { resume: Resume }) {
           {s.headerAlignment === 'center' ? (
             // ── Center: everything stacked, text-aligned center ────
             <View style={{ alignItems: 'center' }}>
+              {s.photoEnabled && h?.photo && (
+                <Image src={h.photo} style={{ width: 48, height: 48, borderRadius: 24, objectFit: 'cover', marginBottom: 6 }} />
+              )}
               <Text style={{
                 fontSize: pt(nameSize),
                 fontWeight: s.nameBold ? 'bold' : 'normal',
@@ -223,8 +226,9 @@ export function ResumePDF({ resume }: { resume: Resume }) {
                   <ContactLinePDF h={h} ctx={ctx} display="block" align="left" />
                 </View>
               )}
-              <View>
-                <Text style={{
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <View>
+                  <Text style={{
                   fontSize: pt(nameSize),
                   fontWeight: s.nameBold ? 'bold' : 'normal',
                   color: colors.accent,
@@ -244,32 +248,41 @@ export function ResumePDF({ resume }: { resume: Resume }) {
                     {h.jobTitle}
                   </Text>
                 )}
+                </View>
+                {s.photoEnabled && h?.photo && (
+                  <Image src={h.photo} style={{ width: 48, height: 48, borderRadius: 24, objectFit: 'cover' }} />
+                )}
               </View>
             </View>
           ) : (
             // ── Left: name+title on left, contacts block on right ──
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <View style={{ flex: 1, paddingRight: 16 }}>
-                <Text style={{
-                  fontSize: pt(nameSize),
-                  fontWeight: s.nameBold ? 'bold' : 'normal',
-                  color: colors.accent,
-                  lineHeight: 1.1,
-                  letterSpacing: -0.02 * nameSize,
-                  textAlign: 'left',
-                }}>
-                  {h?.fullName || 'Your Name'}
-                </Text>
-                {h?.jobTitle && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, paddingRight: 16 }}>
+                {s.photoEnabled && h?.photo && (
+                  <Image src={h.photo} style={{ width: 48, height: 48, borderRadius: 24, objectFit: 'cover' }} />
+                )}
+                <View style={{ flex: 1 }}>
                   <Text style={{
-                    fontSize: pt(base * 1.15),
-                    color: colors.subtitle,
-                    marginTop: 3,
+                    fontSize: pt(nameSize),
+                    fontWeight: s.nameBold ? 'bold' : 'normal',
+                    color: colors.accent,
+                    lineHeight: 1.1,
+                    letterSpacing: -0.02 * nameSize,
                     textAlign: 'left',
                   }}>
-                    {h.jobTitle}
+                    {h?.fullName || 'Your Name'}
                   </Text>
-                )}
+                  {h?.jobTitle && (
+                    <Text style={{
+                      fontSize: pt(base * 1.15),
+                      color: colors.subtitle,
+                      marginTop: 3,
+                      textAlign: 'left',
+                    }}>
+                      {h.jobTitle}
+                    </Text>
+                  )}
+                </View>
               </View>
               {h && (
                 <View>

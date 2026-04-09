@@ -11,6 +11,8 @@ export const TEMPLATE_META: Record<TemplateId, { label: string; description: str
   crisp: { label: 'Crisp', description: 'Balanced two-column grid' },
   tokyo: { label: 'Tokyo', description: 'Bold sidebar with icons' },
   elite: { label: 'Elite', description: 'Bold executive design' },
+  mono: { label: 'Mono', description: 'Developer-centric monospace design' },
+  blocks: { label: 'Blocks', description: 'Structured grid with bold headers' },
 }
 
 export { MasterTemplate, TemplateFooter } from './MasterTemplate'
@@ -162,6 +164,45 @@ export function getTemplateSettings(id: TemplateId): Partial<ResumeSettings> {
         lineHeight:                   1.5,
         marginHorizontal:             22,
         marginVertical:               16,
+        entrySpacing:                 1.1,
+      }
+    case 'mono':
+      return {
+        ...colorReset('#059669'),
+        columnLayout:                 'one',
+        headerAlignment:              'left',
+        headerArrangement:            'pipe',
+        sectionHeadingStyle:          'box',
+        sectionHeadingSize:           'S',
+        sectionHeadingCapitalization: 'uppercase',
+        sectionHeadingIcon:           'none',
+        nameSize:                     'L',
+        nameBold:                     true,
+        fontFamily:                   'IBM Plex Mono',
+        fontSize:                     9.5,
+        lineHeight:                   1.4,
+        marginHorizontal:             16,
+        marginVertical:               12,
+        entrySpacing:                 1.0,
+        listStyle:                    'hyphen',
+      }
+    case 'blocks':
+      return {
+        ...colorReset('#2563eb'),
+        columnLayout:                 'mix',
+        headerAlignment:              'left',
+        headerArrangement:            'bullet',
+        sectionHeadingStyle:          'background',
+        sectionHeadingSize:           'L',
+        sectionHeadingCapitalization: 'uppercase',
+        sectionHeadingIcon:           'none',
+        nameSize:                     'XL',
+        nameBold:                     true,
+        fontFamily:                   'Inter',
+        fontSize:                     10.5,
+        lineHeight:                   1.5,
+        marginHorizontal:             20,
+        marginVertical:               14,
         entrySpacing:                 1.1,
       }
     default:

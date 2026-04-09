@@ -124,6 +124,41 @@ export interface HeaderData {
   fullName: string; jobTitle: string; email: string; phone: string
   location: string; website: string; linkedin: string; github: string
   photo?: string
+  twitter?: string
+  instagram?: string
+  facebook?: string
+  youtube?: string
+  tiktok?: string
+  pinterest?: string
+  medium?: string
+  behance?: string
+  dribbble?: string
+  stackoverflow?: string
+  gitlab?: string
+  bitbucket?: string
+  discord?: string
+  reddit?: string
+  bluesky?: string
+  threads?: string
+  mastodon?: string
+  nationality?: string
+  dateOfBirth?: string
+  visa?: string
+  passportOrId?: string
+  availability?: string
+  genderPronoun?: string
+  disability?: string
+  workMode?: string
+  relocation?: string
+  expectedSalary?: string
+  secondPhone?: string
+  drivingLicense?: string
+  securityClearance?: string
+  maritalStatus?: string
+  militaryService?: string
+  smoking?: string
+  height?: string
+  weight?: string
 }
 
 export function ContactLinePDF({ h, ctx, display = 'inline', align = 'left' }: {
@@ -135,12 +170,48 @@ export function ContactLinePDF({ h, ctx, display = 'inline', align = 'left' }: {
   const { base, colors, s, pt, lh } = ctx
 
   const parts = [
-    { val: h.email,    label: 'E' },
-    { val: h.phone,    label: 'P' },
-    { val: h.location, label: 'L' },
-    { val: h.linkedin, label: 'in' },
-    { val: h.github,   label: 'gh' },
-    { val: h.website,  label: 'W' },
+    // Contact
+    { val: h.email,         label: 'E' },
+    { val: h.phone,         label: 'P' },
+    { val: h.secondPhone,   label: 'P2' },
+    { val: h.location,      label: 'L' },
+    // Links
+    { val: h.website,       label: 'W' },
+    { val: h.linkedin,      label: 'in' },
+    { val: h.github,        label: 'gh' },
+    { val: h.gitlab,        label: 'gl' },
+    { val: h.bitbucket,     label: 'bb' },
+    { val: h.stackoverflow, label: 'SO' },
+    // Social
+    { val: h.twitter,       label: 'X' },
+    { val: h.bluesky,       label: 'BS' },
+    { val: h.threads,       label: 'TH' },
+    { val: h.mastodon,      label: 'MT' },
+    { val: h.instagram,     label: 'IG' },
+    { val: h.facebook,      label: 'FB' },
+    { val: h.youtube,       label: 'YT' },
+    { val: h.tiktok,        label: 'TT' },
+    { val: h.pinterest,     label: 'PN' },
+    { val: h.reddit,        label: 'RD' },
+    { val: h.discord,       label: 'DC' },
+    { val: h.medium,        label: 'MD' },
+    { val: h.behance,       label: 'Bh' },
+    { val: h.dribbble,      label: 'Dr' },
+    // Personal details
+    { val: h.nationality,      label: 'Nat' },
+    { val: h.dateOfBirth,      label: 'DOB' },
+    { val: h.genderPronoun,    label: 'G' },
+    { val: h.maritalStatus,    label: 'MS' },
+    { val: h.visa,             label: 'Visa' },
+    { val: h.passportOrId,     label: 'ID' },
+    { val: h.drivingLicense,   label: 'DL' },
+    { val: h.availability,     label: 'Avail' },
+    { val: h.workMode,         label: 'WM' },
+    { val: h.relocation,       label: 'Rel' },
+    { val: h.expectedSalary,   label: '$' },
+    { val: h.securityClearance, label: 'SC' },
+    { val: h.militaryService,  label: 'Mil' },
+    { val: h.disability,       label: 'Dis' },
   ].filter(p => p.val)
 
   if (!parts.length) return null

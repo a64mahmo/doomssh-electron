@@ -11,6 +11,7 @@ const CSS_FONT: Record<FontOption, string> = {
   'Merriweather':     '"Merriweather", ui-serif, Georgia, "Times New Roman", serif',
   'Playfair Display': '"Playfair Display", ui-serif, Georgia, "Times New Roman", serif',
   'IBM Plex Serif':   '"IBM Plex Serif", ui-serif, Georgia, "Times New Roman", serif',
+  'IBM Plex Mono':    '"IBM Plex Mono", monospace, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
 }
 
 export function cssFont(font: FontOption): string {
@@ -26,6 +27,7 @@ const GFONT: Partial<Record<FontOption, string>> = {
   'Merriweather':     'family=Merriweather:ital,wght@0,400;0,700;1,400',
   'Playfair Display': 'family=Playfair+Display:ital,wght@0,400;0,700;1,400',
   'IBM Plex Serif':   'family=IBM+Plex+Serif:ital,wght@0,400;0,700;1,400',
+  'IBM Plex Mono':    'family=IBM+Plex+Mono:ital,wght@0,400;0,700;1,400',
 }
 
 /** Returns full Google Fonts URL or null if font is system/already-loaded */

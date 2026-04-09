@@ -57,7 +57,7 @@ const TEMPLATE_IDS = [...(Object.keys(TEMPLATE_META) as TemplateId[]), 'custom' 
 
 const FONTS: FontOption[] = [
   'Inter', 'Lato', 'Roboto', 'Source Sans Pro', 'Raleway',
-  'Merriweather', 'Playfair Display', 'IBM Plex Serif',
+  'Merriweather', 'Playfair Display', 'IBM Plex Serif', 'IBM Plex Mono',
 ]
 
 const ACCENT_PRESETS = [

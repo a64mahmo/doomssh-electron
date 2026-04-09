@@ -203,27 +203,42 @@ export function MasterTemplate({ resume, pads, hideFooter, hideHeader, isMeasure
             flexWrap: 'wrap',
             gap: '10pt'
           }}>
-            <div>
-              <h1 style={{
-                fontSize: pt(nameSize),
-                fontWeight: s.nameBold ? 800 : 400,
-                color: colors.accent,
-                lineHeight: 1.1,
-                margin: 0,
-                letterSpacing: '-0.02em',
-              }}>
-                {h?.fullName || 'Your Name'}
-              </h1>
-              {h?.jobTitle && (
-                <div style={{
-                  fontSize: pt(base * 1.2),
-                  color: colors.subtitle,
-                  marginTop: '4pt',
-                  fontWeight: 500,
-                }}>
-                  {h.jobTitle}
-                </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14pt' }}>
+              {s.photoEnabled && h?.photo && (
+                <img
+                  src={h.photo}
+                  alt=""
+                  style={{
+                    width: '48pt',
+                    height: '48pt',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    flexShrink: 0,
+                  }}
+                />
               )}
+              <div>
+                <h1 style={{
+                  fontSize: pt(nameSize),
+                  fontWeight: s.nameBold ? 800 : 400,
+                  color: colors.accent,
+                  lineHeight: 1.1,
+                  margin: 0,
+                  letterSpacing: '-0.02em',
+                }}>
+                  {h?.fullName || 'Your Name'}
+                </h1>
+                {h?.jobTitle && (
+                  <div style={{
+                    fontSize: pt(base * 1.2),
+                    color: colors.subtitle,
+                    marginTop: '4pt',
+                    fontWeight: 500,
+                  }}>
+                    {h.jobTitle}
+                  </div>
+                )}
+              </div>
             </div>
             
             <div style={{ 

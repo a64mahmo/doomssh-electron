@@ -25,6 +25,8 @@ export type TemplateId =
   | 'crisp'
   | 'tokyo'
   | 'elite'
+  | 'mono'
+  | 'blocks'
   | 'custom'
 
 export type FontOption =
@@ -36,6 +38,7 @@ export type FontOption =
   | 'Lato'
   | 'Raleway'
   | 'IBM Plex Serif'
+  | 'IBM Plex Mono'
 
 export type DateFormat = 'MM/YYYY' | 'MMMM YYYY' | 'YYYY' | 'YYYY MMM DD' | 'MMM YYYY'
 export type PaperSize = 'a4' | 'letter'
@@ -70,6 +73,43 @@ export interface HeaderItem {
   linkedin: string
   github: string
   photo?: string // base64
+  // Personal details
+  nationality?: string
+  dateOfBirth?: string
+  visa?: string
+  passportOrId?: string
+  availability?: string
+  genderPronoun?: string
+  disability?: string
+  workMode?: string
+  relocation?: string
+  expectedSalary?: string
+  secondPhone?: string
+  drivingLicense?: string
+  securityClearance?: string
+  maritalStatus?: string
+  militaryService?: string
+  smoking?: string
+  height?: string
+  weight?: string
+  // Social profiles
+  twitter?: string
+  instagram?: string
+  facebook?: string
+  youtube?: string
+  tiktok?: string
+  pinterest?: string
+  medium?: string
+  behance?: string
+  dribbble?: string
+  stackoverflow?: string
+  gitlab?: string
+  bitbucket?: string
+  discord?: string
+  reddit?: string
+  bluesky?: string
+  threads?: string
+  mastodon?: string
 }
 
 export interface SummaryItem {
