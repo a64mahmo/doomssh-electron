@@ -1,0 +1,53 @@
+# Engineering Mandates for AI Agents (GEMINI.md)
+
+As an AI agent, you are part of the core engineering team. You must adhere to these strict architectural constraints to ensure the stability and maintainability of the DoomSSH platform.
+
+---
+
+## 1. Domain Integrity (Types)
+- **Constraint:** `frontend/lib/store/types.ts` is the **Single Source of Truth**.
+- **Mandate:** Never use `any` or `Record<string, unknown>` for core data structures. If you add a field to a resume section, you **must** update the interface in `types.ts` first.
+- **Style:** Prefer Discriminated Unions for section types to allow for exhaustive switch-case handling in the renderers.
+
+## 2. Immutable State Contract
+- **Constraint:** We use Zustand with the `immer` middleware.
+- **Mandate:** Mutate the `state` draft directly within `set()` calls.
+- **Async Warning:** Never access the `state` draft inside an `async` callback or `setTimeout`. The proxy is revoked immediately after the `set()` function returns.
+- **Persistence Pattern:** Always use the `scheduleSave(get)` helper. Do not trigger `saveResume()` manually from components.
+
+## 3. The "Mirror-World" Rendering Rule
+- **Constraint:** The HTML preview (`MasterTemplate.tsx`) and the PDF engine (`ResumePDF.tsx`) are technically separate systems.
+- **Mandate:** If you change a margin, a font size, a color, or a layout structure in the HTML template, you **must** apply the identical change to the corresponding PDF component.
+- **Primitive Matching:**
+    - `<div>` / `<section>` → `<View>`
+    - `<span>` / `<p>` / `<h1>` → `<Text>`
+    - `border-bottom: 1px solid` → `borderBottomWidth: 1, borderBottomColor: ..., borderBottomStyle: 'solid'`
+
+## 4. UI Architecture (Base UI + Tailwind)
+- **Constraint:** We use `@base-ui/react` (Radix) for unstyled primitives and Tailwind 4 for styling.
+- **Mandate:** 
+    - Keep UI components in `frontend/components/ui/` pure and atomic.
+    - Use the `cn()` utility for all class merges.
+    - Ensure Dark Mode compatibility by using `dark:` variants or CSS variables defined in `globals.css`.
+
+## 5. Security & IPC Boundary
+- **Constraint:** The Renderer process is untrusted.
+- **Mandate:** 
+    - Never import `@anthropic-ai/sdk` or `fs` in the `frontend/` directory.
+    - All desktop-level features must be accessed via `window.electron`.
+    - If a new IPC channel is needed, define it in `electron/main.ts` (handler) and `electron/preload.ts` (bridge).
+
+## 6. Layout Mathematics
+- **Constraint:** PDFs are rigid; HTML is fluid.
+- **Mandate:** When implementing multi-column layouts, use explicit percentage widths (e.g., `68%` and `32%`) and solid spacing units (`pt` or `mm`). Avoid `flex-grow` behaviors that behave differently between Chrome (Renderer) and Fontkit (PDF).
+
+---
+
+### Verification Checklist for AI Changes
+1. [ ] Did I update `types.ts`?
+2. [ ] Did I mirror the UI change in both `MasterTemplate.tsx` and `ResumePDF.tsx`?
+3. [ ] Is the state mutation happening safely within an `immer` draft?
+4. [ ] Does the change support both Light and Dark modes?
+5. [ ] Did I avoid introducing node-only modules into the frontend bundle?
+
+**Failure to follow these mandates will result in layout drift, state corruption, or build failures.**

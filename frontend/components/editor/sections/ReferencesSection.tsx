@@ -3,7 +3,7 @@ import { useSection } from '@/hooks/useResume'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Copy } from 'lucide-react'
 import type { ReferenceItem } from '@/lib/store/types'
 import { generateId } from '@/lib/utils/ids'
 
@@ -34,10 +34,27 @@ export function ReferencesSection({ sectionId }: Props) {
     updateItems(items.filter((it) => it.id !== id))
   }
 
+  function duplicate(id: string) {
+    const item = items.find((it) => it.id === id)
+    if (!item) return
+    const copy = { ...item, id: generateId() }
+    const idx = items.findIndex((it) => it.id === id)
+    const next = [...items]
+    next.splice(idx + 1, 0, copy)
+    updateItems(next)
+  }
+
   return (
     <div className="space-y-3">
       {items.map((item) => (
         <div key={item.id} className="rounded-md border border-border p-3 space-y-2.5 relative">
+          <Button
+            variant="ghost" size="icon"
+            className="absolute top-2 right-9 h-6 w-6 text-muted-foreground hover:text-foreground hover:bg-muted"
+            onClick={() => duplicate(item.id)}
+          >
+            <Copy size={12} />
+          </Button>
           <Button
             variant="ghost" size="icon"
             className="absolute top-2 right-2 h-6 w-6 text-muted-foreground hover:text-destructive"

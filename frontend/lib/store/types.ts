@@ -25,6 +25,7 @@ export type TemplateId =
   | 'crisp'
   | 'tokyo'
   | 'elite'
+  | 'custom'
 
 export type FontOption =
   | 'Inter'
@@ -256,9 +257,16 @@ export interface ResumeSettings {
 
   // Per-section display
   skillDisplay: SkillDisplayOption
+  skillColumns: 2 | 3 | 4
   educationOrder: EducationOrder
   experienceOrder: ExperienceOrder
   groupPromotions: boolean
+
+  // Entry title styling
+  titleBold: boolean
+
+  // Section spacing (multiplier on top of entry spacing)
+  sectionSpacing: number
 
   // Section Column Mapping (sectionId -> 'main' | 'sidebar')
   sectionColumns: Record<string, 'main' | 'sidebar'>
@@ -362,9 +370,17 @@ export const DEFAULT_SETTINGS: ResumeSettings = {
 
   // Per-section display
   skillDisplay: 'compact',
+  skillColumns: 3,
   educationOrder: 'degree-school',
   experienceOrder: 'title-employer',
   groupPromotions: false,
+
+  // Entry title styling
+  titleBold: true,
+
+  // Section spacing
+  sectionSpacing: 1.0,
+
   sectionColumns: {},
 }
 

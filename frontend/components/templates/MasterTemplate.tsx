@@ -110,18 +110,18 @@ export function MasterTemplate({ resume, pads, hideFooter, hideHeader, isMeasure
     }
 
     if (style === 'underline') {
-      containerStyle.borderBottom = `${thickness} solid ${colors.heading}${isSidebar ? '30' : '60'}`
+      containerStyle.borderBottom = `${thickness} solid ${colors.heading}`
       containerStyle.paddingBottom = '3pt'
     } else if (style === 'overline') {
-      containerStyle.borderTop = `${thickness} solid ${colors.heading}${isSidebar ? '30' : '60'}`
+      containerStyle.borderTop = `${thickness} solid ${colors.heading}`
       containerStyle.paddingTop = '3pt'
     } else if (style === 'top-bottom') {
-      containerStyle.borderTop = `${thickness} solid ${colors.heading}${isSidebar ? '30' : '60'}`
-      containerStyle.borderBottom = `${thickness} solid ${colors.heading}${isSidebar ? '30' : '60'}`
+      containerStyle.borderTop = `${thickness} solid ${colors.heading}`
+      containerStyle.borderBottom = `${thickness} solid ${colors.heading}`
       containerStyle.paddingTop = '3pt'
       containerStyle.paddingBottom = '3pt'
     } else if (style === 'box') {
-      containerStyle.border = `${thickness} solid ${colors.heading}${isSidebar ? '30' : '60'}`
+      containerStyle.border = `${thickness} solid ${colors.heading}`
       containerStyle.padding = '4pt 8pt'
       containerStyle.borderRadius = '2pt'
     } else if (style === 'background') {
@@ -193,7 +193,7 @@ export function MasterTemplate({ resume, pads, hideFooter, hideHeader, isMeasure
           paddingBottom: '20pt',
           textAlign: s.headerAlignment as 'left' | 'center' | 'right',
           backgroundColor: s.columnLayout === 'one' ? colors.accent + '05' : 'transparent',
-          borderBottom: s.columnLayout === 'one' ? `1pt solid ${colors.accent}15` : 'none',
+          borderBottom: s.columnLayout === 'one' ? `1pt solid ${colors.accent}` : 'none',
         }}>
           <div style={{
             display: 'flex',
@@ -252,6 +252,7 @@ export function MasterTemplate({ resume, pads, hideFooter, hideHeader, isMeasure
           paddingRight: s.columnLayout !== 'one' ? '20pt' : padH,
           paddingTop: '10pt',
           paddingBottom: isMeasurement ? '0' : '20pt',
+          borderRight: s.columnLayout !== 'one' && sidebarSections.length > 0 ? `0.5pt solid ${colors.accent}` : 'none',
         }}>
           {mainSections.map((section, i) => (
             <React.Fragment key={section.id}>
@@ -275,7 +276,6 @@ export function MasterTemplate({ resume, pads, hideFooter, hideHeader, isMeasure
             paddingRight: padH,
             paddingTop: '10pt',
             paddingBottom: isMeasurement ? '0' : '20pt',
-            borderLeft: `0.5pt solid ${colors.accent}10`,
           }}>
             {sidebarSections.map((section, i) => (
               <div key={section.id} data-section>
@@ -283,6 +283,7 @@ export function MasterTemplate({ resume, pads, hideFooter, hideHeader, isMeasure
                   section={section}
                   ctx={ctx}
                   renderHeading={(title) => <SectionHeading title={title} type={section.type} isSidebar={true} />}
+                  isSidebar={true}
                 />
               </div>
             ))}
@@ -312,7 +313,7 @@ export function TemplateFooter({ resume, pageNumber }: { resume: Resume; pageNum
       paddingLeft: padH,
       paddingRight: padH,
       paddingBottom: '4pt',
-      borderTop: `0.5pt solid ${colors.accent}15`,
+      borderTop: `0.5pt solid ${colors.accent}`,
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',

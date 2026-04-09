@@ -59,7 +59,20 @@ export const useResumeStore = create<ResumeStore>()(
     updateSettings: (updates) =>
       set((state) => {
         if (!state.resume) return
-        state.resume.settings = { ...state.resume.settings, ...updates }
+        
+        const newSettings = { ...state.resume.settings, ...updates }
+
+        // If in basic mode, we MUST keep headingColor in sync with accentColor
+        if (newSettings.colorMode === 'basic') {
+          newSettings.headingColor = newSettings.accentColor
+        }
+
+        state.resume.settings = newSettings
+        
+        // If they adjust settings manually, it's now a custom template
+        if (state.resume.template !== 'custom') {
+          state.resume.template = 'custom'
+        }
         state.isDirty = true
         scheduleSave(get)
       }),

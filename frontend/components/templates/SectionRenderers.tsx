@@ -29,7 +29,7 @@ function renderMarkdown(text: string): React.ReactNode[] {
 // ─── Shared primitive ─────────────────────────────────────────────────────────
 // A standard two-line entry used by experience, education, projects, etc.
 function Entry({
-  title, subtitle, date, description, ctx, extraLine,
+  title, subtitle, date, description, ctx, extraLine, isSidebar = false,
 }: {
   title: React.ReactNode
   subtitle?: React.ReactNode
@@ -37,6 +37,7 @@ function Entry({
   description?: string
   ctx: TemplateCtx
   extraLine?: React.ReactNode
+  isSidebar?: boolean
 }) {
   const { base, lh, colors, bullet, s, pt } = ctx
   const bullets = parseBullets(description || '')
@@ -48,11 +49,18 @@ function Entry({
     color:      colors.subtitle,
   }
 
-  const isSameLine = s.subtitlePlacement === 'same-line'
+  const isSameLine = s.subtitlePlacement === 'same-line' && !isSidebar
 
   return (
     <div style={{ marginBottom: ctx.gap }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', flexWrap: 'wrap' }}>
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: isSidebar ? 'column' : 'row',
+        justifyContent: 'space-between', 
+        alignItems: isSidebar ? 'flex-start' : 'baseline', 
+        flexWrap: 'wrap',
+        gap: isSidebar ? '2pt' : '0'
+      }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '6pt', flex: 1, flexWrap: 'wrap' }}>
           <span style={{ fontWeight: 'bold', fontSize: pt(base) }}>{title}</span>
           {subtitle && isSameLine && (
@@ -60,7 +68,15 @@ function Entry({
           )}
         </div>
         {date && (
-          <span style={{ fontSize: pt(base * 0.85), color: colors.date, marginLeft: '8pt', whiteSpace: 'nowrap', flexShrink: 0 }}>
+          <span style={{ 
+            fontSize: pt(base * 0.85), 
+            color: colors.date, 
+            marginLeft: isSidebar ? '0' : '8pt', 
+            whiteSpace: 'nowrap', 
+            flexShrink: 0,
+            fontStyle: isSidebar ? 'italic' : 'normal',
+            marginTop: isSidebar ? '1pt' : '0'
+          }}>
             {date}
           </span>
         )}
@@ -150,31 +166,32 @@ export function ContactLine({ h, ctx, display = 'inline' }: {
 // ─── Section dispatchers ──────────────────────────────────────────────────────
 type HeadingFn = (title: string) => React.ReactNode
 
-export function SectionRenderer({ section, ctx, renderHeading }: {
+export function SectionRenderer({ section, ctx, renderHeading, isSidebar = false }: {
   section: ResumeSection
   ctx: TemplateCtx
   renderHeading: HeadingFn
+  isSidebar?: boolean
 }) {
   if (!section.visible) return null
   switch (section.type) {
-    case 'summary':        return <SummarySection        section={section} ctx={ctx} renderHeading={renderHeading} />
-    case 'experience':     return <ExperienceSection     section={section} ctx={ctx} renderHeading={renderHeading} />
-    case 'education':      return <EducationSection      section={section} ctx={ctx} renderHeading={renderHeading} />
-    case 'skills':         return <SkillsSection         section={section} ctx={ctx} renderHeading={renderHeading} />
-    case 'projects':       return <ProjectsSection       section={section} ctx={ctx} renderHeading={renderHeading} />
-    case 'certifications': return <CertificationsSection section={section} ctx={ctx} renderHeading={renderHeading} />
-    case 'languages':      return <LanguagesSection      section={section} ctx={ctx} renderHeading={renderHeading} />
-    case 'awards':         return <AwardsSection         section={section} ctx={ctx} renderHeading={renderHeading} />
-    case 'volunteering':   return <VolunteeringSection   section={section} ctx={ctx} renderHeading={renderHeading} />
-    case 'publications':   return <PublicationsSection   section={section} ctx={ctx} renderHeading={renderHeading} />
-    case 'references':     return <ReferencesSection     section={section} ctx={ctx} renderHeading={renderHeading} />
-    case 'custom':         return <CustomSectionRender   section={section} ctx={ctx} renderHeading={renderHeading} />
+    case 'summary':        return <SummarySection        section={section} ctx={ctx} renderHeading={renderHeading} isSidebar={isSidebar} />
+    case 'experience':     return <ExperienceSection     section={section} ctx={ctx} renderHeading={renderHeading} isSidebar={isSidebar} />
+    case 'education':      return <EducationSection      section={section} ctx={ctx} renderHeading={renderHeading} isSidebar={isSidebar} />
+    case 'skills':         return <SkillsSection         section={section} ctx={ctx} renderHeading={renderHeading} isSidebar={isSidebar} />
+    case 'projects':       return <ProjectsSection       section={section} ctx={ctx} renderHeading={renderHeading} isSidebar={isSidebar} />
+    case 'certifications': return <CertificationsSection section={section} ctx={ctx} renderHeading={renderHeading} isSidebar={isSidebar} />
+    case 'languages':      return <LanguagesSection      section={section} ctx={ctx} renderHeading={renderHeading} isSidebar={isSidebar} />
+    case 'awards':         return <AwardsSection         section={section} ctx={ctx} renderHeading={renderHeading} isSidebar={isSidebar} />
+    case 'volunteering':   return <VolunteeringSection   section={section} ctx={ctx} renderHeading={renderHeading} isSidebar={isSidebar} />
+    case 'publications':   return <PublicationsSection   section={section} ctx={ctx} renderHeading={renderHeading} isSidebar={isSidebar} />
+    case 'references':     return <ReferencesSection     section={section} ctx={ctx} renderHeading={renderHeading} isSidebar={isSidebar} />
+    case 'custom':         return <CustomSectionRender   section={section} ctx={ctx} renderHeading={renderHeading} isSidebar={isSidebar} />
     default: return null
   }
 }
 
 // ── Summary ───────────────────────────────────────────────────────────────────
-function SummarySection({ section, ctx, renderHeading }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn }) {
+function SummarySection({ section, ctx, renderHeading, isSidebar }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn; isSidebar?: boolean }) {
   const text = (section.items as { text: string })?.text || ''
   if (!text) return null
   return (
@@ -186,7 +203,7 @@ function SummarySection({ section, ctx, renderHeading }: { section: ResumeSectio
 }
 
 // ── Experience ────────────────────────────────────────────────────────────────
-function ExperienceSection({ section, ctx, renderHeading }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn }) {
+function ExperienceSection({ section, ctx, renderHeading, isSidebar }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn; isSidebar?: boolean }) {
   const items = (section.items as ExperienceItem[]) || []
   if (!items.length) return null
   const { s } = ctx
@@ -203,6 +220,7 @@ function ExperienceSection({ section, ctx, renderHeading }: { section: ResumeSec
             date={formatDateRange(item.startDate, item.endDate, item.present, s.dateFormat)}
             description={item.description}
             ctx={ctx}
+            isSidebar={isSidebar}
           />
         )
       })}
@@ -211,7 +229,7 @@ function ExperienceSection({ section, ctx, renderHeading }: { section: ResumeSec
 }
 
 // ── Education ─────────────────────────────────────────────────────────────────
-function EducationSection({ section, ctx, renderHeading }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn }) {
+function EducationSection({ section, ctx, renderHeading, isSidebar }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn; isSidebar?: boolean }) {
   const items = (section.items as EducationItem[]) || []
   if (!items.length) return null
   const { s, base, colors, pt } = ctx
@@ -229,6 +247,7 @@ function EducationSection({ section, ctx, renderHeading }: { section: ResumeSect
             date={formatDateRange(item.startDate, item.endDate, item.present, s.dateFormat)}
             description={item.description}
             ctx={ctx}
+            isSidebar={isSidebar}
             extraLine={item.gpa ? (
               <div style={{ fontSize: pt(base * 0.85), color: colors.subtitle, marginBottom: '2pt' }}>GPA: {item.gpa}</div>
             ) : undefined}
@@ -240,7 +259,7 @@ function EducationSection({ section, ctx, renderHeading }: { section: ResumeSect
 }
 
 // ── Skills ────────────────────────────────────────────────────────────────────
-function SkillsSection({ section, ctx, renderHeading }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn }) {
+function SkillsSection({ section, ctx, renderHeading, isSidebar }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn; isSidebar?: boolean }) {
   const items = (section.items as SkillItem[]) || []
   if (!items.length) return null
   const { base, lh, colors, bullet, s, pt } = ctx
@@ -295,7 +314,7 @@ function SkillsSection({ section, ctx, renderHeading }: { section: ResumeSection
 }
 
 // ── Projects ──────────────────────────────────────────────────────────────────
-function ProjectsSection({ section, ctx, renderHeading }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn }) {
+function ProjectsSection({ section, ctx, renderHeading, isSidebar }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn; isSidebar?: boolean }) {
   const items = (section.items as ProjectItem[]) || []
   if (!items.length) return null
   const { base, colors, s, pt } = ctx
@@ -309,6 +328,7 @@ function ProjectsSection({ section, ctx, renderHeading }: { section: ResumeSecti
           date={item.date ? formatDateRange(item.date, '', false, s.dateFormat) : undefined}
           description={item.description}
           ctx={ctx}
+          isSidebar={isSidebar}
         />
       ))}
     </div>
@@ -316,7 +336,7 @@ function ProjectsSection({ section, ctx, renderHeading }: { section: ResumeSecti
 }
 
 // ── Certifications ────────────────────────────────────────────────────────────
-function CertificationsSection({ section, ctx, renderHeading }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn }) {
+function CertificationsSection({ section, ctx, renderHeading, isSidebar }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn; isSidebar?: boolean }) {
   const items = (section.items as CertificationItem[]) || []
   if (!items.length) return null
   const { s } = ctx
@@ -329,6 +349,7 @@ function CertificationsSection({ section, ctx, renderHeading }: { section: Resum
           subtitle={item.issuer || undefined}
           date={item.date ? formatDateRange(item.date, '', false, s.dateFormat) : undefined}
           ctx={ctx}
+          isSidebar={isSidebar}
         />
       ))}
     </div>
@@ -336,7 +357,7 @@ function CertificationsSection({ section, ctx, renderHeading }: { section: Resum
 }
 
 // ── Languages ─────────────────────────────────────────────────────────────────
-function LanguagesSection({ section, ctx, renderHeading }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn }) {
+function LanguagesSection({ section, ctx, renderHeading, isSidebar }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn; isSidebar?: boolean }) {
   const items = (section.items as LanguageItem[]) || []
   if (!items.length) return null
   const { base, colors, lh, pt } = ctx
@@ -356,7 +377,7 @@ function LanguagesSection({ section, ctx, renderHeading }: { section: ResumeSect
 }
 
 // ── Awards ────────────────────────────────────────────────────────────────────
-function AwardsSection({ section, ctx, renderHeading }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn }) {
+function AwardsSection({ section, ctx, renderHeading, isSidebar }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn; isSidebar?: boolean }) {
   const items = (section.items as AwardItem[]) || []
   if (!items.length) return null
   const { s } = ctx
@@ -370,6 +391,7 @@ function AwardsSection({ section, ctx, renderHeading }: { section: ResumeSection
           date={item.date ? formatDateRange(item.date, '', false, s.dateFormat) : undefined}
           description={item.description}
           ctx={ctx}
+          isSidebar={isSidebar}
         />
       ))}
     </div>
@@ -377,7 +399,7 @@ function AwardsSection({ section, ctx, renderHeading }: { section: ResumeSection
 }
 
 // ── Volunteering ──────────────────────────────────────────────────────────────
-function VolunteeringSection({ section, ctx, renderHeading }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn }) {
+function VolunteeringSection({ section, ctx, renderHeading, isSidebar }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn; isSidebar?: boolean }) {
   const items = (section.items as VolunteeringItem[]) || []
   if (!items.length) return null
   const { s } = ctx
@@ -391,6 +413,7 @@ function VolunteeringSection({ section, ctx, renderHeading }: { section: ResumeS
           date={formatDateRange(item.startDate, item.endDate, item.present, s.dateFormat)}
           description={item.description}
           ctx={ctx}
+          isSidebar={isSidebar}
         />
       ))}
     </div>
@@ -398,7 +421,7 @@ function VolunteeringSection({ section, ctx, renderHeading }: { section: ResumeS
 }
 
 // ── Publications ──────────────────────────────────────────────────────────────
-function PublicationsSection({ section, ctx, renderHeading }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn }) {
+function PublicationsSection({ section, ctx, renderHeading, isSidebar }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn; isSidebar?: boolean }) {
   const items = (section.items as PublicationItem[]) || []
   if (!items.length) return null
   const { s } = ctx
@@ -412,6 +435,7 @@ function PublicationsSection({ section, ctx, renderHeading }: { section: ResumeS
           date={item.date ? formatDateRange(item.date, '', false, s.dateFormat) : undefined}
           description={item.description}
           ctx={ctx}
+          isSidebar={isSidebar}
         />
       ))}
     </div>
@@ -419,7 +443,7 @@ function PublicationsSection({ section, ctx, renderHeading }: { section: ResumeS
 }
 
 // ── References ────────────────────────────────────────────────────────────────
-function ReferencesSection({ section, ctx, renderHeading }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn }) {
+function ReferencesSection({ section, ctx, renderHeading, isSidebar }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn; isSidebar?: boolean }) {
   const items = (section.items as ReferenceItem[]) || []
   if (!items.length) return null
   const { base, colors, lh, pt } = ctx
@@ -442,7 +466,7 @@ function ReferencesSection({ section, ctx, renderHeading }: { section: ResumeSec
 }
 
 // ── Custom ────────────────────────────────────────────────────────────────────
-function CustomSectionRender({ section, ctx, renderHeading }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn }) {
+function CustomSectionRender({ section, ctx, renderHeading, isSidebar }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn; isSidebar?: boolean }) {
   const items = (section.items as CustomItem[]) || []
   if (!items.length) return null
   const { s } = ctx
@@ -456,6 +480,7 @@ function CustomSectionRender({ section, ctx, renderHeading }: { section: ResumeS
           date={item.date ? formatDateRange(item.date, '', false, s.dateFormat) : undefined}
           description={item.description}
           ctx={ctx}
+          isSidebar={isSidebar}
         />
       ))}
     </div>

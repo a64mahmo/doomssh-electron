@@ -10,31 +10,29 @@ import { cn } from '@/lib/utils'
 import { useResume } from '@/hooks/useResume'
 import { TEMPLATE_META, getTemplateSettings } from '@/components/templates'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  Palette, 
-  Layout as LayoutIcon, 
-  User as HeaderIcon, 
-  Settings2, 
-  ChevronRight, 
-  GripVertical, 
-  AlignLeft, 
-  AlignCenter, 
+import {
+  Palette,
+  Layout as LayoutIcon,
+  User as HeaderIcon,
+  Settings2,
+  GripVertical,
+  AlignLeft,
+  AlignCenter,
   AlignRight,
-  Columns, 
-  LayoutTemplate, 
-  Check, 
-  Minus, 
-  Square, 
-  Type as TypeIcon
+  Columns,
+  LayoutTemplate,
+  Check,
+  Type as TypeIcon,
 } from 'lucide-react'
-  import type {
+import {
+  SectionType,
   FontOption, DateFormat, PaperSize, ColumnLayout, ListStyle,
   SubtitleStyle, SubtitlePlacement, SectionHeadingSize, SectionHeadingCapitalization,
   SectionHeadingIcon, HeaderAlignment, HeaderArrangement, NameSize, ColorMode,
-  SkillDisplayOption, EducationOrder, ExperienceOrder, SectionHeadingStyle, SectionHeadingIconStyle
-  } from '@/lib/store/types'
+  SkillDisplayOption, EducationOrder, ExperienceOrder, SectionHeadingStyle,
+  DEFAULT_SETTINGS,
+} from '@/lib/store/types'
 import type { TemplateId } from '@/lib/store/types'
-
 import {
   DndContext,
   closestCenter,
@@ -53,7 +51,9 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-const TEMPLATE_IDS = Object.keys(TEMPLATE_META) as TemplateId[]
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const TEMPLATE_IDS = [...(Object.keys(TEMPLATE_META) as TemplateId[]), 'custom' as const]
 
 const FONTS: FontOption[] = [
   'Inter', 'Lato', 'Roboto', 'Source Sans Pro', 'Raleway',
@@ -66,103 +66,147 @@ const ACCENT_PRESETS = [
 ]
 
 const PANEL_SECTIONS = [
-  { id: 'templates', label: 'Templates', icon: LayoutTemplate },
-  { id: 'layout',    label: 'Layout',    icon: LayoutIcon },
-  { id: 'typography', label: 'Typography', icon: TypeIcon },
-  { id: 'colors',    label: 'Colors',    icon: Palette },
-  { id: 'header',    label: 'Header',    icon: HeaderIcon },
-  { id: 'sections',  label: 'Sections',  icon: Settings2 },
+  { id: 'templates', label: 'Templates',  icon: LayoutTemplate },
+  { id: 'layout',    label: 'Layout',     icon: LayoutIcon },
+  { id: 'typography',label: 'Typography', icon: TypeIcon },
+  { id: 'colors',    label: 'Colors',     icon: Palette },
+  { id: 'header',    label: 'Header',     icon: HeaderIcon },
+  { id: 'sections',  label: 'Sections',   icon: Settings2 },
 ] as const
 
 type PanelSectionId = typeof PANEL_SECTIONS[number]['id']
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Shared UI primitives ──────────────────────────────────────────────────────
 
-function FieldLabel({ children, className }: { children: React.ReactNode, className?: string }) {
+function FieldLabel({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <Label className={cn("block text-[11px] font-medium text-muted-foreground/80 mb-2 uppercase tracking-wider", className)}>
+    <Label className={cn('block text-[10px] font-semibold text-muted-foreground/70 mb-1.5 uppercase tracking-widest', className)}>
       {children}
     </Label>
   )
 }
 
-function ControlGroup({ title, children }: { title?: string, children: React.ReactNode }) {
+function ControlGroup({ title, children, className }: { title?: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className="space-y-4 mb-8">
-      {title && <h4 className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-[0.1em] mb-3">{title}</h4>}
-      <div className="space-y-4">{children}</div>
+    <div className={cn('space-y-3', className)}>
+      {title && (
+        <p className="text-[9px] font-bold text-muted-foreground/35 uppercase tracking-[0.12em] pb-1 border-b border-border/40">
+          {title}
+        </p>
+      )}
+      {children}
     </div>
   )
 }
 
-function ToggleRow({
+/** Slider with label + live value — consistent layout everywhere */
+function SliderRow({
   label,
+  value,
+  display,
+  min, max, step,
+  onChange,
+}: {
+  label: string
+  value: number
+  display: string
+  min: number
+  max: number
+  step: number
+  onChange: (v: number) => void
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <FieldLabel className="mb-0">{label}</FieldLabel>
+        <span className="text-[10px] font-mono tabular-nums text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
+          {display}
+        </span>
+      </div>
+      <Slider min={min} max={max} step={step} value={[value]} onValueChange={([v]) => onChange(v)} />
+    </div>
+  )
+}
+
+/** Toggle row — label clicks the switch via htmlFor */
+function ToggleRow({
+  id,
+  label,
+  description,
   checked,
   onCheckedChange,
 }: {
+  id: string
   label: string
+  description?: string
   checked: boolean
   onCheckedChange: (v: boolean) => void
 }) {
   return (
-    <div className="flex items-center justify-between py-1">
-      <Label className="text-xs font-medium cursor-pointer" onClick={() => onCheckedChange(!checked)}>{label}</Label>
-      <Switch checked={checked} onCheckedChange={onCheckedChange} className="scale-75" />
+    <div className="flex items-center justify-between gap-3 py-1">
+      <div>
+        <label htmlFor={id} className="text-xs font-medium cursor-pointer select-none leading-tight">
+          {label}
+        </label>
+        {description && (
+          <p className="text-[10px] text-muted-foreground/60 mt-0.5">{description}</p>
+        )}
+      </div>
+      <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} className="shrink-0" />
     </div>
   )
 }
 
-function IconGroup<T extends string>({
+/** Segmented button group — icon OR text content, no spurious DOM props */
+function SegmentGroup<T extends string>({
   value,
   onChange,
   options,
 }: {
   value: T
   onChange: (v: T) => void
-  options: { value: T; icon: any; label: string }[]
+  options: { value: T; render: () => React.ReactNode; label: string }[]
 }) {
   return (
-    <div className="flex bg-muted/50 p-1 rounded-lg border border-border/50">
+    <div className="flex bg-muted/40 p-0.5 rounded-lg border border-border/50 gap-0.5">
       {options.map((o) => (
         <button
           key={o.value}
+          type="button"
           onClick={() => onChange(o.value)}
           title={o.label}
           className={cn(
-            'flex-1 flex items-center justify-center py-1.5 rounded-md transition-all',
+            'flex-1 flex items-center justify-center py-1.5 rounded-md transition-all text-xs',
             value === o.value
-              ? 'bg-background text-foreground shadow-sm'
+              ? 'bg-background text-foreground shadow-sm font-semibold'
               : 'text-muted-foreground hover:text-foreground hover:bg-background/50',
           )}
         >
-          <o.icon size={14} />
+          {o.render()}
         </button>
       ))}
     </div>
   )
 }
 
-// ── D&D Helpers ───────────────────────────────────────────────────────────────
+// ── Drag & Drop ───────────────────────────────────────────────────────────────
 
 function SortableSectionItem({ id, title }: { id: string; title: string }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
-  const style = {
-    transform: CSS.Translate.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 50 : 0,
-  }
-
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      style={{ transform: CSS.Translate.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
       className={cn(
-        "group flex items-center gap-2 px-3 py-2 bg-background border rounded-lg shadow-sm mb-2 transition-all",
-        isDragging ? "border-primary ring-2 ring-primary/10" : "border-border hover:border-foreground/20"
+        'group flex items-center gap-2 px-3 py-2 bg-background border rounded-lg shadow-sm transition-all',
+        isDragging ? 'border-primary ring-2 ring-primary/10 shadow-md' : 'border-border hover:border-foreground/20',
       )}
     >
-      <div {...attributes} {...listeners} className="cursor-grab text-muted-foreground/30 group-hover:text-muted-foreground/60 transition-colors">
+      <div
+        {...attributes}
+        {...listeners}
+        className="cursor-grab text-muted-foreground/30 group-hover:text-muted-foreground/60 transition-colors shrink-0"
+      >
         <GripVertical size={14} />
       </div>
       <span className="text-xs font-medium truncate select-none">{title}</span>
@@ -170,30 +214,101 @@ function SortableSectionItem({ id, title }: { id: string; title: string }) {
   )
 }
 
-function DroppableColumn({ id, title, items, resumeSections }: { id: string; title: string; items: string[]; resumeSections: any[] }) {
+function DroppableColumn({ id, title, items, resumeSections }: {
+  id: string; title: string; items: string[]; resumeSections: { id: string; title: string }[]
+}) {
   const { setNodeRef } = useSortable({ id })
-
   return (
     <div className="flex-1 min-w-0">
-      <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3 px-1">{title}</div>
-      <div
-        ref={setNodeRef}
-        className="min-h-[160px] p-2.5 rounded-xl bg-muted/30 border border-dashed border-border/60"
-      >
+      <p className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-widest mb-2 px-1">{title}</p>
+      <div ref={setNodeRef} className="min-h-[140px] p-2 rounded-xl bg-muted/30 border border-dashed border-border/60 space-y-1">
         <SortableContext items={items} strategy={verticalListSortingStrategy}>
-          <div className="space-y-1">
-            {items.map((sectionId) => {
-              const sec = resumeSections.find(s => s.id === sectionId)
-              return <SortableSectionItem key={sectionId} id={sectionId} title={sec?.title || 'Unknown'} />
-            })}
-          </div>
+          {items.map((sectionId) => {
+            const sec = resumeSections.find(s => s.id === sectionId)
+            return <SortableSectionItem key={sectionId} id={sectionId} title={sec?.title || 'Unknown'} />
+          })}
         </SortableContext>
       </div>
     </div>
   )
 }
 
-// ── Main Component ────────────────────────────────────────────────────────────
+// ── Heading style visual ──────────────────────────────────────────────────────
+
+const HEADING_STYLES: { id: SectionHeadingStyle; label: string }[] = [
+  { id: 'none',       label: 'None'     },
+  { id: 'underline',  label: 'Under'    },
+  { id: 'overline',   label: 'Over'     },
+  { id: 'top-bottom', label: 'Both'     },
+  { id: 'left-bar',   label: 'Left bar' },
+  { id: 'box',        label: 'Box'      },
+  { id: 'background', label: 'Fill'     },
+]
+
+function HeadingStyleButton({ style, active, onClick, accentColor }: {
+  style: { id: SectionHeadingStyle; label: string }
+  active: boolean
+  onClick: () => void
+  accentColor: string
+}) {
+  const lineStyle = { backgroundColor: `${accentColor}80`, borderRadius: '999px' }
+  const preview: Record<SectionHeadingStyle, React.ReactNode> = {
+    none: (
+      <div className="w-full h-[2px]" style={{ ...lineStyle, opacity: 0 }} />
+    ),
+    underline: (
+      <div className="w-full border-b-[1.5px] border-foreground/20 pb-0.5">
+        <div className="h-[1.5px] w-3/4" style={lineStyle} />
+      </div>
+    ),
+    overline: (
+      <div className="w-full border-t-[1.5px] border-foreground/20 pt-0.5">
+        <div className="h-[1.5px] w-3/4" style={lineStyle} />
+      </div>
+    ),
+    'top-bottom': (
+      <div className="w-full border-t-[1.5px] border-b-[1.5px] border-foreground/20 py-0.5">
+        <div className="h-[1.5px] w-3/4" style={lineStyle} />
+      </div>
+    ),
+    'left-bar': (
+      <div className="w-full flex items-center gap-1 pl-1 border-l-[2.5px] border-foreground/30">
+        <div className="h-[1.5px] flex-1" style={lineStyle} />
+      </div>
+    ),
+    box: (
+      <div className="w-full border-[1.5px] border-foreground/20 rounded px-1 py-0.5">
+        <div className="h-[1.5px] w-3/4" style={lineStyle} />
+      </div>
+    ),
+    background: (
+      <div className="w-full bg-foreground/5 rounded px-1 py-0.5">
+        <div className="h-[1.5px] w-3/4" style={lineStyle} />
+      </div>
+    ),
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={style.label}
+      className={cn(
+        'flex flex-col items-center gap-1.5 p-2 rounded-lg border transition-all',
+        active
+          ? 'border-foreground bg-foreground/5 ring-1 ring-foreground/20'
+          : 'border-border hover:border-foreground/30 hover:bg-muted/50',
+      )}
+    >
+      <div className="w-full h-4 flex items-center">{preview[style.id]}</div>
+      <span className={cn('text-[9px] font-semibold uppercase tracking-wide', active ? 'text-foreground' : 'text-muted-foreground/60')}>
+        {style.label}
+      </span>
+    </button>
+  )
+}
+
+// ── Main Panel ────────────────────────────────────────────────────────────────
 
 export function CustomizePanel() {
   const { resume, updateSettings, setResume } = useResume()
@@ -211,252 +326,256 @@ export function CustomizePanel() {
 
   const sidebarTypes = ['skills', 'education', 'languages', 'certifications', 'awards', 'references']
   const sections = resume.sections.filter(sec => sec.type !== 'header')
-  
-  const mainIds = useMemo(() => sections.filter(sec => {
-    const col = s.sectionColumns?.[sec.id]
-    if (col) return col === 'main'
-    return !sidebarTypes.includes(sec.type)
-  }).map(s => s.id), [sections, s.sectionColumns])
 
-  const sidebarIds = useMemo(() => sections.filter(sec => {
-    const col = s.sectionColumns?.[sec.id]
-    if (col) return col === 'sidebar'
-    return sidebarTypes.includes(sec.type)
-  }).map(s => s.id), [sections, s.sectionColumns])
+  const mainIds = useMemo(() =>
+    sections.filter(sec => {
+      const col = s.sectionColumns?.[sec.id]
+      return col ? col === 'main' : !sidebarTypes.includes(sec.type)
+    }).map(sec => sec.id),
+  [sections, s.sectionColumns])
 
-  function handleDragStart(event: any) {
-    setDragActiveId(event.active.id)
-  }
+  const sidebarIds = useMemo(() =>
+    sections.filter(sec => {
+      const col = s.sectionColumns?.[sec.id]
+      return col ? col === 'sidebar' : sidebarTypes.includes(sec.type)
+    }).map(sec => sec.id),
+  [sections, s.sectionColumns])
 
   function handleDragOver(event: any) {
     const { active, over } = event
     if (!over) return
-
     const activeContainer = mainIds.includes(active.id) ? 'main' : 'sidebar'
-    const overContainer = over.id === 'main-col' || mainIds.includes(over.id) ? 'main' : 
-                         over.id === 'sidebar-col' || sidebarIds.includes(over.id) ? 'sidebar' : null
-
+    const overContainer =
+      over.id === 'main-col' || mainIds.includes(over.id) ? 'main' :
+      over.id === 'sidebar-col' || sidebarIds.includes(over.id) ? 'sidebar' : null
     if (overContainer && activeContainer !== overContainer) {
-      const newMap = { ...(s.sectionColumns || {}), [active.id]: overContainer as 'main' | 'sidebar' }
-      updateSettings({ sectionColumns: newMap })
+      updateSettings({ sectionColumns: { ...(s.sectionColumns || {}), [active.id]: overContainer } })
     }
   }
 
-  function handleDragEnd() {
-    setDragActiveId(null)
-  }
+  const upd = (updates: Partial<typeof s>) => updateSettings(updates)
 
-  const update = (updates: Partial<typeof s>) => updateSettings(updates)
+  // Whether the active heading decoration has a line to configure
+  const headingHasLine = ['underline', 'overline', 'top-bottom', 'box'].includes(s.sectionHeadingStyle || 'underline')
 
   return (
     <div className="flex h-full overflow-hidden bg-background">
-      
-      {/* ── Left Nav ────────────────────────────────────────────── */}
-      <nav className="w-14 border-r border-border flex flex-col items-center py-4 gap-4 shrink-0 bg-muted/5">
-        {PANEL_SECTIONS.map((section) => (
-          <button
-            key={section.id}
-            onClick={() => setActiveSection(section.id)}
-            title={section.label}
-            className={cn(
-              "relative group p-2.5 rounded-xl transition-all",
-              activeSection === section.id 
-                ? "bg-foreground text-background shadow-md shadow-foreground/10" 
-                : "text-muted-foreground hover:text-foreground hover:bg-muted"
-            )}
-          >
-            <section.icon size={18} strokeWidth={activeSection === section.id ? 2.5 : 2} />
-            {activeSection === section.id && (
-              <motion.div 
-                layoutId="active-indicator"
-                className="absolute -right-[1px] top-1/2 -translate-y-1/2 w-1 h-6 bg-foreground rounded-l-full"
-              />
-            )}
-          </button>
-        ))}
+
+      {/* ── Icon Nav ──────────────────────────────────────────────── */}
+      <nav className="w-12 border-r border-border flex flex-col items-center py-3 gap-1 shrink-0 bg-muted/5">
+        {PANEL_SECTIONS.map((section) => {
+          const active = activeSection === section.id
+          return (
+            <button
+              key={section.id}
+              type="button"
+              onClick={() => setActiveSection(section.id)}
+              title={section.label}
+              className={cn(
+                'relative w-9 h-9 flex items-center justify-center rounded-xl transition-all',
+                active
+                  ? 'bg-foreground text-background shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+              )}
+            >
+              <section.icon size={16} strokeWidth={active ? 2.5 : 1.8} />
+              {active && (
+                <motion.div
+                  layoutId="nav-pip"
+                  className="absolute -right-px top-1/2 -translate-y-1/2 w-0.5 h-5 bg-foreground rounded-l-full"
+                />
+              )}
+            </button>
+          )
+        })}
       </nav>
 
-      {/* ── Right Content ─────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="px-5 h-11 border-b border-border flex items-center justify-between shrink-0 bg-background/50 backdrop-blur-sm">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-foreground/80">
+      {/* ── Content ───────────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+        {/* Header bar */}
+        <header className="px-4 h-10 border-b border-border flex items-center shrink-0 bg-background/60 backdrop-blur-sm">
+          <h3 className="text-[11px] font-bold uppercase tracking-widest text-foreground/70">
             {PANEL_SECTIONS.find(p => p.id === activeSection)?.label}
           </h3>
         </header>
 
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-6">
+        {/* Scrollable content */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeSection}
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.15 }}
-              className="pb-20"
+              transition={{ duration: 0.12, ease: 'easeOut' }}
+              className="px-4 py-5 space-y-6 pb-24"
             >
-              
-              {/* ───────────────── TEMPLATES ─────────────────────────── */}
+
+              {/* ═══════════════ TEMPLATES ═══════════════════════════ */}
               {activeSection === 'templates' && (
-                <div className="grid grid-cols-2 gap-3">
-                  {TEMPLATE_IDS.map((id) => (
-                    <button
-                      key={id}
-                      onClick={() => {
-                        const overrides = getTemplateSettings(id)
-                        setResume({ 
-                          ...resume, 
-                          template: id,
-                          settings: { ...resume.settings, ...overrides }
-                        })
-                      }}
-                      className={cn(
-                        'group relative aspect-[3/4.2] rounded-xl border-2 transition-all overflow-hidden flex flex-col',
-                        resume.template === id
-                          ? 'border-foreground ring-4 ring-foreground/5 shadow-xl'
-                          : 'border-border hover:border-foreground/30 shadow-sm',
-                      )}
-                    >
-                      {/* Fake preview with accent color */}
-                      <div className="flex-1 bg-muted relative overflow-hidden p-2">
-                        <div className="absolute inset-0 bg-gradient-to-br from-background/40 to-muted/80" />
-                        
-                        {/* Fake lines */}
-                        <div className="relative space-y-1.5 opacity-40">
-                          <div className="h-2 bg-foreground/20 rounded-full w-2/3 mx-auto mb-3" />
-                          {[...Array(6)].map((_, i) => (
-                            <div key={i} className="space-y-1">
-                              <div className="h-1 bg-foreground/10 rounded-full w-full" />
-                              <div className="h-1 bg-foreground/10 rounded-full w-[85%]" />
-                            </div>
+                <div className="grid grid-cols-2 gap-2.5">
+                  {TEMPLATE_IDS.map((id) => {
+                    const meta = id === 'custom' ? { label: 'Custom', description: 'Your manual adjustments' } : TEMPLATE_META[id as Exclude<TemplateId, 'custom'>]
+                    const active = resume.template === id
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => {
+                          if (id === 'custom') return
+                          const overrides = getTemplateSettings(id as Exclude<TemplateId, 'custom'>)
+                          // Complete overwrite: start with DEFAULT_SETTINGS, then apply overrides
+                          setResume({ ...resume, template: id, settings: { ...DEFAULT_SETTINGS, ...overrides } })
+                        }}
+                        className={cn(
+                          'group relative aspect-[3/4] rounded-xl border-2 overflow-hidden flex flex-col transition-all',
+                          active
+                            ? 'border-foreground shadow-lg ring-2 ring-foreground/10'
+                            : 'border-border hover:border-foreground/40 shadow-sm',
+                          id === 'custom' && !active && 'opacity-50 pointer-events-none grayscale',
+                        )}
+                      >
+                        {/* Accent stripe at top */}
+                        <div
+                          className="h-2 w-full shrink-0"
+                          style={{ backgroundColor: s.accentColor }}
+                        />
+                        {/* Skeleton preview */}
+                        <div className="flex-1 bg-background p-2 space-y-1.5">
+                          <div className="h-1.5 bg-foreground/15 rounded-full w-2/3" />
+                          <div className="h-px bg-foreground/8 rounded-full w-full" />
+                          {[0.9, 0.75, 0.85, 0.6, 0.8].map((w, i) => (
+                            <div key={i} className="h-px rounded-full bg-foreground/8" style={{ width: `${w * 100}%` }} />
+                          ))}
+                          <div className="h-px bg-muted rounded-full w-full mt-0.5" />
+                          {[0.7, 0.55, 0.65].map((w, i) => (
+                            <div key={i} className="h-px rounded-full bg-foreground/8" style={{ width: `${w * 100}%` }} />
                           ))}
                         </div>
-
-                        {resume.template === id && (
-                          <div className="absolute top-2 right-2 w-5 h-5 bg-foreground text-background rounded-full flex items-center justify-center shadow-lg">
-                            <Check size={12} strokeWidth={3} />
+                        {/* Label */}
+                        <div className="bg-muted/60 px-2 py-1.5 border-t border-border">
+                          <p className="text-[10px] font-bold text-center tracking-tight">
+                            {meta.label}
+                          </p>
+                        </div>
+                        {/* Active badge */}
+                        {active && (
+                          <div className="absolute top-2 right-2 w-4 h-4 bg-foreground text-background rounded-full flex items-center justify-center">
+                            <Check size={9} strokeWidth={3} />
                           </div>
                         )}
-                      </div>
-
-                      <div className="bg-background px-2.5 py-2.5 border-t border-border group-hover:bg-muted/50 transition-colors">
-                        <p className="text-[11px] font-bold text-foreground text-center tracking-tight">
-                          {TEMPLATE_META[id].label}
-                        </p>
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    )
+                  })}
                 </div>
               )}
 
-              {/* ───────────────── LAYOUT ────────────────────────────── */}
+              {/* ═══════════════ LAYOUT ══════════════════════════════ */}
               {activeSection === 'layout' && (
-                <div className="space-y-8">
-                  <ControlGroup title="Page & Columns">
+                <>
+                  <ControlGroup title="Page">
                     <div>
                       <FieldLabel>Column Layout</FieldLabel>
-                      <IconGroup
+                      <SegmentGroup
                         value={s.columnLayout}
-                        onChange={(v) => update({ columnLayout: v as ColumnLayout })}
+                        onChange={(v) => upd({ columnLayout: v as ColumnLayout })}
                         options={[
-                          { value: 'one', icon: AlignLeft, label: 'Single Column' },
-                          { value: 'two', icon: Columns, label: 'Two Columns' },
-                          { value: 'mix', icon: LayoutIcon, label: 'Mixed Layout' },
+                          { value: 'one',  label: 'Single',  render: () => <AlignLeft  size={14} /> },
+                          { value: 'two',  label: 'Two col', render: () => <Columns    size={14} /> },
+                          { value: 'mix',  label: 'Mixed',   render: () => <LayoutIcon size={14} /> },
                         ]}
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-2">
                       <div>
                         <FieldLabel>Paper Size</FieldLabel>
-                        <Select value={s.paperSize} onValueChange={(v) => update({ paperSize: v as PaperSize })}>
-                          <SelectTrigger className="h-9 text-xs font-medium"><SelectValue /></SelectTrigger>
+                        <Select value={s.paperSize} onValueChange={(v) => upd({ paperSize: v as PaperSize })}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="letter">US Letter</SelectItem>
-                            <SelectItem value="a4">A4 (ISO)</SelectItem>
+                            <SelectItem value="a4">A4</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div>
-                        <FieldLabel>Language</FieldLabel>
-                        <Select value={s.language} onValueChange={(v) => v && update({ language: v })}>
-                          <SelectTrigger className="h-9 text-xs font-medium"><SelectValue /></SelectTrigger>
+                        <FieldLabel>Date Format</FieldLabel>
+                        <Select value={s.dateFormat} onValueChange={(v) => upd({ dateFormat: v as DateFormat })}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="en-GB">English (UK)</SelectItem>
-                            <SelectItem value="en-US">English (US)</SelectItem>
-                            <SelectItem value="fr-FR">French</SelectItem>
-                            <SelectItem value="de-DE">German</SelectItem>
+                            <SelectItem value="MMM YYYY">Jan 2024</SelectItem>
+                            <SelectItem value="MMMM YYYY">January 2024</SelectItem>
+                            <SelectItem value="MM/YYYY">01/2024</SelectItem>
+                            <SelectItem value="YYYY">2024</SelectItem>
+                            <SelectItem value="YYYY MMM DD">2024 Jan 01</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
+                    </div>
+
+                    <div>
+                      <FieldLabel>Language</FieldLabel>
+                      <Select value={s.language} onValueChange={(v) => v && upd({ language: v })}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="en-US">English (US)</SelectItem>
+                          <SelectItem value="en-GB">English (UK)</SelectItem>
+                          <SelectItem value="fr-FR">French</SelectItem>
+                          <SelectItem value="de-DE">German</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </ControlGroup>
 
+                  <Separator className="opacity-30" />
+
                   <ControlGroup title="Margins & Spacing">
-                    <div className="space-y-6">
-                      <div>
-                        <div className="flex justify-between items-center mb-3">
-                          <FieldLabel className="mb-0">Horizontal Margin</FieldLabel>
-                          <span className="text-[10px] font-mono text-muted-foreground">{s.marginHorizontal}mm</span>
-                        </div>
-                        <Slider min={5} max={40} step={1} value={[s.marginHorizontal]} onValueChange={([v]) => update({ marginHorizontal: v })} />
-                      </div>
-                      <div>
-                        <div className="flex justify-between items-center mb-3">
-                          <FieldLabel className="mb-0">Vertical Margin</FieldLabel>
-                          <span className="text-[10px] font-mono text-muted-foreground">{s.marginVertical}mm</span>
-                        </div>
-                        <Slider min={5} max={40} step={1} value={[s.marginVertical]} onValueChange={([v]) => update({ marginVertical: v })} />
-                      </div>
-                      <div>
-                        <div className="flex justify-between items-center mb-3">
-                          <FieldLabel className="mb-0">Entry Spacing</FieldLabel>
-                          <span className="text-[10px] font-mono text-muted-foreground">x{s.entrySpacing.toFixed(1)}</span>
-                        </div>
-                        <Slider min={0.5} max={2.0} step={0.1} value={[s.entrySpacing]} onValueChange={([v]) => update({ entrySpacing: v })} />
-                      </div>
-                    </div>
+                    <SliderRow
+                      label="Horizontal Margin" value={s.marginHorizontal} display={`${s.marginHorizontal}mm`}
+                      min={5} max={40} step={1} onChange={(v) => upd({ marginHorizontal: v })}
+                    />
+                    <SliderRow
+                      label="Vertical Margin" value={s.marginVertical} display={`${s.marginVertical}mm`}
+                      min={5} max={40} step={1} onChange={(v) => upd({ marginVertical: v })}
+                    />
+                    <SliderRow
+                      label="Entry Spacing" value={s.entrySpacing} display={`×${s.entrySpacing.toFixed(1)}`}
+                      min={0.5} max={2.0} step={0.1} onChange={(v) => upd({ entrySpacing: v })}
+                    />
+                    <SliderRow
+                      label="Section Spacing" value={s.sectionSpacing ?? 1.0} display={`×${(s.sectionSpacing ?? 1.0).toFixed(1)}`}
+                      min={0.5} max={3.0} step={0.1} onChange={(v) => upd({ sectionSpacing: v })}
+                    />
                   </ControlGroup>
+
+                  <Separator className="opacity-30" />
 
                   <ControlGroup title="Section Placement">
                     {s.columnLayout === 'one' ? (
-                      <div className="p-5 rounded-2xl bg-muted/50 border border-border/60 text-center">
-                        <p className="text-[11px] text-muted-foreground leading-relaxed italic">
-                          One-column layout applies to all sections. Change layout to enable column assignments.
+                      <div className="py-4 px-3 rounded-xl bg-muted/40 border border-dashed border-border/60 text-center">
+                        <p className="text-[11px] text-muted-foreground/60">
+                          Switch to two-column or mixed layout to assign sections.
                         </p>
                       </div>
                     ) : (
                       <DndContext
                         sensors={sensors}
                         collisionDetection={closestCenter}
-                        onDragStart={handleDragStart}
+                        onDragStart={(e) => setDragActiveId(e.active.id as string)}
                         onDragOver={handleDragOver}
-                        onDragEnd={handleDragEnd}
+                        onDragEnd={() => setDragActiveId(null)}
                       >
-                        <div className="flex gap-4">
-                          <DroppableColumn 
-                            id="main-col" 
-                            title="Main" 
-                            items={mainIds} 
-                            resumeSections={sections} 
-                          />
-                          <DroppableColumn 
-                            id="sidebar-col" 
-                            title="Sidebar" 
-                            items={sidebarIds} 
-                            resumeSections={sections} 
-                          />
+                        <div className="flex gap-3">
+                          <DroppableColumn id="main-col" title="Main" items={mainIds} resumeSections={sections} />
+                          <DroppableColumn id="sidebar-col" title="Sidebar" items={sidebarIds} resumeSections={sections} />
                         </div>
-
-                        <DragOverlay dropAnimation={{
-                          sideEffects: defaultDropAnimationSideEffects({
-                            styles: { active: { opacity: '0.5' } }
-                          })
-                        }}>
+                        <DragOverlay dropAnimation={{ sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.4' } } }) }}>
                           {dragActiveId ? (
-                            <div className="flex items-center gap-2 px-3 py-2 bg-background border-2 border-primary rounded-lg shadow-2xl opacity-90 scale-105 z-[100]">
-                              <GripVertical size={14} className="text-primary" />
-                              <span className="text-xs font-bold truncate">
-                                {sections.find(s => s.id === dragActiveId)?.title}
+                            <div className="flex items-center gap-2 px-3 py-2 bg-background border-2 border-primary rounded-lg shadow-xl">
+                              <GripVertical size={13} className="text-primary" />
+                              <span className="text-xs font-semibold">
+                                {sections.find(sec => sec.id === dragActiveId)?.title}
                               </span>
                             </div>
                           ) : null}
@@ -464,24 +583,26 @@ export function CustomizePanel() {
                       </DndContext>
                     )}
                   </ControlGroup>
-                </div>
+                </>
               )}
 
-              {/* ───────────────── TYPOGRAPHY ────────────────────────── */}
+              {/* ═══════════════ TYPOGRAPHY ══════════════════════════ */}
               {activeSection === 'typography' && (
-                <div className="space-y-8">
-                  <ControlGroup title="Base Font">
+                <>
+                  <ControlGroup title="Font Family">
                     <div className="grid grid-cols-2 gap-1.5">
                       {FONTS.map((f) => (
                         <button
                           key={f}
-                          onClick={() => update({ fontFamily: f })}
+                          type="button"
+                          onClick={() => upd({ fontFamily: f })}
                           className={cn(
-                            'px-3 py-2.5 rounded-lg border text-xs text-left transition-all',
+                            'px-2.5 py-2 rounded-lg border text-[11px] text-left transition-all truncate',
                             s.fontFamily === f
-                              ? 'bg-foreground text-background border-foreground shadow-md font-bold'
-                              : 'border-border text-muted-foreground hover:border-foreground/30 hover:bg-muted/50',
+                              ? 'bg-foreground text-background border-foreground shadow-sm'
+                              : 'border-border text-muted-foreground hover:border-foreground/30 hover:bg-muted/40',
                           )}
+                          style={{ fontFamily: f }}
                         >
                           {f}
                         </button>
@@ -489,232 +610,286 @@ export function CustomizePanel() {
                     </div>
                   </ControlGroup>
 
-                  <ControlGroup title="Sizes & Height">
-                    <div className="space-y-6">
-                      <div>
-                        <div className="flex justify-between items-center mb-3">
-                          <FieldLabel className="mb-0">Base Font Size</FieldLabel>
-                          <span className="text-[10px] font-mono text-muted-foreground">{s.fontSize}pt</span>
-                        </div>
-                        <Slider min={8} max={13} step={0.5} value={[s.fontSize]} onValueChange={([v]) => update({ fontSize: v })} />
-                      </div>
-                      <div>
-                        <div className="flex justify-between items-center mb-3">
-                          <FieldLabel className="mb-0">Line Height</FieldLabel>
-                          <span className="text-[10px] font-mono text-muted-foreground">{s.lineHeight}</span>
-                        </div>
-                        <Slider min={1.0} max={2.2} step={0.05} value={[s.lineHeight]} onValueChange={([v]) => update({ lineHeight: v })} />
-                      </div>
-                    </div>
+                  <Separator className="opacity-30" />
+
+                  <ControlGroup title="Sizes">
+                    <SliderRow
+                      label="Base Font Size" value={s.fontSize} display={`${s.fontSize}pt`}
+                      min={8} max={13} step={0.5} onChange={(v) => upd({ fontSize: v })}
+                    />
+                    <SliderRow
+                      label="Line Height" value={s.lineHeight} display={`${s.lineHeight.toFixed(2)}`}
+                      min={1.0} max={2.2} step={0.05} onChange={(v) => upd({ lineHeight: v })}
+                    />
                   </ControlGroup>
 
-                  <ControlGroup title="Entry Styles">
-                    <div className="grid grid-cols-2 gap-4">
+                  <Separator className="opacity-30" />
+
+                  <ControlGroup title="Entry Layout">
+                    <div className="grid grid-cols-2 gap-3">
                       <div>
                         <FieldLabel>Title Size</FieldLabel>
-                        <IconGroup
+                        <SegmentGroup
                           value={s.titleSize}
-                          onChange={(v) => update({ titleSize: v as 'S' | 'M' | 'L' })}
+                          onChange={(v) => upd({ titleSize: v as 'S' | 'M' | 'L' })}
                           options={[
-                            { value: 'S', icon: () => <span className="text-[10px] font-bold">S</span>, label: 'Small' },
-                            { value: 'M', icon: () => <span className="text-xs font-bold">M</span>, label: 'Medium' },
-                            { value: 'L', icon: () => <span className="text-sm font-bold">L</span>, label: 'Large' },
+                            { value: 'S', label: 'Small',  render: () => <span className="text-[10px] font-bold leading-none">S</span> },
+                            { value: 'M', label: 'Medium', render: () => <span className="text-xs  font-bold leading-none">M</span> },
+                            { value: 'L', label: 'Large',  render: () => <span className="text-sm  font-bold leading-none">L</span> },
                           ]}
                         />
                       </div>
                       <div>
-                        <FieldLabel>Subtitle</FieldLabel>
-                        <IconGroup
+                        <FieldLabel>Subtitle Style</FieldLabel>
+                        <SegmentGroup
                           value={s.subtitleStyle}
-                          onChange={(v) => update({ subtitleStyle: v as SubtitleStyle })}
+                          onChange={(v) => upd({ subtitleStyle: v as SubtitleStyle })}
                           options={[
-                            { value: 'normal', icon: () => <span className="text-xs">N</span>, label: 'Normal' },
-                            { value: 'bold',   icon: () => <span className="text-xs font-bold">B</span>, label: 'Bold' },
-                            { value: 'italic', icon: () => <span className="text-xs italic font-serif">I</span>, label: 'Italic' },
+                            { value: 'normal', label: 'Normal', render: () => <span className="text-xs leading-none">N</span> },
+                            { value: 'bold',   label: 'Bold',   render: () => <span className="text-xs font-bold leading-none">B</span> },
+                            { value: 'italic', label: 'Italic', render: () => <span className="text-xs italic font-serif leading-none">I</span> },
                           ]}
                         />
                       </div>
                     </div>
-                    
-                    <div className="pt-2 space-y-1">
-                      <ToggleRow 
-                        label="Indent body text" 
-                        checked={s.indentBody} 
-                        onCheckedChange={(v) => update({ indentBody: v })} 
+
+                    <div>
+                      <FieldLabel>Bullet Character</FieldLabel>
+                      <SegmentGroup
+                        value={s.listStyle}
+                        onChange={(v) => upd({ listStyle: v as ListStyle })}
+                        options={[
+                          { value: 'bullet', label: 'Bullet', render: () => <span className="leading-none">•  Bullet</span> },
+                          { value: 'dash',   label: 'Dash',   render: () => <span className="leading-none">—  Dash</span> },
+                          { value: 'hyphen', label: 'Hyphen', render: () => <span className="leading-none">-  Hyphen</span> },
+                        ]}
                       />
-                      <div className="flex items-center justify-between py-1">
-                        <Label className="text-xs font-medium">Subtitle Placement</Label>
-                        <Select value={s.subtitlePlacement} onValueChange={(v) => update({ subtitlePlacement: v as SubtitlePlacement })}>
-                          <SelectTrigger className="h-7 w-28 text-[10px] font-bold uppercase tracking-wider"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="same-line">Same Line</SelectItem>
-                            <SelectItem value="next-line">Next Line</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    </div>
+
+                    <div>
+                      <FieldLabel>Subtitle Placement</FieldLabel>
+                      <SegmentGroup
+                        value={s.subtitlePlacement}
+                        onChange={(v) => upd({ subtitlePlacement: v as SubtitlePlacement })}
+                        options={[
+                          { value: 'next-line', label: 'Next line', render: () => <span className="text-[10px] leading-none">Next line</span> },
+                          { value: 'same-line', label: 'Same line', render: () => <span className="text-[10px] leading-none">Same line</span> },
+                        ]}
+                      />
+                    </div>
+
+                    <div className="space-y-0.5">
+                      <ToggleRow id="title-bold"  label="Bold entry titles" checked={s.titleBold !== false} onCheckedChange={(v) => upd({ titleBold: v })} />
+                      <ToggleRow id="indent-body" label="Indent body text"  checked={s.indentBody}          onCheckedChange={(v) => upd({ indentBody: v })} />
                     </div>
                   </ControlGroup>
-                </div>
+                </>
               )}
 
-              {/* ───────────────── COLORS ────────────────────────────── */}
+              {/* ═══════════════ COLORS ══════════════════════════════ */}
               {activeSection === 'colors' && (
-                <div className="space-y-8">
-                  <ControlGroup title="Color Mode">
-                    <div className="flex bg-muted/50 p-1 rounded-xl border border-border/50">
-                      {[
-                        { id: 'basic', label: 'Classic' },
-                        { id: 'multi', label: 'Enhanced' },
-                      ].map((mode) => (
-                        <button
-                          key={mode.id}
-                          onClick={() => update({ colorMode: mode.id as ColorMode })}
-                          className={cn(
-                            'flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all',
-                            s.colorMode === mode.id
-                              ? 'bg-background text-foreground shadow-sm'
-                              : 'text-muted-foreground hover:text-foreground hover:bg-background/50',
-                          )}
-                        >
-                          {mode.label}
-                        </button>
-                      ))}
-                    </div>
+                <>
+                  <ControlGroup title="Mode">
+                    <SegmentGroup
+                      value={s.colorMode}
+                      onChange={(v) => upd({ colorMode: v as ColorMode })}
+                      options={[
+                        { value: 'basic', label: 'Classic',  render: () => <span className="text-[10px] font-semibold leading-none">Classic</span> },
+                        { value: 'multi', label: 'Enhanced', render: () => <span className="text-[10px] font-semibold leading-none">Enhanced</span> },
+                      ]}
+                    />
+                    {s.colorMode === 'basic' && (
+                      <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
+                        One accent color drives the whole palette.
+                      </p>
+                    )}
                   </ControlGroup>
 
+                  <Separator className="opacity-30" />
+
                   <ControlGroup title="Accent Color">
-                    <div className="grid grid-cols-4 gap-2.5 mb-5">
+                    <div className="grid grid-cols-8 gap-2">
                       {ACCENT_PRESETS.map((color) => (
                         <button
                           key={color}
-                          onClick={() => update({ accentColor: color })}
+                          type="button"
+                          onClick={() => upd({ accentColor: color })}
+                          title={color}
                           className={cn(
-                            "group relative aspect-square rounded-full flex items-center justify-center transition-all hover:scale-110",
-                            s.accentColor === color ? "ring-2 ring-offset-2 ring-foreground" : "ring-1 ring-border"
+                            'aspect-square rounded-full transition-all hover:scale-110',
+                            s.accentColor === color
+                              ? 'ring-2 ring-offset-2 ring-foreground scale-105'
+                              : 'ring-1 ring-border/50',
                           )}
                           style={{ backgroundColor: color }}
                         >
                           {s.accentColor === color && (
-                            <Check size={14} className={cn(
-                              color.toLowerCase() === '#ffffff' ? "text-black" : "text-white"
-                            )} strokeWidth={3} />
+                            <Check size={10} className="text-white mx-auto" strokeWidth={3} />
                           )}
                         </button>
                       ))}
                     </div>
-                    
-                    <div>
-                      <FieldLabel>Custom Color</FieldLabel>
-                      <div className="flex gap-2">
-                        <div className="relative shrink-0 w-10 h-10 rounded-xl border border-border overflow-hidden">
-                          <input
-                            type="color"
-                            value={s.accentColor}
-                            onChange={(e) => update({ accentColor: e.target.value })}
-                            className="absolute inset-[-4px] w-[150%] h-[150%] cursor-pointer bg-transparent"
-                          />
-                        </div>
-                        <Input
+
+                    <div className="flex gap-2 items-center">
+                      <div className="relative shrink-0 w-9 h-9 rounded-lg border border-border overflow-hidden">
+                        <input
+                          type="color"
                           value={s.accentColor}
-                          onChange={(e) => update({ accentColor: e.target.value })}
-                          className="h-10 text-xs font-mono uppercase tracking-wider"
-                          placeholder="#000000"
+                          onChange={(e) => upd({ accentColor: e.target.value })}
+                          className="absolute inset-[-4px] w-[calc(100%+8px)] h-[calc(100%+8px)] cursor-pointer"
                         />
                       </div>
+                      <Input
+                        value={s.accentColor}
+                        onChange={(e) => upd({ accentColor: e.target.value })}
+                        className="h-9 text-xs font-mono uppercase flex-1"
+                        placeholder="#1a2744"
+                        maxLength={7}
+                      />
                     </div>
                   </ControlGroup>
 
                   {s.colorMode === 'multi' && (
-                    <ControlGroup title="Specific Elements">
-                      <div className="space-y-4">
-                        {[
-                          { label: 'Background', key: 'backgroundColor', val: s.backgroundColor },
-                          { label: 'Main Text',   key: 'textColor',       val: s.textColor },
-                          { label: 'Headings',    key: 'headingColor',    val: s.headingColor },
-                          { label: 'Dates & Meta', key: 'dateColor',       val: s.dateColor },
-                        ].map(({ label, key, val }) => (
-                          <div key={key} className="flex items-center justify-between">
-                            <Label className="text-[11px] font-medium text-muted-foreground">{label}</Label>
-                            <div className="flex gap-2 items-center">
-                              <span className="text-[9px] font-mono text-muted-foreground/50 uppercase">{val}</span>
-                              <div className="relative w-7 h-7 rounded-lg border border-border overflow-hidden">
-                                <input
-                                  type="color" value={val}
-                                  onChange={(e) => update({ [key]: e.target.value } as never)}
-                                  className="absolute inset-[-4px] w-[150%] h-[150%] cursor-pointer"
-                                />
+                    <>
+                      <Separator className="opacity-30" />
+
+                      <ControlGroup title="Element Colors">
+                        <div className="space-y-2.5">
+                          {[
+                            { label: 'Background',  key: 'backgroundColor', val: s.backgroundColor },
+                            { label: 'Body Text',   key: 'textColor',       val: s.textColor       },
+                            { label: 'Headings',    key: 'headingColor',    val: s.headingColor    },
+                            { label: 'Subtitles',   key: 'subtitleColor',   val: s.subtitleColor   },
+                            { label: 'Dates',       key: 'dateColor',       val: s.dateColor       },
+                          ].map(({ label, key, val }) => (
+                            <div key={key} className="flex items-center justify-between gap-3">
+                              <span className="text-xs font-medium text-muted-foreground shrink-0">{label}</span>
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="text-[9px] font-mono text-muted-foreground/40 uppercase truncate">{val}</span>
+                                <div className="relative w-7 h-7 rounded-lg border border-border overflow-hidden shrink-0">
+                                  <input
+                                    type="color"
+                                    value={val}
+                                    onChange={(e) => upd({ [key]: e.target.value } as never)}
+                                    className="absolute inset-[-4px] w-[calc(100%+8px)] h-[calc(100%+8px)] cursor-pointer"
+                                  />
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    </ControlGroup>
+                          ))}
+                        </div>
+                      </ControlGroup>
+
+                      <ControlGroup title="Background Presets">
+                        <div className="grid grid-cols-6 gap-2">
+                          {[
+                            { bg: '#ffffff', label: 'White'  },
+                            { bg: '#fdfbf7', label: 'Cream'  },
+                            { bg: '#f8f9fa', label: 'Snow'   },
+                            { bg: '#1a1a2e', label: 'Dark'   },
+                            { bg: '#0f172a', label: 'Slate'  },
+                            { bg: '#1c1917', label: 'Stone'  },
+                          ].map(({ bg, label }) => (
+                            <button
+                              key={bg}
+                              type="button"
+                              title={label}
+                              onClick={() => upd({ backgroundColor: bg })}
+                              className={cn(
+                                'aspect-square rounded-lg border-2 transition-all hover:scale-110',
+                                s.backgroundColor === bg ? 'border-foreground ring-1 ring-foreground/30' : 'border-border/60',
+                              )}
+                              style={{ backgroundColor: bg }}
+                            />
+                          ))}
+                        </div>
+                      </ControlGroup>
+                    </>
                   )}
-                </div>
+                </>
               )}
 
-              {/* ───────────────── HEADER ────────────────────────────── */}
+              {/* ═══════════════ HEADER ══════════════════════════════ */}
               {activeSection === 'header' && (
-                <div className="space-y-8">
-                  <ControlGroup title="Identity">
+                <>
+                  <ControlGroup title="Name">
                     <div>
                       <FieldLabel>Name Size</FieldLabel>
-                      <IconGroup
+                      <SegmentGroup
                         value={s.nameSize}
-                        onChange={(v) => update({ nameSize: v as NameSize })}
+                        onChange={(v) => upd({ nameSize: v as NameSize })}
                         options={[
-                          { value: 'XS', icon: () => <span className="text-[10px]">XS</span>, label: 'Tiny' },
-                          { value: 'S',  icon: () => <span className="text-[11px]">S</span>, label: 'Small' },
-                          { value: 'M',  icon: () => <span className="text-[12px]">M</span>, label: 'Medium' },
-                          { value: 'L',  icon: () => <span className="text-[13px]">L</span>, label: 'Large' },
-                          { value: 'XL', icon: () => <span className="text-[14px] font-bold">XL</span>, label: 'Huge' },
+                          { value: 'XS', label: 'XS', render: () => <span className="text-[9px]  font-bold leading-none">XS</span> },
+                          { value: 'S',  label: 'S',  render: () => <span className="text-[10px] font-bold leading-none">S</span>  },
+                          { value: 'M',  label: 'M',  render: () => <span className="text-[11px] font-bold leading-none">M</span>  },
+                          { value: 'L',  label: 'L',  render: () => <span className="text-[12px] font-bold leading-none">L</span>  },
+                          { value: 'XL', label: 'XL', render: () => <span className="text-[13px] font-bold leading-none">XL</span> },
                         ]}
                       />
                     </div>
-                    <div className="pt-2">
-                      <ToggleRow label="Bold name" checked={s.nameBold} onCheckedChange={(v) => update({ nameBold: v })} />
-                      <ToggleRow label="Show section labels" checked={s.showSectionLabels} onCheckedChange={(v) => update({ showSectionLabels: v })} />
-                    </div>
+                    <ToggleRow id="name-bold"  label="Bold name"   checked={s.nameBold}      onCheckedChange={(v) => upd({ nameBold: v })} />
+                    <ToggleRow id="show-photo" label="Show photo"  checked={s.photoEnabled}  onCheckedChange={(v) => upd({ photoEnabled: v })}
+                      description="Photo upload available in the content panel"
+                    />
                   </ControlGroup>
 
-                  <ControlGroup title="Alignment & Layout">
-                    <div>
-                      <FieldLabel>Header Alignment</FieldLabel>
-                      <IconGroup
-                        value={s.headerAlignment}
-                        onChange={(v) => update({ headerAlignment: v as HeaderAlignment })}
-                        options={[
-                          { value: 'left',   icon: AlignLeft,   label: 'Align Left' },
-                          { value: 'center', icon: AlignCenter, label: 'Align Center' },
-                          { value: 'right',  icon: AlignRight,  label: 'Align Right' },
-                        ]}
-                      />
-                    </div>
-                    <div className="pt-4">
-                      <FieldLabel>Contact Info Arrangement</FieldLabel>
-                      <Select value={s.headerArrangement} onValueChange={(v) => update({ headerArrangement: v as HeaderArrangement })}>
-                        <SelectTrigger className="h-9 text-xs font-medium"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="icon">With Icons</SelectItem>
-                          <SelectItem value="bullet">Bullet Points (•)</SelectItem>
-                          <SelectItem value="pipe">Pipes (|)</SelectItem>
-                          <SelectItem value="bar">Bar (—)</SelectItem>
-                        </SelectContent>
-                      </Select>
+                  <Separator className="opacity-30" />
+
+                  <ControlGroup title="Alignment">
+                    <SegmentGroup
+                      value={s.headerAlignment}
+                      onChange={(v) => upd({ headerAlignment: v as HeaderAlignment })}
+                      options={[
+                        { value: 'left',   label: 'Left',   render: () => <AlignLeft   size={14} /> },
+                        { value: 'center', label: 'Center', render: () => <AlignCenter size={14} /> },
+                        { value: 'right',  label: 'Right',  render: () => <AlignRight  size={14} /> },
+                      ]}
+                    />
+                  </ControlGroup>
+
+                  <Separator className="opacity-30" />
+
+                  <ControlGroup title="Contact Info">
+                    <FieldLabel>Separator Style</FieldLabel>
+                    <Select value={s.headerArrangement} onValueChange={(v) => upd({ headerArrangement: v as HeaderArrangement })}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pipe">  Pipes  (name | email | phone)</SelectItem>
+                        <SelectItem value="bullet">Bullets (name • email • phone)</SelectItem>
+                        <SelectItem value="bar">   Bar    (name — email — phone)</SelectItem>
+                        <SelectItem value="icon">  Labels (E: email  P: phone)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </ControlGroup>
+
+                  <Separator className="opacity-30" />
+
+                  <ControlGroup title="Footer">
+                    <div className="space-y-0.5">
+                      <ToggleRow id="footer-pages" label="Page numbers"   checked={s.footerPageNumbers} onCheckedChange={(v) => upd({ footerPageNumbers: v })} />
+                      <ToggleRow id="footer-name"  label="Name in footer" checked={s.footerName}        onCheckedChange={(v) => upd({ footerName: v })} />
+                      <ToggleRow id="footer-email" label="Email in footer" checked={s.footerEmail}      onCheckedChange={(v) => upd({ footerEmail: v })} />
                     </div>
                   </ControlGroup>
-                </div>
+                </>
               )}
 
-              {/* ───────────────── SECTIONS ──────────────────────────── */}
+              {/* ═══════════════ SECTIONS ════════════════════════════ */}
               {activeSection === 'sections' && (
-                <div className="space-y-8">
+                <>
                   <ControlGroup title="Section Headings">
-                    <div className="grid grid-cols-2 gap-4">
+                    <ToggleRow
+                      id="show-labels"
+                      label="Show section labels"
+                      checked={s.showSectionLabels}
+                      onCheckedChange={(v) => upd({ showSectionLabels: v })}
+                    />
+
+                    <div className="grid grid-cols-2 gap-2">
                       <div>
                         <FieldLabel>Size</FieldLabel>
-                        <Select value={s.sectionHeadingSize} onValueChange={(v) => update({ sectionHeadingSize: v as SectionHeadingSize })}>
-                          <SelectTrigger className="h-9 text-xs font-medium"><SelectValue /></SelectTrigger>
+                        <Select value={s.sectionHeadingSize} onValueChange={(v) => upd({ sectionHeadingSize: v as SectionHeadingSize })}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="S">Small</SelectItem>
                             <SelectItem value="M">Medium</SelectItem>
@@ -725,114 +900,137 @@ export function CustomizePanel() {
                       </div>
                       <div>
                         <FieldLabel>Capitalization</FieldLabel>
-                        <Select value={s.sectionHeadingCapitalization} onValueChange={(v) => update({ sectionHeadingCapitalization: v as SectionHeadingCapitalization })}>
-                          <SelectTrigger className="h-9 text-xs font-medium"><SelectValue /></SelectTrigger>
+                        <Select value={s.sectionHeadingCapitalization} onValueChange={(v) => upd({ sectionHeadingCapitalization: v as SectionHeadingCapitalization })}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
+                            <SelectItem value="uppercase">Uppercase</SelectItem>
                             <SelectItem value="capitalize">Capitalize</SelectItem>
-                            <SelectItem value="uppercase">UPPERCASE</SelectItem>
-                            <SelectItem value="none">None</SelectItem>
+                            <SelectItem value="none">As typed</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
 
-                    <div className="pt-2">
-                      <FieldLabel>Heading Decoration</FieldLabel>
+                    <div>
+                      <FieldLabel>Decoration Style</FieldLabel>
                       <div className="grid grid-cols-4 gap-1.5">
-                        {[
-                          { id: 'none',       label: 'None' },
-                          { id: 'underline',  label: 'Under' },
-                          { id: 'overline',   label: 'Over' },
-                          { id: 'top-bottom', label: 'T & B' },
-                          { id: 'box',        label: 'Box' },
-                          { id: 'background', label: 'Fill' },
-                          { id: 'left-bar',   label: 'Left' },
-                        ].map((style) => (
-                          <button
+                        {HEADING_STYLES.map((style) => (
+                          <HeadingStyleButton
                             key={style.id}
-                            onClick={() => update({ sectionHeadingStyle: style.id as SectionHeadingStyle })}
-                            className={cn(
-                              'py-1.5 px-1 rounded border text-[9px] font-bold uppercase transition-all',
-                              s.sectionHeadingStyle === style.id
-                                ? 'bg-foreground text-background border-foreground'
-                                : 'border-border text-muted-foreground hover:border-foreground/30',
-                            )}
-                          >
-                            {style.label}
-                          </button>
+                            style={style}
+                            active={s.sectionHeadingStyle === style.id}
+                            onClick={() => upd({ sectionHeadingStyle: style.id })}
+                            accentColor={s.accentColor}
+                          />
                         ))}
                       </div>
                     </div>
 
-                    <div className="pt-2">
-                      <div className="flex justify-between items-center mb-2">
-                        <FieldLabel className="mb-0">Line Thickness</FieldLabel>
-                        <span className="text-[10px] font-mono text-muted-foreground">{s.sectionHeadingLineThickness}pt</span>
-                      </div>
-                      <Slider min={0.5} max={4} step={0.5} value={[s.sectionHeadingLineThickness]} onValueChange={([v]) => update({ sectionHeadingLineThickness: v })} />
+                    {headingHasLine && (
+                      <SliderRow
+                        label="Line Thickness"
+                        value={s.sectionHeadingLineThickness}
+                        display={`${s.sectionHeadingLineThickness}pt`}
+                        min={0.5} max={4} step={0.5}
+                        onChange={(v) => upd({ sectionHeadingLineThickness: v })}
+                      />
+                    )}
+
+                    <div>
+                      <FieldLabel>Icon</FieldLabel>
+                      <SegmentGroup
+                        value={s.sectionHeadingIcon || 'none'}
+                        onChange={(v) => upd({ sectionHeadingIcon: v as SectionHeadingIcon })}
+                        options={[
+                          { value: 'none',   label: 'None',   render: () => <span className="text-[10px] font-semibold leading-none">Off</span> },
+                          { value: 'simple', label: 'Simple', render: () => <span className="w-2.5 h-[1.5px] bg-current rounded-full inline-block" /> },
+                          { value: 'filled', label: 'Filled', render: () => <span className="w-2.5 h-2.5 bg-current rounded-sm inline-block" /> },
+                        ]}
+                      />
                     </div>
 
-                    <div className="pt-2">
-                      <div className="flex justify-between items-center mb-2">
-                        <FieldLabel className="mb-0">Icon Size</FieldLabel>
-                        <span className="text-[10px] font-mono text-muted-foreground">x{(s.sectionHeadingIconSize || 1.0).toFixed(1)}</span>
-                      </div>
-                      <Slider min={0.6} max={1.8} step={0.1} value={[s.sectionHeadingIconSize || 1.0]} onValueChange={([v]) => update({ sectionHeadingIconSize: v })} />
-                    </div>
-
-                    <div className="pt-2 space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <FieldLabel>Icon Library</FieldLabel>
-                          <IconGroup
-                            value={s.sectionHeadingIconStyle}
-                            onChange={(v) => update({ sectionHeadingIconStyle: v as SectionHeadingIconStyle })}
-                            options={[
-                              { value: 'lucide', icon: TypeIcon, label: 'Professional' },
-                              { value: 'nerd',   icon: () => <span className="text-[10px] font-bold">AB</span>, label: 'Abstract' },
-                            ]}
-                          />
-                        </div>
-                        <div>
-                          <FieldLabel>Icon Display</FieldLabel>
-                          <IconGroup
-                            value={s.sectionHeadingIcon || 'none'}
-                            onChange={(v) => update({ sectionHeadingIcon: v as SectionHeadingIcon })}
-                            options={[
-                              { value: 'none',    icon: () => <span className="text-[10px] font-bold">Ø</span>, label: 'None' },
-                              { value: 'simple',  icon: () => <div className="w-2.5 h-0.5 bg-current rounded-full" />, label: 'Simple' },
-                              { value: 'filled',  icon: Minus,  label: 'Filled' },
-                            ]}
-                          />
-                        </div>
-                      </div>
-                    </div>
+                    {(s.sectionHeadingIcon && s.sectionHeadingIcon !== 'none') && (
+                      <SliderRow
+                        label="Icon Size"
+                        value={s.sectionHeadingIconSize || 1.0}
+                        display={`×${(s.sectionHeadingIconSize || 1.0).toFixed(1)}`}
+                        min={0.6} max={1.8} step={0.1}
+                        onChange={(v) => upd({ sectionHeadingIconSize: v })}
+                      />
+                    )}
                   </ControlGroup>
 
-                  <ControlGroup title="Specific Section Options">
-                    <div className="space-y-4">
+                  <Separator className="opacity-30" />
+
+                  <ControlGroup title="Skills">
+                    <div>
+                      <FieldLabel>Display Style</FieldLabel>
+                      <Select value={s.skillDisplay} onValueChange={(v) => upd({ skillDisplay: v as SkillDisplayOption })}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="compact">Compact (inline list)</SelectItem>
+                          <SelectItem value="grid">Grid (columns)</SelectItem>
+                          <SelectItem value="level">With Levels</SelectItem>
+                          <SelectItem value="bubble">Bubbles / Tags</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {s.skillDisplay === 'grid' && (
                       <div>
-                        <FieldLabel>Skills Display</FieldLabel>
-                        <Select value={s.skillDisplay} onValueChange={(v) => update({ skillDisplay: v as SkillDisplayOption })}>
-                          <SelectTrigger className="h-9 text-xs font-medium capitalize"><SelectValue /></SelectTrigger>
+                        <FieldLabel>Grid Columns</FieldLabel>
+                        <SegmentGroup
+                          value={String(s.skillColumns ?? 3) as '2' | '3' | '4'}
+                          onChange={(v) => upd({ skillColumns: Number(v) as 2 | 3 | 4 })}
+                          options={[
+                            { value: '2', label: '2 cols', render: () => <span className="text-xs font-bold leading-none">2</span> },
+                            { value: '3', label: '3 cols', render: () => <span className="text-xs font-bold leading-none">3</span> },
+                            { value: '4', label: '4 cols', render: () => <span className="text-xs font-bold leading-none">4</span> },
+                          ]}
+                        />
+                      </div>
+                    )}
+                  </ControlGroup>
+
+                  <Separator className="opacity-30" />
+
+                  <ControlGroup title="Entry Order">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <FieldLabel>Experience</FieldLabel>
+                        <Select value={s.experienceOrder} onValueChange={(v) => upd({ experienceOrder: v as ExperienceOrder })}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="grid">Grid (Columns)</SelectItem>
-                            <SelectItem value="level">With Levels</SelectItem>
-                            <SelectItem value="compact">Compact (List)</SelectItem>
-                            <SelectItem value="bubble">Bubbles</SelectItem>
+                            <SelectItem value="title-employer">Title first</SelectItem>
+                            <SelectItem value="employer-title">Company first</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
-                      
-                      <Separator className="opacity-50" />
-                      
-                      <div className="space-y-3">
-                        <ToggleRow label="Group Promotions" checked={s.groupPromotions} onCheckedChange={(v) => update({ groupPromotions: v })} />
-                        <ToggleRow label="Footer Page Numbers" checked={s.footerPageNumbers} onCheckedChange={(v) => update({ footerPageNumbers: v })} />
+                      <div>
+                        <FieldLabel>Education</FieldLabel>
+                        <Select value={s.educationOrder} onValueChange={(v) => upd({ educationOrder: v as EducationOrder })}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="degree-school">Degree first</SelectItem>
+                            <SelectItem value="school-degree">School first</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                   </ControlGroup>
-                </div>
+
+                  <Separator className="opacity-30" />
+
+                  <ControlGroup title="Links & Misc">
+                    <div className="space-y-0.5">
+                      <ToggleRow id="link-underline"  label="Underline links"     checked={s.linkUnderline}  onCheckedChange={(v) => upd({ linkUnderline: v })} />
+                      <ToggleRow id="link-blue"       label="Blue links"          checked={s.linkBlue}       onCheckedChange={(v) => upd({ linkBlue: v })} />
+                      <ToggleRow id="group-promo"     label="Group promotions"    checked={s.groupPromotions} onCheckedChange={(v) => upd({ groupPromotions: v })}
+                        description="Stack same-company jobs under one heading"
+                      />
+                    </div>
+                  </ControlGroup>
+                </>
               )}
 
             </motion.div>

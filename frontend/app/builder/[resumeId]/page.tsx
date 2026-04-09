@@ -67,6 +67,7 @@ export default function BuilderPage() {
   }, [onMouseMove, onMouseUp])
 
   function startResize(e: React.MouseEvent) {
+    e.preventDefault()
     dragging.current = true
     startX.current = e.clientX
     startW.current = sideW
@@ -169,8 +170,7 @@ export default function BuilderPage() {
               {panel === 'content' ? (
                 <motion.div
                   key="content"
-                  className="h-full overflow-auto p-3"
-                  style={{ overscrollBehavior: 'contain' }}
+                  className="h-full overflow-hidden flex flex-col"
                   initial={{ opacity: 0, x: -6 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -6 }}

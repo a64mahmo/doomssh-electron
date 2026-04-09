@@ -123,44 +123,20 @@ async function createWindow(): Promise<void> {
 ipcMain.handle('set-api-key', (_event, key: string) => storeApiKey(key))
 ipcMain.handle('get-api-key', () => getStoredApiKey())
 
-ipcMain.handle('export-pdf', async (_event, { resumeId, fileName, paperSize }: { resumeId: string, fileName: string, paperSize: 'a4' | 'letter' }) => {
-  const workerWindow = new BrowserWindow({
-    show: false,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-    }
-  })
-
+ipcMain.handle('save-pdf', async (_event, { bytes, fileName }: { bytes: number[]; fileName: string }) => {
   try {
-    await workerWindow.loadURL(`http://127.0.0.1:${NEXT_PORT}/print/${resumeId}`)
-    
-    // Give Next.js a moment to hydrate and render
-    await new Promise(r => setTimeout(r, 1500))
-
-    const pdfData = await workerWindow.webContents.printToPDF({
-      pageSize: paperSize === 'a4' ? 'A4' : 'Letter',
-      printBackground: true,
-      displayHeaderFooter: false,
-      preferCSSPageSize: true,
-    })
-
-    const { filePath } = await dialog.showSaveDialog({
-      title: 'Export Resume',
+    const buffer = Buffer.from(bytes)
+    const { filePath, canceled } = await dialog.showSaveDialog({
+      title: 'Save Resume',
       defaultPath: fileName,
-      filters: [{ name: 'PDF Documents', extensions: ['pdf'] }]
+      filters: [{ name: 'PDF Documents', extensions: ['pdf'] }],
     })
-
-    if (filePath) {
-      fs.writeFileSync(filePath, pdfData)
-      return { success: true, path: filePath }
-    }
-    return { success: false, cancelled: true }
+    if (canceled || !filePath) return { success: false, cancelled: true }
+    fs.writeFileSync(filePath, buffer)
+    return { success: true, path: filePath }
   } catch (error) {
-    console.error('PDF Export Error:', error)
+    console.error('PDF Save Error:', error)
     return { success: false, error: String(error) }
-  } finally {
-    workerWindow.close()
   }
 })
 

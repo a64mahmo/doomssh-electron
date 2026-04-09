@@ -3,7 +3,7 @@ import { useSection } from '@/hooks/useResume'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Plus, Trash2, Award, Building2, Calendar, Link as LinkIcon } from 'lucide-react'
+import { Plus, Trash2, Copy, Award, Building2, Calendar, Link as LinkIcon } from 'lucide-react'
 import type { CertificationItem } from '@/lib/store/types'
 import { generateId } from '@/lib/utils/ids'
 import { MonthYearPicker } from '../MonthYearPicker'
@@ -38,6 +38,16 @@ export function CertificationsSection({ sectionId }: Props) {
     updateItems(items.filter((it) => it.id !== id))
   }
 
+  function duplicate(id: string) {
+    const item = items.find((it) => it.id === id)
+    if (!item) return
+    const copy = { ...item, id: generateId() }
+    const idx = items.findIndex((it) => it.id === id)
+    const next = [...items]
+    next.splice(idx + 1, 0, copy)
+    updateItems(next)
+  }
+
   return (
     <div className="space-y-6">
       <div className="space-y-4">
@@ -50,6 +60,14 @@ export function CertificationsSection({ sectionId }: Props) {
               Entry #{items.length - index}
             </div>
 
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-10 h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => duplicate(item.id)}
+            >
+              <Copy size={14} />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
