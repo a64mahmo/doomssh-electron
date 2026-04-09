@@ -1,18 +1,22 @@
 'use client'
+import { useState } from 'react'
 import { useSection } from '@/hooks/useResume'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Plus, Trash2, Copy } from 'lucide-react'
+import { Plus, User, Building2, Briefcase, Mail, Phone, type LucideIcon } from 'lucide-react'
 import type { ReferenceItem } from '@/lib/store/types'
 import { generateId } from '@/lib/utils/ids'
+import { FieldLabel, EntryCard } from '../EditorPrimitives'
 
 interface Props { sectionId: string }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, icon: Icon, children }: { label: string; icon?: LucideIcon; children: React.ReactNode }) {
   return (
-    <div className="space-y-1">
-      <Label className="text-xs text-muted-foreground">{label}</Label>
+    <div className="space-y-1.5">
+      <div className="flex items-center gap-1.5 px-0.5">
+        {Icon && <Icon size={12} className="text-muted-foreground/50" />}
+        <FieldLabel className="mb-0">{label}</FieldLabel>
+      </div>
       {children}
     </div>
   )
@@ -21,9 +25,12 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 export function ReferencesSection({ sectionId }: Props) {
   const { section, updateItems } = useSection(sectionId)
   const items = (section?.items as ReferenceItem[]) || []
+  const [openId, setOpenId] = useState<string | null>(items[0]?.id || null)
 
   function add() {
-    updateItems([...items, { id: generateId(), name: '', company: '', position: '', email: '', phone: '' }])
+    const id = generateId()
+    updateItems([{ id, name: '', position: '', company: '', email: '', phone: '' }, ...items])
+    setOpenId(id)
   }
 
   function update(id: string, changes: Partial<ReferenceItem>) {
@@ -32,63 +39,98 @@ export function ReferencesSection({ sectionId }: Props) {
 
   function remove(id: string) {
     updateItems(items.filter((it) => it.id !== id))
+    if (openId === id) setOpenId(null)
   }
 
   function duplicate(id: string) {
     const item = items.find((it) => it.id === id)
     if (!item) return
-    const copy = { ...item, id: generateId() }
+    const newId = generateId()
+    const copy = { ...item, id: newId }
     const idx = items.findIndex((it) => it.id === id)
     const next = [...items]
     next.splice(idx + 1, 0, copy)
     updateItems(next)
+    setOpenId(newId)
   }
 
   return (
-    <div className="space-y-3">
-      {items.map((item) => (
-        <div key={item.id} className="rounded-md border border-border p-3 space-y-2.5 relative">
-          <Button
-            variant="ghost" size="icon"
-            className="absolute top-2 right-9 h-6 w-6 text-muted-foreground hover:text-foreground hover:bg-muted"
-            onClick={() => duplicate(item.id)}
+    <div className="space-y-6">
+      <div className="flex flex-col">
+        {items.map((item, index) => (
+          <EntryCard
+            key={item.id}
+            index={index}
+            title={item.name || 'New Reference'}
+            subtitle={item.position ? `${item.position}${item.company ? ` at ${item.company}` : ''}` : item.company}
+            isOpen={openId === item.id}
+            onOpenChange={(open) => setOpenId(open ? item.id : null)}
+            onRemove={() => remove(item.id)}
+            onDuplicate={() => duplicate(item.id)}
           >
-            <Copy size={12} />
-          </Button>
-          <Button
-            variant="ghost" size="icon"
-            className="absolute top-2 right-2 h-6 w-6 text-muted-foreground hover:text-destructive"
-            onClick={() => remove(item.id)}
-          >
-            <Trash2 size={12} />
-          </Button>
+            <div className="space-y-5">
+              <Field label="Reference Name" icon={User}>
+                <Input 
+                  placeholder="e.g. Jane Smith"
+                  className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
+                  value={item.name} 
+                  onChange={(e) => update(item.id, { name: e.target.value })} 
+                />
+              </Field>
 
-          <div className="grid grid-cols-2 gap-2 pr-8">
-            <Field label="Name">
-              <Input className="h-7 text-xs" value={item.name} onChange={(e) => update(item.id, { name: e.target.value })} />
-            </Field>
-            <Field label="Company">
-              <Input className="h-7 text-xs" value={item.company} onChange={(e) => update(item.id, { company: e.target.value })} />
-            </Field>
-          </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Position" icon={Briefcase}>
+                  <Input 
+                    placeholder="e.g. CTO"
+                    className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
+                    value={item.position} 
+                    onChange={(e) => update(item.id, { position: e.target.value })} 
+                  />
+                </Field>
+                <Field label="Company" icon={Building2}>
+                  <Input 
+                    placeholder="e.g. Acme Corp"
+                    className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
+                    value={item.company} 
+                    onChange={(e) => update(item.id, { company: e.target.value })} 
+                  />
+                </Field>
+              </div>
 
-          <Field label="Position">
-            <Input className="h-7 text-xs" value={item.position} onChange={(e) => update(item.id, { position: e.target.value })} />
-          </Field>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Email" icon={Mail}>
+                  <Input 
+                    placeholder="jane@example.com"
+                    className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
+                    value={item.email} 
+                    onChange={(e) => update(item.id, { email: e.target.value })} 
+                  />
+                </Field>
+                <Field label="Phone" icon={Phone}>
+                  <Input 
+                    placeholder="+1 (555) 000-0000"
+                    className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
+                    value={item.phone} 
+                    onChange={(e) => update(item.id, { phone: e.target.value })} 
+                  />
+                </Field>
+              </div>
+            </div>
+          </EntryCard>
+        ))}
+      </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <Field label="Email">
-              <Input className="h-7 text-xs" type="email" value={item.email} onChange={(e) => update(item.id, { email: e.target.value })} />
-            </Field>
-            <Field label="Phone">
-              <Input className="h-7 text-xs" type="tel" value={item.phone} onChange={(e) => update(item.id, { phone: e.target.value })} />
-            </Field>
-          </div>
+      <Button 
+        variant="outline" 
+        onClick={add}
+        className="w-full h-12 border-dashed border-2 bg-muted/20 hover:bg-muted/40 hover:border-foreground/20 rounded-2xl flex items-center justify-center gap-2 transition-all group"
+      >
+        <div className="w-6 h-6 rounded-lg bg-background border border-border flex items-center justify-center group-hover:scale-110 transition-transform">
+          <Plus size={14} className="text-foreground" />
         </div>
-      ))}
-
-      <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs h-8" onClick={add}>
-        <Plus size={12} /> Add Reference
+        <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">
+          Add Reference
+        </span>
       </Button>
     </div>
   )

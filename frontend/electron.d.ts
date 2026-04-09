@@ -1,5 +1,7 @@
 // Global type for the Electron preload bridge (window.electron)
 interface ElectronAPI {
+  platform: string
+
   // API key
   setApiKey: (key: string) => Promise<void>
   getApiKey: () => Promise<string | null>

@@ -26,6 +26,16 @@ To keep API keys secure and bypass browser-level CORS restrictions, all AI inter
 3.  **Main Process** sends `ai:chunk` messages back to the Renderer as the AI generates content.
 4.  **Main Process** sends `ai:done` or `ai:error` to signal the end of the operation.
 
+## Native UI Integration
+
+### macOS Traffic Light Padding
+To provide a truly native look and feel on macOS, the application uses **hiddenInset** title bar styling. This places the standard macOS window controls (close, minimize, maximize) directly inside the application's content area.
+
+To prevent UI overlap:
+1.  The `electron/preload.ts` script exposes the `window.electron.platform` property to the renderer.
+2.  The frontend identifies when it is running on **darwin** (macOS).
+3.  Dynamic CSS padding (`pl-[72px]`) is automatically applied to the top navigation bars and sidebar headers to shift content to the right, ensuring the native window controls are never obscured.
+
 ## Development & Distribution
 
 ### Development Mode

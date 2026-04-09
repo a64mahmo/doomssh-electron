@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
 contextBridge.exposeInMainWorld('electron', {
+  platform: process.platform,
   // ── API key ────────────────────────────────────────────────────────────────
   setApiKey: (key: string): Promise<void> => ipcRenderer.invoke('set-api-key', key),
   getApiKey: (): Promise<string | null> => ipcRenderer.invoke('get-api-key'),

@@ -49,7 +49,7 @@ export type SubtitleStyle = 'normal' | 'bold' | 'italic'
 export type SubtitlePlacement = 'same-line' | 'next-line'
 export type SectionHeadingSize = 'S' | 'M' | 'L' | 'XL'
 export type SectionHeadingCapitalization = 'capitalize' | 'uppercase' | 'none'
-export type SectionHeadingIcon = 'none' | 'simple' | 'filled'
+export type SectionHeadingIcon = 'none' | 'simple' | 'filled' | 'knockout'
 export type SectionHeadingStyle = 'none' | 'underline' | 'overline' | 'top-bottom' | 'box' | 'background' | 'left-bar'
 export type SectionHeadingIconStyle = 'lucide' | 'nerd'
 export type HeaderAlignment = 'left' | 'center' | 'right'
@@ -60,6 +60,10 @@ export type FontStyle = 'serif' | 'sans' | 'mono'
 export type SkillDisplayOption = 'grid' | 'level' | 'compact' | 'bubble'
 export type EducationOrder = 'degree-school' | 'school-degree'
 export type ExperienceOrder = 'title-employer' | 'employer-title'
+export type PhotoSize = 'S' | 'M' | 'L' | 'XL'
+export type PhotoShape = 'circle' | 'rounded' | 'square'
+export type PhotoPosition = 'beside-name' | 'top-center' | 'top-left' | 'top-right'
+export type ContactLayout = 'inline' | 'columns-2' | 'columns-3'
 
 // ─── Section Item Types ───────────────────────────────────────────────────────
 
@@ -251,6 +255,8 @@ export interface ResumeSettings {
   dateFormat: DateFormat
   showSectionLabels: boolean
   photoEnabled: boolean
+  photoSize: PhotoSize
+  photoShape: PhotoShape
   language: string          // e.g. 'en-GB'
 
   // Layout & Spacing
@@ -289,6 +295,9 @@ export interface ResumeSettings {
   headerArrangement: HeaderArrangement
   nameSize: NameSize
   nameBold: boolean
+  photoPosition: PhotoPosition
+  contactLayout: ContactLayout
+  contactIcons: boolean
 
   // Footer
   footerPageNumbers: boolean
@@ -364,6 +373,8 @@ export const DEFAULT_SETTINGS: ResumeSettings = {
   dateFormat: 'MMM YYYY',
   showSectionLabels: true,
   photoEnabled: false,
+  photoSize: 'M',
+  photoShape: 'circle',
   language: 'en-GB',
 
   // Layout & Spacing
@@ -402,6 +413,9 @@ export const DEFAULT_SETTINGS: ResumeSettings = {
   headerArrangement: 'pipe',
   nameSize: 'L',
   nameBold: true,
+  photoPosition: 'beside-name',
+  contactLayout: 'inline',
+  contactIcons: false,
 
   // Footer
   footerPageNumbers: false,

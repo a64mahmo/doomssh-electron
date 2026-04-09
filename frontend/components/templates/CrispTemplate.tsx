@@ -5,6 +5,49 @@ import { SectionRenderer, ContactLine, type HeaderData } from './SectionRenderer
 
 interface Props { resume: Resume; pads?: number[] }
 
+function CrispHeading({ title, ctx }: { title: string; ctx: ReturnType<typeof buildCtx> }) {
+  const { colors, hSize, hCap, gap, pt, s } = ctx
+  return s.showSectionLabels ? (
+    <div style={{
+      fontSize:      pt(hSize),
+      fontWeight:    'bold',
+      color:         colors.accent,
+      letterSpacing: '0.12em',
+      textTransform: hCap ?? 'uppercase',
+      borderBottom:  `0.5pt solid ${colors.accent}40`,
+      paddingBottom: '2pt',
+      marginBottom:  '10pt',
+      marginTop:     gap,
+    }}>
+      {title}
+    </div>
+  ) : <div style={{ marginTop: gap }} />
+}
+
+function Footer({ ctx, h }: { ctx: ReturnType<typeof buildCtx>; h?: HeaderData }) {
+  const { colors, base, pt, s } = ctx
+  if (!s.footerPageNumbers && !s.footerEmail && !s.footerName) return null
+  return (
+    <div data-footer-fixed style={{
+      marginTop: 'auto',
+      paddingTop: '10pt',
+      borderTop: `0.5pt solid ${colors.accent}20`,
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      fontSize: pt(base * 0.75),
+      color: colors.subtitle,
+      backgroundColor: colors.background,
+    }}>
+      <div>
+        {s.footerName && <span style={{ marginRight: '12pt' }}>{h?.fullName}</span>}
+        {s.footerEmail && <span>{h?.email}</span>}
+      </div>
+      {s.footerPageNumbers && <div data-page-number></div>}
+    </div>
+  )
+}
+
 export function CrispTemplate({ resume, pads }: Props) {
   const ctx = buildCtx(resume.settings)
   const { colors, base, lh, gap, hSize, hCap, nameSize, font, fontHref, s, pt } = ctx
@@ -13,47 +56,6 @@ export function CrispTemplate({ resume, pads }: Props) {
   const h = header?.items as HeaderData | undefined
 
   const bodySections = resume.sections.filter(sec => sec.visible !== false && sec.type !== 'header')
-
-  function CrispHeading({ title }: { title: string }) {
-    return s.showSectionLabels ? (
-      <div style={{
-        fontSize:      pt(hSize),
-        fontWeight:    'bold',
-        color:         colors.accent,
-        letterSpacing: '0.12em',
-        textTransform: hCap ?? 'uppercase',
-        borderBottom:  `0.5pt solid ${colors.accent}40`,
-        paddingBottom: '2pt',
-        marginBottom:  '10pt',
-        marginTop:     gap,
-      }}>
-        {title}
-      </div>
-    ) : <div style={{ marginTop: gap }} />
-  }
-
-  function Footer() {
-    if (!s.footerPageNumbers && !s.footerEmail && !s.footerName) return null
-    return (
-      <div data-footer-fixed style={{
-        marginTop: 'auto',
-        paddingTop: '10pt',
-        borderTop: `0.5pt solid ${colors.accent}20`,
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        fontSize: pt(base * 0.75),
-        color: colors.subtitle,
-        backgroundColor: colors.background,
-      }}>
-        <div>
-          {s.footerName && <span style={{ marginRight: '12pt' }}>{h?.fullName}</span>}
-          {s.footerEmail && <span>{h?.email}</span>}
-        </div>
-        {s.footerPageNumbers && <div data-page-number></div>}
-      </div>
-    )
-  }
 
   return (
     <div style={{
@@ -101,14 +103,14 @@ export function CrispTemplate({ resume, pads }: Props) {
               {(pads?.[i] ?? 0) > 0 && <div style={{ height: pads![i] }} />}
               <div data-section>
                 <SectionRenderer section={section} ctx={ctx}
-                  renderHeading={(title) => <CrispHeading title={title} />} />
+                  renderHeading={(title) => <CrispHeading title={title} ctx={ctx} />} />
               </div>
             </React.Fragment>
           ))}
         </div>
       </div>
 
-      <Footer />
+      <Footer ctx={ctx} h={h} />
     </div>
   )
 }

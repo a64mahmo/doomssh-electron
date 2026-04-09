@@ -5,6 +5,50 @@ import { SectionRenderer, ContactLine, type HeaderData } from './SectionRenderer
 
 interface Props { resume: Resume; pads?: number[] }
 
+function EliteHeading({ title, isSidebar, ctx }: { title: string; isSidebar?: boolean; ctx: ReturnType<typeof buildCtx> }) {
+  const { colors, hSize, hCap, gap, pt, s } = ctx
+  if (!s.showSectionLabels) return <div style={{ marginTop: gap }} />
+  return (
+    <div style={{
+      fontSize: pt(isSidebar ? hSize * 0.8 : hSize),
+      fontWeight: 'bold',
+      color: isSidebar ? '#fff' : colors.accent,
+      textTransform: hCap ?? 'uppercase',
+      letterSpacing: '0.05em',
+      marginBottom: '8pt',
+      marginTop: isSidebar ? '14pt' : gap,
+      borderBottom: isSidebar ? '1pt solid rgba(255,255,255,0.2)' : `1.5pt solid ${colors.accent}`,
+      paddingBottom: '2pt',
+    }}>
+      {title}
+    </div>
+  )
+}
+
+function Footer({ ctx, h }: { ctx: ReturnType<typeof buildCtx>; h?: HeaderData }) {
+  const { colors, base, pt, s } = ctx
+  if (!s.footerPageNumbers && !s.footerEmail && !s.footerName) return null
+  return (
+    <div data-footer-fixed style={{
+      marginTop: 'auto',
+      paddingTop: '10pt',
+      borderTop: `0.5pt solid ${colors.accent}20`,
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      fontSize: pt(base * 0.75),
+      color: colors.subtitle,
+      backgroundColor: colors.background,
+    }}>
+      <div>
+        {s.footerName && <span style={{ marginRight: '12pt' }}>{h?.fullName}</span>}
+        {s.footerEmail && <span>{h?.email}</span>}
+      </div>
+      {s.footerPageNumbers && <div data-page-number></div>}
+    </div>
+  )
+}
+
 export function EliteTemplate({ resume, pads }: Props) {
   const ctx = buildCtx(resume.settings)
   const { colors, base, lh, gap, hSize, hCap, nameSize, font, fontHref, s, pt } = ctx
@@ -18,48 +62,6 @@ export function EliteTemplate({ resume, pads }: Props) {
 
   const padH = `${s.marginHorizontal}mm`
   const padV = `${s.marginVertical}mm`
-
-  function EliteHeading({ title, isSidebar }: { title: string; isSidebar?: boolean }) {
-    if (!s.showSectionLabels) return <div style={{ marginTop: gap }} />
-    return (
-      <div style={{
-        fontSize: pt(isSidebar ? hSize * 0.8 : hSize),
-        fontWeight: 'bold',
-        color: isSidebar ? '#fff' : colors.accent,
-        textTransform: hCap ?? 'uppercase',
-        letterSpacing: '0.05em',
-        marginBottom: '8pt',
-        marginTop: isSidebar ? '14pt' : gap,
-        borderBottom: isSidebar ? '1pt solid rgba(255,255,255,0.2)' : `1.5pt solid ${colors.accent}`,
-        paddingBottom: '2pt',
-      }}>
-        {title}
-      </div>
-    )
-  }
-
-  function Footer() {
-    if (!s.footerPageNumbers && !s.footerEmail && !s.footerName) return null
-    return (
-      <div data-footer-fixed style={{
-        marginTop: 'auto',
-        paddingTop: '10pt',
-        borderTop: `0.5pt solid ${colors.accent}20`,
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        fontSize: pt(base * 0.75),
-        color: colors.subtitle,
-        backgroundColor: colors.background,
-      }}>
-        <div>
-          {s.footerName && <span style={{ marginRight: '12pt' }}>{h?.fullName}</span>}
-          {s.footerEmail && <span>{h?.email}</span>}
-        </div>
-        {s.footerPageNumbers && <div data-page-number></div>}
-      </div>
-    )
-  }
 
   return (
     <div style={{
@@ -106,14 +108,14 @@ export function EliteTemplate({ resume, pads }: Props) {
 
           {h && (
             <div style={{ marginBottom: '10pt' }}>
-              <EliteHeading title="Contact" isSidebar />
+              <EliteHeading title="Contact" isSidebar ctx={ctx} />
               <ContactLine h={h} ctx={ctx} display="block" />
             </div>
           )}
 
           {sidebarSections.map(sec => (
             <SectionRenderer key={sec.id} section={sec} ctx={{ ...ctx, colors: { ...ctx.colors, text: '#fff', subtitle: 'rgba(255,255,255,0.7)' } }}
-              renderHeading={(t) => <EliteHeading title={t} isSidebar />} />
+              renderHeading={(t) => <EliteHeading title={t} isSidebar ctx={ctx} />} />
           ))}
         </div>
 
@@ -124,14 +126,14 @@ export function EliteTemplate({ resume, pads }: Props) {
               {(pads?.[i] ?? 0) > 0 && <div style={{ height: pads![i] }} />}
               <div data-section>
                 <SectionRenderer section={section} ctx={ctx}
-                  renderHeading={(title) => <EliteHeading title={title} />} />
+                  renderHeading={(title) => <EliteHeading title={title} ctx={ctx} />} />
               </div>
             </React.Fragment>
           ))}
         </div>
       </div>
 
-      <Footer />
+      <Footer ctx={ctx} h={h} />
     </div>
   )
 }

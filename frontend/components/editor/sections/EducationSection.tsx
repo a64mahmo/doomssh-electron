@@ -1,21 +1,22 @@
 'use client'
+import { useState } from 'react'
 import { useSection } from '@/hooks/useResume'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Plus, Trash2, Copy, GraduationCap, MapPin, Calendar, Award } from 'lucide-react'
+import { Plus, GraduationCap, MapPin, Calendar, Award, type LucideIcon } from 'lucide-react'
 import type { EducationItem } from '@/lib/store/types'
 import { generateId } from '@/lib/utils/ids'
 import { MonthYearPicker } from '../MonthYearPicker'
+import { FieldLabel, EntryCard, ToggleRow } from '../EditorPrimitives'
 
 interface Props { sectionId: string }
 
-function Field({ label, icon: Icon, children }: { label: string; icon?: any; children: React.ReactNode }) {
+function Field({ label, icon: Icon, children }: { label: string; icon?: LucideIcon; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center gap-1.5 ml-0.5">
-        {Icon && <Icon size={12} className="text-muted-foreground/70" />}
-        <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{label}</Label>
+      <div className="flex items-center gap-1.5 px-0.5">
+        {Icon && <Icon size={12} className="text-muted-foreground/50" />}
+        <FieldLabel className="mb-0">{label}</FieldLabel>
       </div>
       {children}
     </div>
@@ -25,12 +26,15 @@ function Field({ label, icon: Icon, children }: { label: string; icon?: any; chi
 export function EducationSection({ sectionId }: Props) {
   const { section, updateItems } = useSection(sectionId)
   const items = (section?.items as EducationItem[]) || []
+  const [openId, setOpenId] = useState<string | null>(items[0]?.id || null)
 
   function add() {
+    const id = generateId()
     updateItems([{
-      id: generateId(), institution: '', degree: '', field: '',
+      id, institution: '', degree: '', field: '',
       location: '', startDate: '', endDate: '', present: false, gpa: '', description: '',
     }, ...items])
+    setOpenId(id)
   }
 
   function update(id: string, changes: Partial<EducationItem>) {
@@ -39,137 +43,123 @@ export function EducationSection({ sectionId }: Props) {
 
   function remove(id: string) {
     updateItems(items.filter((it) => it.id !== id))
+    if (openId === id) setOpenId(null)
   }
 
   function duplicate(id: string) {
     const item = items.find((it) => it.id === id)
     if (!item) return
-    const copy = { ...item, id: generateId() }
+    const newId = generateId()
+    const copy = { ...item, id: newId }
     const idx = items.findIndex((it) => it.id === id)
     const next = [...items]
     next.splice(idx + 1, 0, copy)
     updateItems(next)
+    setOpenId(newId)
   }
 
   return (
     <div className="space-y-6">
-      <div className="space-y-4">
+      <div className="flex flex-col">
         {items.map((item, index) => (
-          <div 
+          <EntryCard 
             key={item.id} 
-            className="group relative bg-background rounded-xl border border-border/60 p-4 pt-5 shadow-sm transition-all hover:border-foreground/10 hover:shadow-md"
+            index={index}
+            title={item.degree ? `${item.degree}${item.field ? ` in ${item.field}` : ''}` : 'New Education'}
+            subtitle={item.institution}
+            isOpen={openId === item.id}
+            onOpenChange={(open) => setOpenId(open ? item.id : null)}
+            onRemove={() => remove(item.id)}
+            onDuplicate={() => duplicate(item.id)}
           >
-            <div className="absolute -top-2.5 left-4 px-2 py-0.5 bg-background border border-border rounded text-[9px] font-bold text-muted-foreground uppercase tracking-widest group-hover:text-foreground transition-colors">
-              Entry #{items.length - index}
-            </div>
+            <div className="space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Institution" icon={GraduationCap}>
+                  <Input 
+                    placeholder="e.g. Stanford University"
+                    className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
+                    value={item.institution} 
+                    onChange={(e) => update(item.id, { institution: e.target.value })} 
+                  />
+                </Field>
+                <Field label="Location" icon={MapPin}>
+                  <Input 
+                    placeholder="e.g. Stanford, CA"
+                    className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
+                    value={item.location} 
+                    onChange={(e) => update(item.id, { location: e.target.value })} 
+                  />
+                </Field>
+              </div>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-2 right-10 h-7 w-7 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={() => duplicate(item.id)}
-            >
-              <Copy size={14} />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-2 right-2 h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={() => remove(item.id)}
-            >
-              <Trash2 size={14} />
-            </Button>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Degree" icon={Award}>
+                  <Input 
+                    placeholder="e.g. Bachelor of Science"
+                    className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
+                    value={item.degree} 
+                    onChange={(e) => update(item.id, { degree: e.target.value })} 
+                  />
+                </Field>
+                <Field label="Field of Study" icon={Award}>
+                  <Input 
+                    placeholder="e.g. Computer Science"
+                    className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
+                    value={item.field} 
+                    onChange={(e) => update(item.id, { field: e.target.value })} 
+                  />
+                </Field>
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="Institution" icon={GraduationCap}>
-                <Input 
-                  placeholder="e.g. Stanford University"
-                  className="h-9 text-xs font-medium focus-visible:ring-1" 
-                  value={item.institution} 
-                  onChange={(e) => update(item.id, { institution: e.target.value })} 
-                />
-              </Field>
-              <Field label="Location" icon={MapPin}>
-                <Input 
-                  placeholder="e.g. Stanford, CA"
-                  className="h-9 text-xs focus-visible:ring-1" 
-                  value={item.location} 
-                  onChange={(e) => update(item.id, { location: e.target.value })} 
-                />
-              </Field>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-              <Field label="Degree" icon={Award}>
-                <Input 
-                  placeholder="e.g. Bachelor of Science"
-                  className="h-9 text-xs focus-visible:ring-1" 
-                  value={item.degree} 
-                  onChange={(e) => update(item.id, { degree: e.target.value })} 
-                />
-              </Field>
-              <Field label="Field of Study" icon={Award}>
-                <Input 
-                  placeholder="e.g. Computer Science"
-                  className="h-9 text-xs focus-visible:ring-1" 
-                  value={item.field} 
-                  onChange={(e) => update(item.id, { field: e.target.value })} 
-                />
-              </Field>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-              <div className="md:col-span-2 grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-2">
                 <Field label="Start Date" icon={Calendar}>
-                  <MonthYearPicker 
-                    value={item.startDate} 
-                    onChange={(v) => update(item.id, { startDate: v })} 
+                  <MonthYearPicker
+                    value={item.startDate}
+                    onChange={(v) => update(item.id, { startDate: v })}
                   />
                 </Field>
                 <Field label="End Date" icon={Calendar}>
-                  <MonthYearPicker 
-                    value={item.endDate} 
+                  <MonthYearPicker
+                    value={item.endDate}
                     disabled={item.present}
-                    onChange={(v) => update(item.id, { endDate: v })} 
+                    onChange={(v) => update(item.id, { endDate: v })}
                   />
                 </Field>
               </div>
-              <div className="md:col-span-1">
-                <Field label="GPA" icon={Award}>
-                  <Input 
-                    placeholder="e.g. 3.8/4.0"
-                    className="h-9 text-xs focus-visible:ring-1" 
-                    value={item.gpa} 
-                    onChange={(e) => update(item.id, { gpa: e.target.value })} 
-                  />
-                </Field>
-              </div>
-            </div>
 
-            <div className="flex items-center gap-2 pt-1 ml-0.5">
-              <input
-                type="checkbox"
-                id={`present-edu-${item.id}`}
-                checked={item.present}
-                onChange={(e) => update(item.id, { present: e.target.checked })}
-                className="w-3.5 h-3.5 rounded border-border text-primary focus:ring-primary/20 cursor-pointer"
-              />
-              <label htmlFor={`present-edu-${item.id}`} className="text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer select-none">
-                I currently study here
-              </label>
+              <Field label="GPA" icon={Award}>
+                <Input
+                  placeholder="e.g. 3.8/4.0"
+                  className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20"
+                  value={item.gpa}
+                  onChange={(e) => update(item.id, { gpa: e.target.value })}
+                />
+              </Field>
+
+              <div className="flex items-center justify-end">
+                <ToggleRow
+                  id={`present-edu-${item.id}`}
+                  label="I currently study here"
+                  checked={item.present}
+                  onCheckedChange={(v) => update(item.id, { present: v })}
+                />
+              </div>
             </div>
-          </div>
+          </EntryCard>
         ))}
       </div>
 
       <Button 
         variant="outline" 
-        size="sm" 
-        className="w-full gap-2 text-xs h-10 border-dashed border-2 hover:border-foreground/20 hover:bg-muted/50 rounded-xl transition-all" 
         onClick={add}
+        className="w-full h-12 border-dashed border-2 bg-muted/20 hover:bg-muted/40 hover:border-foreground/20 rounded-2xl flex items-center justify-center gap-2 transition-all group"
       >
-        <Plus size={14} className="text-muted-foreground" />
-        <span className="font-bold uppercase tracking-wider text-muted-foreground/80">Add Education</span>
+        <div className="w-6 h-6 rounded-lg bg-background border border-border flex items-center justify-center group-hover:scale-110 transition-transform">
+          <Plus size={14} className="text-foreground" />
+        </div>
+        <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground group-hover:text-foreground transition-colors">
+          Add Education
+        </span>
       </Button>
     </div>
   )

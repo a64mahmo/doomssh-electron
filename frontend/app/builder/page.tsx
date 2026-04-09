@@ -79,10 +79,13 @@ export default function BuilderDashboard() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [apiKey, setApiKey] = useState('')
 
+  const [isMac, setIsMac] = useState(false)
+
   useEffect(() => {
     // Get API key from electron if available
     if (window.electron) {
       window.electron.getApiKey().then(key => setApiKey(key || ''))
+      setIsMac(window.electron.platform === 'darwin')
     }
 
     getAllResumes().then(async (existing) => {
@@ -134,7 +137,12 @@ export default function BuilderDashboard() {
     <div className="flex min-h-screen bg-background text-foreground">
       {/* Sidebar */}
       <aside className="w-64 border-r border-border flex flex-col shrink-0">
-        <div className="px-6 h-14 flex items-center gap-2.5 border-b border-border">
+        <div 
+          className={cn(
+            "h-14 flex items-center gap-2.5 border-b border-border px-6",
+            isMac && "pl-[72px]"
+          )}
+        >
           <div className="w-7 h-7 rounded-lg bg-foreground flex items-center justify-center">
             <FileText size={14} className="text-background" />
           </div>

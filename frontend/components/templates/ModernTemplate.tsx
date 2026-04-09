@@ -5,6 +5,58 @@ import { SectionRenderer, ContactLine, type HeaderData } from './SectionRenderer
 
 interface Props { resume: Resume; pads?: number[] }
 
+function SectionHeading({ title, ctx, isSidebar = false }: { title: string; ctx: ReturnType<typeof buildCtx>; isSidebar?: boolean }) {
+  const { colors, hSize, hCap, gap, pt, s } = ctx
+  if (!s.showSectionLabels) return <div style={{ marginTop: gap }} />
+  
+  return (
+    <div style={{
+      fontSize:      pt(isSidebar ? hSize * 0.85 : hSize),
+      fontWeight:    'bold',
+      color:         isSidebar ? colors.accent : colors.accent,
+      textTransform: hCap ?? 'uppercase',
+      letterSpacing: '0.06em',
+      borderBottom:  `1.5pt solid ${colors.accent}${isSidebar ? '40' : ''}`,
+      paddingBottom: '2pt',
+      marginBottom:  '10pt',
+      marginTop:     isSidebar ? '16pt' : gap,
+      display:       'flex',
+      alignItems:    'center',
+      gap:           '6pt'
+    }}>
+      {title}
+    </div>
+  )
+}
+
+function Footer({ ctx, h }: { ctx: ReturnType<typeof buildCtx>; h?: HeaderData }) {
+  const { colors, base, pt, s } = ctx
+  const padH = `${s.marginHorizontal}mm`
+  if (!s.footerPageNumbers && !s.footerEmail && !s.footerName) return null
+  return (
+    <div data-footer-fixed style={{
+      marginTop: 'auto',
+      paddingTop: '10pt',
+      paddingLeft: padH,
+      paddingRight: padH,
+      paddingBottom: '4pt',
+      borderTop: `0.5pt solid ${colors.accent}15`,
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      fontSize: pt(base * 0.75),
+      color: colors.subtitle,
+      backgroundColor: colors.background,
+    }}>
+      <div>
+        {s.footerName && <span style={{ marginRight: '12pt' }}>{h?.fullName}</span>}
+        {s.footerEmail && <span>{h?.email}</span>}
+      </div>
+      {s.footerPageNumbers && <div data-page-number></div>}
+    </div>
+  )
+}
+
 export function ModernTemplate({ resume, pads }: Props) {
   const ctx = buildCtx(resume.settings)
   const { colors, base, lh, gap, hSize, hCap, nameSize, font, fontHref, s, pt } = ctx
@@ -19,55 +71,6 @@ export function ModernTemplate({ resume, pads }: Props) {
 
   const padH = `${s.marginHorizontal}mm`
   const padV = `${s.marginVertical}mm`
-
-  function SectionHeading({ title, isSidebar = false }: { title: string; isSidebar?: boolean }) {
-    if (!s.showSectionLabels) return <div style={{ marginTop: gap }} />
-    
-    return (
-      <div style={{
-        fontSize:      pt(isSidebar ? hSize * 0.85 : hSize),
-        fontWeight:    'bold',
-        color:         isSidebar ? colors.accent : colors.accent,
-        textTransform: hCap ?? 'uppercase',
-        letterSpacing: '0.06em',
-        borderBottom:  `1.5pt solid ${colors.accent}${isSidebar ? '40' : ''}`,
-        paddingBottom: '2pt',
-        marginBottom:  '10pt',
-        marginTop:     isSidebar ? '16pt' : gap,
-        display:       'flex',
-        alignItems:    'center',
-        gap:           '6pt'
-      }}>
-        {title}
-      </div>
-    )
-  }
-
-  function Footer() {
-    if (!s.footerPageNumbers && !s.footerEmail && !s.footerName) return null
-    return (
-      <div data-footer-fixed style={{
-        marginTop: 'auto',
-        paddingTop: '10pt',
-        paddingLeft: padH,
-        paddingRight: padH,
-        paddingBottom: '4pt',
-        borderTop: `0.5pt solid ${colors.accent}15`,
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        fontSize: pt(base * 0.75),
-        color: colors.subtitle,
-        backgroundColor: colors.background,
-      }}>
-        <div>
-          {s.footerName && <span style={{ marginRight: '12pt' }}>{h?.fullName}</span>}
-          {s.footerEmail && <span>{h?.email}</span>}
-        </div>
-        {s.footerPageNumbers && <div data-page-number></div>}
-      </div>
-    )
-  }
 
   return (
     <div style={{
@@ -161,7 +164,7 @@ export function ModernTemplate({ resume, pads }: Props) {
                 <SectionRenderer
                   section={section}
                   ctx={ctx}
-                  renderHeading={(title) => <SectionHeading title={title} />}
+                  renderHeading={(title) => <SectionHeading title={title} ctx={ctx} />}
                 />
               </div>
             </React.Fragment>
@@ -176,12 +179,12 @@ export function ModernTemplate({ resume, pads }: Props) {
           paddingTop: '15pt',
           paddingBottom: '15pt',
         }}>
-          {sidebarSections.map((section, i) => (
+          {sidebarSections.map((section) => (
             <div key={section.id} data-section>
               <SectionRenderer
                 section={section}
                 ctx={ctx}
-                renderHeading={(title) => <SectionHeading title={title} isSidebar={true} />}
+                renderHeading={(title) => <SectionHeading title={title} ctx={ctx} isSidebar={true} />}
               />
             </div>
           ))}
@@ -189,7 +192,7 @@ export function ModernTemplate({ resume, pads }: Props) {
 
       </div>
       
-      <Footer />
+      <Footer ctx={ctx} h={h} />
     </div>
   )
 }

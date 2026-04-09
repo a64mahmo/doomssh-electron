@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Trash2, Copy, Languages, Signal } from 'lucide-react'
+import { Plus, Trash2, Copy, Languages, Signal, type LucideIcon } from 'lucide-react'
 import type { LanguageItem, ProficiencyLevel } from '@/lib/store/types'
 import { generateId } from '@/lib/utils/ids'
 
@@ -19,7 +19,7 @@ const LEVELS = [
   { value: 'expert', label: 'Expert / Native' },
 ]
 
-function Field({ label, icon: Icon, children }: { label: string; icon?: any; children: React.ReactNode }) {
+function Field({ label, icon: Icon, children }: { label: string; icon?: LucideIcon; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center gap-1.5 ml-0.5">

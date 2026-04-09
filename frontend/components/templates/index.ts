@@ -13,6 +13,7 @@ export const TEMPLATE_META: Record<TemplateId, { label: string; description: str
   elite: { label: 'Elite', description: 'Bold executive design' },
   mono: { label: 'Mono', description: 'Developer-centric monospace design' },
   blocks: { label: 'Blocks', description: 'Structured grid with bold headers' },
+  custom: { label: 'Custom', description: 'User-defined template' },
 }
 
 export { MasterTemplate, TemplateFooter } from './MasterTemplate'

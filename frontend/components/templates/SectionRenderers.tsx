@@ -1,8 +1,12 @@
 import React from 'react'
+import * as LucideIcons from 'lucide-react'
+import { type LucideIcon } from 'lucide-react'
 import type { ResumeSection, ExperienceItem, EducationItem, SkillItem, ProjectItem, CertificationItem, LanguageItem, AwardItem, VolunteeringItem, PublicationItem, ReferenceItem, CustomItem } from '@/lib/store/types'
 import { parseBullets } from '@/lib/pdf/pdfStyles'
 import { formatDateRange } from '@/lib/utils/dates'
 import type { TemplateCtx } from '@/lib/pdf/templateCtx'
+import { BsIcon } from '@/lib/icons/BsIcon'
+import { DEFAULT_CONTACT_ICONS } from '@/lib/icons/bootstrapIcons'
 
 // ─── Markdown Renderer ────────────────────────────────────────────────────────
 function renderMarkdown(text: string): React.ReactNode[] {
@@ -100,7 +104,7 @@ function Entry({
             marginBottom: '1.5pt',
             color: colors.text,
           }}>
-            <span style={{ marginRight: '6pt', shrink: 0, color: colors.accent }}>{bullet}</span>
+            <span style={{ marginRight: '6pt', flexShrink: 0, color: colors.accent }}>{bullet}</span>
             <span>{renderMarkdown(b)}</span>
           </div>
         ))}
@@ -150,88 +154,111 @@ export interface HeaderData {
   smoking?: string
   height?: string
   weight?: string
+  photo?: string
 }
 
-export function ContactLine({ h, ctx, display = 'inline' }: {
+// Contact icons now use Bootstrap Icons via DEFAULT_CONTACT_ICONS from @/lib/icons/bootstrapIcons
+
+export function ContactLine({ h, ctx, display = 'inline', columns }: {
   h: HeaderData
   ctx: TemplateCtx
   display?: ContactDisplay
+  columns?: number
 }) {
   const { base, colors, s, pt, lh } = ctx
   const parts = [
     // Contact
-    { val: h.email, label: 'Email' },
-    { val: h.phone, label: 'Phone' },
-    { val: h.secondPhone, label: 'Phone 2' },
-    { val: h.location, label: 'Location' },
+    { val: h.email, label: 'Email', key: 'email' },
+    { val: h.phone, label: 'Phone', key: 'phone' },
+    { val: h.secondPhone, label: 'Phone 2', key: 'secondPhone' },
+    { val: h.location, label: 'Location', key: 'location' },
     // Links
-    { val: h.website, label: 'Website' },
-    { val: h.linkedin, label: 'LinkedIn' },
-    { val: h.github, label: 'GitHub' },
-    { val: h.gitlab, label: 'GitLab' },
-    { val: h.bitbucket, label: 'Bitbucket' },
-    { val: h.stackoverflow, label: 'Stack Overflow' },
+    { val: h.website, label: 'Website', key: 'website' },
+    { val: h.linkedin, label: 'LinkedIn', key: 'linkedin' },
+    { val: h.github, label: 'GitHub', key: 'github' },
+    { val: h.gitlab, label: 'GitLab', key: 'gitlab' },
+    { val: h.bitbucket, label: 'Bitbucket', key: 'bitbucket' },
+    { val: h.stackoverflow, label: 'Stack Overflow', key: 'stackoverflow' },
     // Social
-    { val: h.twitter, label: 'Twitter' },
-    { val: h.bluesky, label: 'Bluesky' },
-    { val: h.threads, label: 'Threads' },
-    { val: h.mastodon, label: 'Mastodon' },
-    { val: h.instagram, label: 'Instagram' },
-    { val: h.facebook, label: 'Facebook' },
-    { val: h.youtube, label: 'YouTube' },
-    { val: h.tiktok, label: 'TikTok' },
-    { val: h.pinterest, label: 'Pinterest' },
-    { val: h.reddit, label: 'Reddit' },
-    { val: h.discord, label: 'Discord' },
-    { val: h.medium, label: 'Medium' },
-    { val: h.behance, label: 'Behance' },
-    { val: h.dribbble, label: 'Dribbble' },
+    { val: h.twitter, label: 'Twitter', key: 'twitter' },
+    { val: h.bluesky, label: 'Bluesky', key: 'bluesky' },
+    { val: h.threads, label: 'Threads', key: 'threads' },
+    { val: h.mastodon, label: 'Mastodon', key: 'mastodon' },
+    { val: h.instagram, label: 'Instagram', key: 'instagram' },
+    { val: h.facebook, label: 'Facebook', key: 'facebook' },
+    { val: h.youtube, label: 'YouTube', key: 'youtube' },
+    { val: h.tiktok, label: 'TikTok', key: 'tiktok' },
+    { val: h.pinterest, label: 'Pinterest', key: 'pinterest' },
+    { val: h.reddit, label: 'Reddit', key: 'reddit' },
+    { val: h.discord, label: 'Discord', key: 'discord' },
+    { val: h.medium, label: 'Medium', key: 'medium' },
+    { val: h.behance, label: 'Behance', key: 'behance' },
+    { val: h.dribbble, label: 'Dribbble', key: 'dribbble' },
     // Personal details
-    { val: h.nationality, label: 'Nationality' },
-    { val: h.dateOfBirth, label: 'Date of Birth' },
-    { val: h.genderPronoun, label: 'Gender/Pronoun' },
-    { val: h.maritalStatus, label: 'Marital Status' },
-    { val: h.visa, label: 'Visa' },
-    { val: h.passportOrId, label: 'Passport/ID' },
-    { val: h.drivingLicense, label: 'Driving License' },
-    { val: h.availability, label: 'Availability' },
-    { val: h.workMode, label: 'Work Mode' },
-    { val: h.relocation, label: 'Relocation' },
-    { val: h.expectedSalary, label: 'Expected Salary' },
-    { val: h.securityClearance, label: 'Security Clearance' },
-    { val: h.militaryService, label: 'Military Service' },
-    { val: h.disability, label: 'Disability' },
-  ].filter(p => p.val)
-  
+    { val: h.nationality, label: 'Nationality', key: 'nationality' },
+    { val: h.dateOfBirth, label: 'Date of Birth', key: 'dateOfBirth' },
+    { val: h.genderPronoun, label: 'Gender/Pronoun', key: 'genderPronoun' },
+    { val: h.maritalStatus, label: 'Marital Status', key: 'maritalStatus' },
+    { val: h.visa, label: 'Visa', key: 'visa' },
+    { val: h.passportOrId, label: 'Passport/ID', key: 'passportOrId' },
+    { val: h.drivingLicense, label: 'Driving License', key: 'drivingLicense' },
+    { val: h.availability, label: 'Availability', key: 'availability' },
+    { val: h.workMode, label: 'Work Mode', key: 'workMode' },
+    { val: h.relocation, label: 'Relocation', key: 'relocation' },
+    { val: h.expectedSalary, label: 'Expected Salary', key: 'expectedSalary' },
+    { val: h.securityClearance, label: 'Security Clearance', key: 'securityClearance' },
+    { val: h.militaryService, label: 'Military Service', key: 'militaryService' },
+    { val: h.disability, label: 'Disability', key: 'disability' },
+  ].filter(p => p.val && p.val.trim())
+
   if (!parts.length) return null
-  
+
   const arrangement = s.headerArrangement
+  const showIcons = s.contactIcons || arrangement === 'icon'
   const sep = arrangement === 'pipe' ? ' | ' : arrangement === 'bullet' ? ' • ' : arrangement === 'bar' ? ' / ' : ' · '
+  const iconSize = base * 0.85
+
+  const renderItem = (p: typeof parts[0], i: number) => {
+    const iconName = DEFAULT_CONTACT_ICONS[p.key]
+    return (
+      <div key={i} style={{ fontSize: pt(base * 0.85), color: colors.subtitle, lineHeight: lh, display: 'flex', alignItems: 'center', gap: '4pt' }}>
+        {showIcons && iconName && <BsIcon name={iconName} size={pt(iconSize)} color={colors.accent} />}
+        <span>{p.val}</span>
+      </div>
+    )
+  }
+
+  // Column layout
+  if (columns && columns > 1) {
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: '3pt 12pt' }}>
+        {parts.map((p, i) => renderItem(p, i))}
+      </div>
+    )
+  }
 
   if (display === 'block') {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '2pt' }}>
-        {parts.map((p, i) => (
-          <div key={i} style={{ fontSize: pt(base * 0.85), color: colors.subtitle, lineHeight: lh }}>
-            {arrangement === 'icon' && <span style={{ fontWeight: 'bold', color: colors.accent, marginRight: '4pt' }}>{p.label[0]}:</span>}
-            {p.val}
-          </div>
-        ))}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '3pt' }}>
+        {parts.map((p, i) => renderItem(p, i))}
       </div>
     )
   }
 
   return (
-    <div style={{ fontSize: pt(base * 0.85), color: colors.subtitle, display: 'flex', flexWrap: 'wrap', justifyContent: s.headerAlignment, gap: '0 8pt' }}>
-      {parts.map((p, i) => (
-        <React.Fragment key={i}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            {arrangement === 'icon' && <span style={{ fontWeight: 'bold', color: colors.accent, marginRight: '3pt' }}>{p.label[0]}:</span>}
-            {p.val}
-          </div>
-          {i < parts.length - 1 && <span>{sep}</span>}
-        </React.Fragment>
-      ))}
+    <div style={{ fontSize: pt(base * 0.85), color: colors.subtitle, display: 'flex', flexWrap: 'wrap', justifyContent: s.headerAlignment, gap: '2pt 8pt', alignItems: 'center' }}>
+      {parts.map((p, i) => {
+        const iconName = DEFAULT_CONTACT_ICONS[p.key]
+        return (
+          <React.Fragment key={i}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '3pt' }}>
+              {showIcons && iconName && <BsIcon name={iconName} size={pt(iconSize)} color={colors.accent} />}
+              {p.val}
+            </div>
+            {i < parts.length - 1 && arrangement !== 'icon' && <span style={{ color: colors.subtitle + '80' }}>{sep}</span>}
+          </React.Fragment>
+        )
+      })}
     </div>
   )
 }

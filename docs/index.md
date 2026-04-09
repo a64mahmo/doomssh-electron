@@ -60,3 +60,13 @@ DoomSSH uses **Next.js 16**, which contains significant breaking changes compare
 -   [Frontend Deep Dive](./frontend.md) - Components, hooks, state, and AI routes.
 -   [Electron Integration](./electron.md) - Packaging and desktop-specific features.
 -   [Troubleshooting](./troubleshooting.md) - Solutions for common issues like high resource usage.
+
+---
+
+## Recent Updates (v0.1.1)
+
+-   **Enhanced Navigation:** Added interactive tooltips to the builder sidebar for all resume sections and customization panels.
+-   **macOS Desktop Optimization:** Implemented dynamic padding for the Electron app on macOS, ensuring the UI perfectly clears the native "traffic light" window controls.
+-   **Refined Visual Identity:** Standardized section heading sizing and spacing across all templates. Icons now feature a high-contrast "etched" look in filled modes, maintaining sharp outlines in both web and PDF.
+-   **Robust Data Handling:** Introduced strict validation for profile images (JPEG, PNG, WEBP only) to prevent Base64 rendering issues.
+-   **Architecture & Stability:** Enforced strict TypeScript type safety across all complex components, including drag-and-drop systems and nested forms.

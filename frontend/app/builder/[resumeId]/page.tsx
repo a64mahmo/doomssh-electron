@@ -27,11 +27,16 @@ export default function BuilderPage() {
   const [editingName, setEditingName] = useState(false)
   const [panel, setPanel] = useState<Panel>('content')
   const [sideW, setSideW] = useState(DEFAULT_W)
+  const [isMac, setIsMac] = useState(false)
   const dragging = useRef(false)
   const startX = useRef(0)
   const startW = useRef(DEFAULT_W)
 
   useEffect(() => {
+    if (window.electron) {
+      setIsMac(window.electron.platform === 'darwin')
+    }
+
     async function load() {
       let r = await getResume(resumeId)
       if (!r) {
@@ -87,7 +92,12 @@ export default function BuilderPage() {
     <div className="fixed inset-0 flex flex-col overflow-hidden bg-background overscroll-none" style={{ overscrollBehavior: 'none' }}>
 
       {/* ── Top bar ─────────────────────────────────────────────────── */}
-      <header className="h-11 flex items-center gap-3 px-3 border-b border-border shrink-0 bg-background">
+      <header 
+        className={cn(
+          "h-11 flex items-center gap-3 px-3 border-b border-border shrink-0 bg-background",
+          isMac && "pl-[72px]"
+        )}
+      >
 
         <button
           onClick={() => router.push('/builder')}

@@ -5,6 +5,30 @@ import { SectionRenderer, ContactLine, type HeaderData } from './SectionRenderer
 
 interface Props { resume: Resume; pads?: number[] }
 
+function Footer({ ctx, h }: { ctx: ReturnType<typeof buildCtx>; h?: HeaderData }) {
+  const { colors, base, pt, s } = ctx
+  if (!s.footerPageNumbers && !s.footerEmail && !s.footerName) return null
+  return (
+    <div data-footer-fixed style={{
+      marginTop: 'auto',
+      paddingTop: '10pt',
+      borderTop: `0.5pt solid ${colors.accent}20`,
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      fontSize: pt(base * 0.75),
+      color: colors.subtitle,
+      backgroundColor: colors.background,
+    }}>
+      <div>
+        {s.footerName && <span style={{ marginRight: '12pt' }}>{h?.fullName}</span>}
+        {s.footerEmail && <span>{h?.email}</span>}
+      </div>
+      {s.footerPageNumbers && <div data-page-number></div>}
+    </div>
+  )
+}
+
 export function MinimalTemplate({ resume, pads }: Props) {
   const ctx = buildCtx(resume.settings)
   const { colors, base, lh, nameSize, font, fontHref, s, pt } = ctx
@@ -23,29 +47,6 @@ export function MinimalTemplate({ resume, pads }: Props) {
     letterSpacing: '0.1em',
     fontWeight:    'bold',
     paddingTop:    '1pt',
-  }
-
-  function Footer() {
-    if (!s.footerPageNumbers && !s.footerEmail && !s.footerName) return null
-    return (
-      <div data-footer-fixed style={{
-        marginTop: 'auto',
-        paddingTop: '10pt',
-        borderTop: `0.5pt solid ${colors.accent}20`,
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        fontSize: pt(base * 0.75),
-        color: colors.subtitle,
-        backgroundColor: colors.background,
-      }}>
-        <div>
-          {s.footerName && <span style={{ marginRight: '12pt' }}>{h?.fullName}</span>}
-          {s.footerEmail && <span>{h?.email}</span>}
-        </div>
-        {s.footerPageNumbers && <div data-page-number></div>}
-      </div>
-    )
   }
 
   return (
@@ -93,7 +94,7 @@ export function MinimalTemplate({ resume, pads }: Props) {
         ))}
       </div>
 
-      <Footer />
+      <Footer ctx={ctx} h={h} />
     </div>
   )
 }

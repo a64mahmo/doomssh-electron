@@ -5,6 +5,52 @@ import { SectionRenderer, ContactLine, type HeaderData } from './SectionRenderer
 
 interface Props { resume: Resume; pads?: number[] }
 
+function ClassicHeading({ title, ctx }: { title: string; ctx: ReturnType<typeof buildCtx> }) {
+  const { colors, hSize, hCap, gap, pt, s } = ctx
+  return s.showSectionLabels ? (
+    <div style={{
+      backgroundColor: colors.accent + '18',
+      padding:    '3pt 6pt',
+      marginTop:  gap,
+      marginBottom: '5pt',
+    }}>
+      <span style={{
+        fontSize:      pt(hSize),
+        fontWeight:    'bold',
+        color:         colors.heading,
+        letterSpacing: '0.06em',
+        textTransform: hCap ?? 'uppercase',
+      }}>
+        {title}
+      </span>
+    </div>
+  ) : <div style={{ marginTop: gap }} />
+}
+
+function Footer({ ctx, h }: { ctx: ReturnType<typeof buildCtx>; h?: HeaderData }) {
+  const { colors, base, pt, s } = ctx
+  if (!s.footerPageNumbers && !s.footerEmail && !s.footerName) return null
+  return (
+    <div data-footer-fixed style={{
+      marginTop: 'auto',
+      paddingTop: '10pt',
+      borderTop: `0.5pt solid ${colors.accent}20`,
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      fontSize: pt(base * 0.75),
+      color: colors.subtitle,
+      backgroundColor: colors.background,
+    }}>
+      <div>
+        {s.footerName && <span style={{ marginRight: '12pt' }}>{h?.fullName}</span>}
+        {s.footerEmail && <span>{h?.email}</span>}
+      </div>
+      {s.footerPageNumbers && <div data-page-number></div>}
+    </div>
+  )
+}
+
 export function ClassicTemplate({ resume, pads }: Props) {
   const ctx = buildCtx(resume.settings)
   const { colors, base, lh, gap, hSize, hCap, nameSize, font, fontHref, s, pt } = ctx
@@ -29,50 +75,6 @@ export function ClassicTemplate({ resume, pads }: Props) {
     boxSizing:       'border-box',
   }
 
-  function ClassicHeading({ title }: { title: string }) {
-    return s.showSectionLabels ? (
-      <div style={{
-        backgroundColor: colors.accent + '18',
-        padding:    '3pt 6pt',
-        marginTop:  gap,
-        marginBottom: '5pt',
-      }}>
-        <span style={{
-          fontSize:      pt(hSize),
-          fontWeight:    'bold',
-          color:         colors.heading,
-          letterSpacing: '0.06em',
-          textTransform: hCap ?? 'uppercase',
-        }}>
-          {title}
-        </span>
-      </div>
-    ) : <div style={{ marginTop: gap }} />
-  }
-
-  function Footer() {
-    if (!s.footerPageNumbers && !s.footerEmail && !s.footerName) return null
-    return (
-      <div data-footer-fixed style={{
-        marginTop: 'auto',
-        paddingTop: '10pt',
-        borderTop: `0.5pt solid ${colors.accent}20`,
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        fontSize: pt(base * 0.75),
-        color: colors.subtitle,
-        backgroundColor: colors.background,
-      }}>
-        <div>
-          {s.footerName && <span style={{ marginRight: '12pt' }}>{h?.fullName}</span>}
-          {s.footerEmail && <span>{h?.email}</span>}
-        </div>
-        {s.footerPageNumbers && <div data-page-number></div>}
-      </div>
-    )
-  }
-
   return (
     <div style={page}>
       {fontHref && <link rel="stylesheet" href={fontHref} />}
@@ -95,12 +97,12 @@ export function ClassicTemplate({ resume, pads }: Props) {
             {(pads?.[i] ?? 0) > 0 && <div style={{ height: pads![i] }} />}
             <div data-section>
               <SectionRenderer section={section} ctx={ctx}
-                renderHeading={(title) => <ClassicHeading title={title} />} />
+                renderHeading={(title) => <ClassicHeading title={title} ctx={ctx} />} />
             </div>
           </React.Fragment>
         ))}
 
-        <Footer />
+        <Footer ctx={ctx} h={h} />
       </div>
     </div>
   )

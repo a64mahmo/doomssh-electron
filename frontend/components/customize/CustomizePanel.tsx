@@ -1,8 +1,5 @@
 'use client'
 import { useRef, useState, useMemo } from 'react'
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
-import { Slider } from '@/components/ui/slider'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Input } from '@/components/ui/input'
@@ -10,6 +7,11 @@ import { cn } from '@/lib/utils'
 import { useResume } from '@/hooks/useResume'
 import { TEMPLATE_META, getTemplateSettings } from '@/components/templates'
 import { motion, AnimatePresence } from 'framer-motion'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import {
   Palette,
   Layout as LayoutIcon,
@@ -23,13 +25,17 @@ import {
   LayoutTemplate,
   Check,
   Type as TypeIcon,
+  Image as ImageIcon,
+  Contact,
+  Grid2X2,
+  Grid3X3,
 } from 'lucide-react'
 import {
-  SectionType,
   FontOption, DateFormat, PaperSize, ColumnLayout, ListStyle,
   SubtitleStyle, SubtitlePlacement, SectionHeadingSize, SectionHeadingCapitalization,
   SectionHeadingIcon, HeaderAlignment, HeaderArrangement, NameSize, ColorMode,
   SkillDisplayOption, EducationOrder, ExperienceOrder, SectionHeadingStyle,
+  PhotoSize, PhotoShape, PhotoPosition, ContactLayout,
   DEFAULT_SETTINGS,
 } from '@/lib/store/types'
 import type { TemplateId } from '@/lib/store/types'
@@ -42,6 +48,7 @@ import {
   useSensors,
   DragOverlay,
   defaultDropAnimationSideEffects,
+  type DragOverEvent,
 } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -50,10 +57,17 @@ import {
   useSortable,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import {
+  FieldLabel,
+  ControlGroup,
+  SliderRow,
+  ToggleRow,
+  SegmentGroup
+} from '@/components/editor/EditorPrimitives'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const TEMPLATE_IDS = [...(Object.keys(TEMPLATE_META) as TemplateId[]), 'custom' as const]
+const TEMPLATE_IDS = Object.keys(TEMPLATE_META) as TemplateId[]
 
 const FONTS: FontOption[] = [
   'Inter', 'Lato', 'Roboto', 'Source Sans Pro', 'Raleway',
@@ -75,119 +89,6 @@ const PANEL_SECTIONS = [
 ] as const
 
 type PanelSectionId = typeof PANEL_SECTIONS[number]['id']
-
-// ── Shared UI primitives ──────────────────────────────────────────────────────
-
-function FieldLabel({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <Label className={cn('block text-[10px] font-semibold text-muted-foreground/70 mb-1.5 uppercase tracking-widest', className)}>
-      {children}
-    </Label>
-  )
-}
-
-function ControlGroup({ title, children, className }: { title?: string; children: React.ReactNode; className?: string }) {
-  return (
-    <div className={cn('space-y-3', className)}>
-      {title && (
-        <p className="text-[9px] font-bold text-muted-foreground/35 uppercase tracking-[0.12em] pb-1 border-b border-border/40">
-          {title}
-        </p>
-      )}
-      {children}
-    </div>
-  )
-}
-
-/** Slider with label + live value — consistent layout everywhere */
-function SliderRow({
-  label,
-  value,
-  display,
-  min, max, step,
-  onChange,
-}: {
-  label: string
-  value: number
-  display: string
-  min: number
-  max: number
-  step: number
-  onChange: (v: number) => void
-}) {
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-2">
-        <FieldLabel className="mb-0">{label}</FieldLabel>
-        <span className="text-[10px] font-mono tabular-nums text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
-          {display}
-        </span>
-      </div>
-      <Slider min={min} max={max} step={step} value={[value]} onValueChange={([v]) => onChange(v)} />
-    </div>
-  )
-}
-
-/** Toggle row — label clicks the switch via htmlFor */
-function ToggleRow({
-  id,
-  label,
-  description,
-  checked,
-  onCheckedChange,
-}: {
-  id: string
-  label: string
-  description?: string
-  checked: boolean
-  onCheckedChange: (v: boolean) => void
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3 py-1">
-      <div>
-        <label htmlFor={id} className="text-xs font-medium cursor-pointer select-none leading-tight">
-          {label}
-        </label>
-        {description && (
-          <p className="text-[10px] text-muted-foreground/60 mt-0.5">{description}</p>
-        )}
-      </div>
-      <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} className="shrink-0" />
-    </div>
-  )
-}
-
-/** Segmented button group — icon OR text content, no spurious DOM props */
-function SegmentGroup<T extends string>({
-  value,
-  onChange,
-  options,
-}: {
-  value: T
-  onChange: (v: T) => void
-  options: { value: T; render: () => React.ReactNode; label: string }[]
-}) {
-  return (
-    <div className="flex bg-muted/40 p-0.5 rounded-lg border border-border/50 gap-0.5">
-      {options.map((o) => (
-        <button
-          key={o.value}
-          type="button"
-          onClick={() => onChange(o.value)}
-          title={o.label}
-          className={cn(
-            'flex-1 flex items-center justify-center py-1.5 rounded-md transition-all text-xs',
-            value === o.value
-              ? 'bg-background text-foreground shadow-sm font-semibold'
-              : 'text-muted-foreground hover:text-foreground hover:bg-background/50',
-          )}
-        >
-          {o.render()}
-        </button>
-      ))}
-    </div>
-  )
-}
 
 // ── Drag & Drop ───────────────────────────────────────────────────────────────
 
@@ -321,35 +222,41 @@ export function CustomizePanel() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
+  const sidebarTypes = useMemo(() => ['skills', 'education', 'languages', 'certifications', 'awards', 'references'], [])
+  const sections = useMemo(() => resume?.sections.filter(sec => sec.type !== 'header') || [], [resume?.sections])
+
+  const mainIds = useMemo(() => {
+    if (!resume) return []
+    const s = resume.settings
+    return sections.filter(sec => {
+      const col = s.sectionColumns?.[sec.id]
+      return col ? col === 'main' : !sidebarTypes.includes(sec.type)
+    }).map(sec => sec.id)
+  }, [sections, resume, sidebarTypes])
+
+  const sidebarIds = useMemo(() => {
+    if (!resume) return []
+    const s = resume.settings
+    return sections.filter(sec => {
+      const col = s.sectionColumns?.[sec.id]
+      return col ? col === 'sidebar' : sidebarTypes.includes(sec.type)
+    }).map(sec => sec.id)
+  }, [sections, resume, sidebarTypes])
+
   if (!resume) return null
   const s = resume.settings
 
-  const sidebarTypes = ['skills', 'education', 'languages', 'certifications', 'awards', 'references']
-  const sections = resume.sections.filter(sec => sec.type !== 'header')
-
-  const mainIds = useMemo(() =>
-    sections.filter(sec => {
-      const col = s.sectionColumns?.[sec.id]
-      return col ? col === 'main' : !sidebarTypes.includes(sec.type)
-    }).map(sec => sec.id),
-  [sections, s.sectionColumns])
-
-  const sidebarIds = useMemo(() =>
-    sections.filter(sec => {
-      const col = s.sectionColumns?.[sec.id]
-      return col ? col === 'sidebar' : sidebarTypes.includes(sec.type)
-    }).map(sec => sec.id),
-  [sections, s.sectionColumns])
-
-  function handleDragOver(event: any) {
+  function handleDragOver(event: DragOverEvent) {
     const { active, over } = event
     if (!over) return
-    const activeContainer = mainIds.includes(active.id) ? 'main' : 'sidebar'
+    const activeId = String(active.id)
+    const overId = String(over.id)
+    const activeContainer = mainIds.includes(activeId) ? 'main' : 'sidebar'
     const overContainer =
-      over.id === 'main-col' || mainIds.includes(over.id) ? 'main' :
-      over.id === 'sidebar-col' || sidebarIds.includes(over.id) ? 'sidebar' : null
+      overId === 'main-col' || mainIds.includes(overId) ? 'main' :
+      overId === 'sidebar-col' || sidebarIds.includes(overId) ? 'sidebar' : null
     if (overContainer && activeContainer !== overContainer) {
-      updateSettings({ sectionColumns: { ...(s.sectionColumns || {}), [active.id]: overContainer } })
+      updateSettings({ sectionColumns: { ...(s.sectionColumns || {}), [activeId]: overContainer } })
     }
   }
 
@@ -366,26 +273,23 @@ export function CustomizePanel() {
         {PANEL_SECTIONS.map((section) => {
           const active = activeSection === section.id
           return (
-            <button
-              key={section.id}
-              type="button"
-              onClick={() => setActiveSection(section.id)}
-              title={section.label}
-              className={cn(
-                'relative w-9 h-9 flex items-center justify-center rounded-xl transition-all',
-                active
-                  ? 'bg-foreground text-background shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted',
-              )}
-            >
-              <section.icon size={16} strokeWidth={active ? 2.5 : 1.8} />
-              {active && (
-                <motion.div
-                  layoutId="nav-pip"
-                  className="absolute -right-px top-1/2 -translate-y-1/2 w-0.5 h-5 bg-foreground rounded-l-full"
-                />
-              )}
-            </button>
+            <Tooltip key={section.id}>
+              <TooltipTrigger
+                type="button"
+                onClick={() => setActiveSection(section.id)}
+                className={cn(
+                  'relative w-9 h-9 flex items-center justify-center rounded-xl transition-all',
+                  active
+                    ? 'bg-foreground text-background shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted',
+                )}
+              >
+                <section.icon size={16} strokeWidth={active ? 2.5 : 1.8} />
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                {section.label}
+              </TooltipContent>
+            </Tooltip>
           )
         })}
       </nav>
@@ -416,7 +320,7 @@ export function CustomizePanel() {
               {activeSection === 'templates' && (
                 <div className="grid grid-cols-2 gap-2.5">
                   {TEMPLATE_IDS.map((id) => {
-                    const meta = id === 'custom' ? { label: 'Custom', description: 'Your manual adjustments' } : TEMPLATE_META[id as Exclude<TemplateId, 'custom'>]
+                    const meta = TEMPLATE_META[id]
                     const active = resume.template === id
                     return (
                       <button
@@ -424,11 +328,10 @@ export function CustomizePanel() {
                         type="button"
                         onClick={() => {
                           if (id === 'custom') return
-                          const overrides = getTemplateSettings(id as Exclude<TemplateId, 'custom'>)
+                          const overrides = getTemplateSettings(id)
                           // Complete overwrite: start with DEFAULT_SETTINGS, then apply overrides
                           setResume({ ...resume, template: id, settings: { ...DEFAULT_SETTINGS, ...overrides } })
-                        }}
-                        className={cn(
+                        }}                        className={cn(
                           'group relative aspect-[3/4] rounded-xl border-2 overflow-hidden flex flex-col transition-all',
                           active
                             ? 'border-foreground shadow-lg ring-2 ring-foreground/10'
@@ -562,7 +465,7 @@ export function CustomizePanel() {
                       <DndContext
                         sensors={sensors}
                         collisionDetection={closestCenter}
-                        onDragStart={(e) => setDragActiveId(e.active.id as string)}
+                        onDragStart={(e) => setDragActiveId(String(e.active.id))}
                         onDragOver={handleDragOver}
                         onDragEnd={() => setDragActiveId(null)}
                       >
@@ -831,6 +734,37 @@ export function CustomizePanel() {
                     <ToggleRow id="show-photo" label="Show photo"  checked={s.photoEnabled}  onCheckedChange={(v) => upd({ photoEnabled: v })}
                       description="Photo upload available in the content panel"
                     />
+
+                    {s.photoEnabled && (
+                      <>
+                        <div>
+                          <FieldLabel>Photo Size</FieldLabel>
+                          <SegmentGroup
+                            value={s.photoSize}
+                            onChange={(v) => upd({ photoSize: v as PhotoSize })}
+                            options={[
+                              { value: 'S',  label: 'Small',  render: () => <span className="text-[10px] font-bold leading-none">S</span> },
+                              { value: 'M',  label: 'Medium', render: () => <span className="text-[11px] font-bold leading-none">M</span> },
+                              { value: 'L',  label: 'Large',  render: () => <span className="text-[12px] font-bold leading-none">L</span> },
+                              { value: 'XL', label: 'XL',     render: () => <span className="text-[13px] font-bold leading-none">XL</span> },
+                            ]}
+                          />
+                        </div>
+
+                        <div>
+                          <FieldLabel>Photo Shape</FieldLabel>
+                          <SegmentGroup
+                            value={s.photoShape}
+                            onChange={(v) => upd({ photoShape: v as PhotoShape })}
+                            options={[
+                              { value: 'circle',  label: 'Circle',  render: () => <div className="w-3.5 h-3.5 rounded-full bg-current opacity-40" /> },
+                              { value: 'rounded', label: 'Rounded', render: () => <div className="w-3.5 h-3.5 rounded-md bg-current opacity-40" /> },
+                              { value: 'square',  label: 'Square',  render: () => <div className="w-3.5 h-3.5 bg-current opacity-40" /> },
+                            ]}
+                          />
+                        </div>
+                      </>
+                    )}
                   </ControlGroup>
 
                   <Separator className="opacity-30" />
@@ -847,19 +781,62 @@ export function CustomizePanel() {
                     />
                   </ControlGroup>
 
+                  {s.photoEnabled && (
+                    <>
+                      <Separator className="opacity-30" />
+                      <ControlGroup title="Photo Placement">
+                        <div>
+                          <FieldLabel>Position</FieldLabel>
+                          <Select value={s.photoPosition} onValueChange={(v) => upd({ photoPosition: v as PhotoPosition })}>
+                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="beside-name">Beside Name</SelectItem>
+                              <SelectItem value="top-center">Top Center</SelectItem>
+                              <SelectItem value="top-left">Top Left</SelectItem>
+                              <SelectItem value="top-right">Top Right</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </ControlGroup>
+                    </>
+                  )}
+
                   <Separator className="opacity-30" />
 
                   <ControlGroup title="Contact Info">
-                    <FieldLabel>Separator Style</FieldLabel>
-                    <Select value={s.headerArrangement} onValueChange={(v) => upd({ headerArrangement: v as HeaderArrangement })}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pipe">  Pipes  (name | email | phone)</SelectItem>
-                        <SelectItem value="bullet">Bullets (name • email • phone)</SelectItem>
-                        <SelectItem value="bar">   Bar    (name — email — phone)</SelectItem>
-                        <SelectItem value="icon">  Labels (E: email  P: phone)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div>
+                      <FieldLabel>Separator</FieldLabel>
+                      <Select value={s.headerArrangement} onValueChange={(v) => upd({ headerArrangement: v as HeaderArrangement })}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pipe">Pipes  ( | )</SelectItem>
+                          <SelectItem value="bullet">Bullets ( • )</SelectItem>
+                          <SelectItem value="bar">Bar  ( / )</SelectItem>
+                          <SelectItem value="icon">Icons only</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <FieldLabel>Layout</FieldLabel>
+                      <SegmentGroup
+                        value={s.contactLayout}
+                        onChange={(v) => upd({ contactLayout: v as ContactLayout })}
+                        options={[
+                          { value: 'inline',    label: 'Inline',  render: () => <span className="text-[10px] font-semibold leading-none">Wrap</span> },
+                          { value: 'columns-2', label: '2 Cols',  render: () => <Grid2X2 size={13} /> },
+                          { value: 'columns-3', label: '3 Cols',  render: () => <Grid3X3 size={13} /> },
+                        ]}
+                      />
+                    </div>
+
+                    <ToggleRow
+                      id="contact-icons"
+                      label="Show icons"
+                      description="Display an icon next to each contact item"
+                      checked={s.contactIcons}
+                      onCheckedChange={(v) => upd({ contactIcons: v })}
+                    />
                   </ControlGroup>
 
                   <Separator className="opacity-30" />
@@ -943,8 +920,9 @@ export function CustomizePanel() {
                         onChange={(v) => upd({ sectionHeadingIcon: v as SectionHeadingIcon })}
                         options={[
                           { value: 'none',   label: 'None',   render: () => <span className="text-[10px] font-semibold leading-none">Off</span> },
-                          { value: 'simple', label: 'Simple', render: () => <span className="w-2.5 h-[1.5px] bg-current rounded-full inline-block" /> },
-                          { value: 'filled', label: 'Filled', render: () => <span className="w-2.5 h-2.5 bg-current rounded-sm inline-block" /> },
+                          { value: 'simple', label: 'Simple', render: () => <span className="text-[10px] font-semibold leading-none">Stroke</span> },
+                          { value: 'filled', label: 'Filled', render: () => <span className="text-[10px] font-semibold leading-none">Fill</span> },
+                          { value: 'knockout', label: 'Knockout', render: () => <span className="text-[10px] font-semibold leading-none">Box</span> },
                         ]}
                       />
                     </div>

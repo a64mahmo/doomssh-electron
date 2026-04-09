@@ -26,9 +26,9 @@ function Slider({
       min={min}
       max={max}
       thumbAlignment="edge-client-only"
-      onValueChange={(v) => {
+      onValueChange={(v, eventDetails) => {
         if (onValueChange) {
-          onValueChange(Array.isArray(v) ? v : [v])
+          onValueChange(Array.isArray(v) ? v : [v], eventDetails)
         }
       }}
       {...props}

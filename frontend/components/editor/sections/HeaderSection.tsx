@@ -1,8 +1,8 @@
 "use client";
-import { useState, useRef } from "react";
+import { useRef } from "react";
+import { toast } from "sonner";
 import { useSection } from "@/hooks/useResume";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   User,
   Briefcase,
@@ -13,17 +13,12 @@ import {
   Link,
   Code2,
   Plus,
-  ChevronDown,
   X,
   Image as ImageIcon,
   BadgeCheck,
   Flag,
   Calendar,
   FileText,
-  Users,
-  Zap as WorkIcon,
-  MapPin as RelocationIcon,
-  DollarSign,
   Smartphone,
   Car,
   Shield,
@@ -32,8 +27,10 @@ import {
   AlertCircle,
   BarChart3,
   Scale,
+  type LucideIcon,
 } from "lucide-react";
 import type { HeaderItem } from "@/lib/store/types";
+import { FieldLabel, ControlGroup } from "../EditorPrimitives";
 
 interface Props {
   sectionId: string;
@@ -44,30 +41,28 @@ function Field({
   icon: Icon,
   children,
   onRemove,
-  type = "text",
 }: {
   label: string;
-  icon: any;
+  icon: LucideIcon;
   children?: React.ReactNode;
   onRemove?: () => void;
-  type?: string;
 }) {
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center gap-1.5 ml-0.5 justify-between">
+      <div className="flex items-center justify-between px-0.5">
         <div className="flex items-center gap-1.5">
-          <Icon size={12} className="text-muted-foreground/70" />
-          <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-            {label}
-          </Label>
+          <Icon size={12} className="text-muted-foreground/50" />
+          <FieldLabel className="mb-0">{label}</FieldLabel>
         </div>
         {onRemove && (
           <button
             onClick={onRemove}
-            className="p-1 hover:bg-destructive/10 rounded transition-colors"
-            title="Remove field"
+            className="p-1 hover:bg-destructive/10 rounded transition-colors group/del"
           >
-            <X size={14} className="text-muted-foreground/50" />
+            <X
+              size={12}
+              className="text-muted-foreground/30 group-hover/del:text-destructive transition-colors"
+            />
           </button>
         )}
       </div>
@@ -84,9 +79,9 @@ const PERSONAL_DETAILS = [
   { key: "availability", label: "Availability", icon: Zap },
   { key: "genderPronoun", label: "Gender/Pronoun", icon: User },
   { key: "disability", label: "Disability", icon: Heart },
-  { key: "workMode", label: "Work Mode", icon: WorkIcon },
+  { key: "workMode", label: "Work Mode", icon: Briefcase },
   { key: "relocation", label: "Relocation", icon: MapPin },
-  { key: "expectedSalary", label: "Expected Salary", icon: DollarSign },
+  { key: "expectedSalary", label: "Expected Salary", icon: Globe },
   { key: "secondPhone", label: "Second Phone", icon: Smartphone },
   { key: "drivingLicense", label: "Driving License", icon: Car },
   { key: "securityClearance", label: "Security Clearance", icon: Shield },
@@ -107,73 +102,19 @@ const SOCIAL_PROFILES = [
   { key: "medium", label: "Medium", icon: Link },
   { key: "behance", label: "Behance", icon: Link },
   { key: "dribbble", label: "Dribbble", icon: Link },
-  { key: "stackoverflow", label: "Stack Overflow", icon: Link },
-  { key: "gitlab", label: "GitLab", icon: Link },
-  { key: "bitbucket", label: "Bitbucket", icon: Link },
-  { key: "discord", label: "Discord", icon: Link },
-  { key: "reddit", label: "Reddit", icon: Link },
-  { key: "bluesky", label: "Bluesky", icon: Link },
-  { key: "threads", label: "Threads", icon: Link },
-  { key: "mastodon", label: "Mastodon", icon: Link },
+  { key: "stackoverflow", label: "Stack Overflow", icon: Code2 },
+  { key: "gitlab", label: "GitLab", icon: Code2 },
+  { key: "bitbucket", label: "Bitbucket", icon: Code2 },
+  { key: "discord", label: "Link", icon: Link },
+  { key: "reddit", label: "Link", icon: Link },
+  { key: "bluesky", label: "Link", icon: Link },
+  { key: "threads", label: "Link", icon: Link },
+  { key: "mastodon", label: "Link", icon: Link },
 ];
-
-interface DetailOption {
-  key: string;
-  label: string;
-  icon?: any;
-  inputType?: string;
-  placeholder?: string;
-}
-
-function DetailsButton({
-  option,
-  isActive,
-  onClick,
-}: {
-  option: DetailOption;
-  isActive: boolean;
-  onClick: () => void;
-}) {
-  const IconComponent = option.icon || Plus;
-  return (
-    <button
-      onClick={onClick}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium whitespace-nowrap transition-all duration-200 ${
-        isActive
-          ? "bg-foreground text-background"
-          : "bg-secondary hover:bg-secondary/80 text-secondary-foreground"
-      }`}
-    >
-      {isActive ? <X size={14} /> : <Plus size={14} />}
-      <span>{option.label}</span>
-    </button>
-  );
-}
-
-function getInputType(key: string): string {
-  const typeMap: Record<string, string> = {
-    dateOfBirth: "date",
-    email: "email",
-    phone: "tel",
-    secondPhone: "tel",
-    expectedSalary: "number",
-  };
-  return typeMap[key] || "text";
-}
-
-function getPlaceholder(label: string, key: string): string {
-  const placeholders: Record<string, string> = {
-    dateOfBirth: "YYYY-MM-DD",
-    expectedSalary: "50000",
-    secondPhone: "+1 (555) 000-0000",
-  };
-  return placeholders[key] || `Enter ${label.toLowerCase()}`;
-}
 
 export function HeaderSection({ sectionId }: Props) {
   const { section, updateItems } = useSection(sectionId);
   const item = (section?.items as HeaderItem) || {};
-  const [showMoreDetails, setShowMoreDetails] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   function update(field: keyof HeaderItem, value: string) {
@@ -181,282 +122,182 @@ export function HeaderSection({ sectionId }: Props) {
   }
 
   function toggleField(field: keyof HeaderItem) {
-    const currentValue = item[field as keyof HeaderItem];
-    if (currentValue !== undefined && currentValue !== "") {
+    const currentValue = item[field];
+    if (currentValue !== undefined) {
       removeField(field);
-    } else if (currentValue === undefined) {
-      // Mark field as active by setting a sentinel space value
-      update(field, " ");
     } else {
-      removeField(field);
+      update(field, "");
     }
   }
 
   function removeField(field: keyof HeaderItem) {
-    const { [field]: _, ...rest } = item as any;
-    updateItems(rest as HeaderItem);
+    const next = { ...item };
+    delete next[field];
+    updateItems(next);
   }
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate file type - browsers might not support HEIC base64 rendering easily
+    const validTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!validTypes.includes(file.type)) {
+      toast.error("Invalid format. Please use JPEG, PNG, or WEBP.");
+      if (photoInputRef.current) photoInputRef.current.value = "";
+      return;
+    }
+
     const reader = new FileReader();
-    reader.onload = () => {
-      update("photo", reader.result as string);
-    };
+    reader.onload = () => update("photo", reader.result as string);
     reader.readAsDataURL(file);
   };
 
-  const visiblePersonalDetails = PERSONAL_DETAILS.slice(0, 4);
-  const allPersonalDetails = PERSONAL_DETAILS;
-
-  const activePersonalDetails = allPersonalDetails.filter((d) => (item as any)[d.key] !== undefined);
-  const activeSocialProfiles = SOCIAL_PROFILES.filter((d) => (item as any)[d.key] !== undefined);
+  const activePersonalDetails = PERSONAL_DETAILS.filter(
+    (d) => item[d.key as keyof HeaderItem] !== undefined,
+  );
+  const activeSocialProfiles = SOCIAL_PROFILES.filter(
+    (d) => item[d.key as keyof HeaderItem] !== undefined,
+  );
 
   return (
-    <div className="space-y-3 md:space-y-6">
-      {/* Header with Name, Title, and Photo */}
-      <div className="flex flex-col gap-3 md:gap-6 md:flex-row md:items-start">
-        {/* Left side - Name and Title */}
-        <div className="flex-1 min-w-0 space-y-3 md:space-y-4">
-          <Field label="Full Name" icon={User}>
-            <Input
-              placeholder="e.g. John Doe"
-              className="h-8 md:h-9 text-xs focus-visible:ring-1 w-full"
-              value={item.fullName || ""}
-              onChange={(e) => update("fullName", e.target.value)}
-            />
-          </Field>
-          <Field label="Professional Title" icon={Briefcase}>
-            <Input
-              placeholder="Senior Product Designer"
-              className="h-8 md:h-9 text-xs focus-visible:ring-1 w-full"
-              value={item.jobTitle || ""}
-              onChange={(e) => update("jobTitle", e.target.value)}
-            />
-          </Field>
-        </div>
-
-        {/* Right side - Photo */}
-        <div className="w-24 md:w-32 space-y-2 flex-shrink-0">
-          <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-            Photo
-          </Label>
-          <input
-            ref={photoInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handlePhotoUpload}
-            className="hidden"
-          />
-          <button
-            onClick={() => photoInputRef.current?.click()}
-            className="w-full aspect-square rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center transition-colors cursor-pointer overflow-hidden flex-shrink-0"
-          >
-            {item.photo ? (
-              <img src={item.photo} alt="Profile" className="w-full h-full object-cover" />
-            ) : (
-              <ImageIcon size={20} className="text-muted-foreground md:w-8 md:h-8" />
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Contact Info Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-5">
-        <Field label="Email" icon={Mail} type="email">
-          <Input
-            placeholder="john@example.com"
-            className="h-8 md:h-9 text-xs focus-visible:ring-1 w-full"
-            type="email"
-            value={item.email || ""}
-            onChange={(e) => update("email", e.target.value)}
-          />
-        </Field>
-        <Field label="Phone" icon={Phone} type="tel">
-          <Input
-            placeholder="+1 (555) 000-0000"
-            className="h-8 md:h-9 text-xs focus-visible:ring-1 w-full"
-            type="tel"
-            value={item.phone || ""}
-            onChange={(e) => update("phone", e.target.value)}
-          />
-        </Field>
-        <Field label="Location" icon={MapPin}>
-          <Input
-            placeholder="New York, NY"
-            className="h-8 md:h-9 text-xs focus-visible:ring-1 w-full"
-            value={item.location || ""}
-            onChange={(e) => update("location", e.target.value)}
-          />
-        </Field>
-        <Field label="Website / Portfolio" icon={Globe} type="url">
-          <Input
-            placeholder="portfolio.com"
-            className="h-8 md:h-9 text-xs focus-visible:ring-1 w-full"
-            type="url"
-            value={item.website || ""}
-            onChange={(e) => update("website", e.target.value)}
-          />
-        </Field>
-        <Field label="LinkedIn" icon={Link} type="url">
-          <Input
-            placeholder="linkedin.com/in/username"
-            className="h-8 md:h-9 text-xs focus-visible:ring-1 w-full"
-            type="url"
-            value={item.linkedin || ""}
-            onChange={(e) => update("linkedin", e.target.value)}
-          />
-        </Field>
-        <Field label="GitHub" icon={Code2} type="url">
-          <Input
-            placeholder="github.com/username"
-            className="h-8 md:h-9 text-xs focus-visible:ring-1 w-full"
-            type="url"
-            value={item.github || ""}
-            onChange={(e) => update("github", e.target.value)}
-          />
-        </Field>
-      </div>
-
-      {/* Add details section */}
-      <div className="pt-4 md:pt-6 border-t space-y-3 md:space-y-4">
-        <h3 className="text-sm font-semibold">Add details</h3>
-
-        {/* Initial detail buttons */}
-        <div className="flex flex-wrap gap-2 md:gap-2">
-          {visiblePersonalDetails.map((detail) => {
-            const isActive = (item as any)[detail.key] !== undefined;
-            return (
-              <DetailsButton
-                key={detail.key}
-                option={detail}
-                isActive={isActive}
-                onClick={() => toggleField(detail.key as keyof HeaderItem)}
+    <div className="space-y-10">
+      {/* Basics */}
+      <ControlGroup title="Profile Image & Identity">
+        <div className="flex gap-8 items-start">
+          <div className="flex-1 space-y-5">
+            <Field label="Full Name" icon={User}>
+              <Input
+                placeholder="John Doe"
+                className="h-10 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20 w-full"
+                value={item.fullName || ""}
+                onChange={(e) => update("fullName", e.target.value)}
               />
-            );
-          })}
-
-          {!showMoreDetails && (
+            </Field>
+            <Field label="Job Title" icon={Briefcase}>
+              <Input
+                placeholder="Senior Product Designer"
+                className="h-10 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20 w-full"
+                value={item.jobTitle || ""}
+                onChange={(e) => update("jobTitle", e.target.value)}
+              />
+            </Field>
+          </div>
+          <div className="shrink-0 space-y-3 pt-1 text-center">
+            <FieldLabel className="mb-0">Photo</FieldLabel>
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept=".jpg,.jpeg,.png,.webp"
+              onChange={handlePhotoUpload}
+              className="hidden"
+            />
             <button
-              onClick={() => setShowMoreDetails(true)}
-              className="px-3 py-1.5 rounded text-xs font-medium bg-secondary hover:bg-secondary/80 text-secondary-foreground transition-colors"
+              onClick={() => photoInputRef.current?.click()}
+              className="w-28 h-28 rounded-3xl bg-muted/50 border-2 border-dashed border-border hover:border-foreground/20 hover:bg-muted transition-all flex items-center justify-center overflow-hidden group shadow-sm"
             >
-              Show More
+              {item.photo ? (
+                <img
+                  src={item.photo}
+                  alt={item.fullName || "Profile"}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <ImageIcon
+                  size={28}
+                  className="text-muted-foreground/30 group-hover:text-muted-foreground/50 transition-colors"
+                />
+              )}
             </button>
-          )}
+          </div>
+        </div>
+      </ControlGroup>
+
+      {/* Contact */}
+      <ControlGroup title="Contact Information">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+          <Field label="Email" icon={Mail}>
+            <Input
+              placeholder="john@example.com"
+              className="h-10 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20 w-full"
+              value={item.email || ""}
+              onChange={(e) => update("email", e.target.value)}
+            />
+          </Field>
+          <Field label="Phone" icon={Phone}>
+            <Input
+              placeholder="+1 555 000 0000"
+              className="h-10 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20 w-full"
+              value={item.phone || ""}
+              onChange={(e) => update("phone", e.target.value)}
+            />
+          </Field>
+          <Field label="Location" icon={MapPin}>
+            <Input
+              placeholder="New York, NY"
+              className="h-10 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20 w-full"
+              value={item.location || ""}
+              onChange={(e) => update("location", e.target.value)}
+            />
+          </Field>
+          <Field label="Website" icon={Globe}>
+            <Input
+              placeholder="portfolio.com"
+              className="h-10 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20 w-full"
+              value={item.website || ""}
+              onChange={(e) => update("website", e.target.value)}
+            />
+          </Field>
+        </div>
+      </ControlGroup>
+
+      {/* Socials & More */}
+      <ControlGroup title="Social Profiles & Additional Details">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+          {/* Active Custom Fields */}
+          {[...activePersonalDetails, ...activeSocialProfiles].map((f) => (
+            <Field
+              key={f.key}
+              label={f.label}
+              icon={f.icon || Link}
+              onRemove={() => removeField(f.key as keyof HeaderItem)}
+            >
+              <Input
+                className="h-10 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20 w-full"
+                placeholder={`Enter ${f.label.toLowerCase()}`}
+                value={item[f.key as keyof HeaderItem] || ""}
+                onChange={(e) =>
+                  update(f.key as keyof HeaderItem, e.target.value)
+                }
+              />
+            </Field>
+          ))}
         </div>
 
-        {/* Expanded details */}
-        {showMoreDetails && (
-          <div className="space-y-3 md:space-y-4 py-3 md:py-4 animate-in fade-in duration-300 border-t pt-3 md:pt-4">
-            {/* Personal details section */}
-            <div className="space-y-2 md:space-y-3">
-              <p className="text-xs font-medium text-muted-foreground">Personal details</p>
-              <div className="flex flex-wrap gap-2">
-                {allPersonalDetails.map((detail) => {
-                  const isActive = (item as any)[detail.key] !== undefined;
-                  return (
-                    <DetailsButton
-                      key={detail.key}
-                      option={detail}
-                      isActive={isActive}
-                      onClick={() => toggleField(detail.key as keyof HeaderItem)}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Social profiles section */}
-            <div className="space-y-2 md:space-y-3">
-              <p className="text-xs font-medium text-muted-foreground">Links / Social profiles</p>
-              <div className="flex flex-wrap gap-2">
-                {SOCIAL_PROFILES.map((profile) => {
-                  const isActive = (item as any)[profile.key] !== undefined;
-                  return (
-                    <DetailsButton
-                      key={profile.key}
-                      option={profile}
-                      isActive={isActive}
-                      onClick={() => toggleField(profile.key as keyof HeaderItem)}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowMoreDetails(false)}
-              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors mt-2"
-            >
-              Show Less
-            </button>
+        {/* Add more buttons */}
+        <div className="pt-8 border-t border-border/30 mt-6">
+          <FieldLabel className="mb-4 text-muted-foreground/50 uppercase tracking-widest text-[9px]">
+            Add Additional Fields
+          </FieldLabel>
+          <div className="flex flex-wrap gap-2">
+            {[...PERSONAL_DETAILS, ...SOCIAL_PROFILES].map((f) => {
+              const isActive =
+                item[f.key as keyof HeaderItem] !== undefined;
+              if (isActive) return null;
+              return (
+                <button
+                  key={f.key}
+                  onClick={() => toggleField(f.key as keyof HeaderItem)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted/40 border border-border/50 text-[10px] font-bold uppercase tracking-wider hover:bg-muted hover:border-border transition-all text-muted-foreground/70 hover:text-foreground"
+                >
+                  <Plus size={11} />
+                  {f.label}
+                </button>
+              );
+            })}
           </div>
-        )}
-
-        {/* Active fields grid */}
-        {(activePersonalDetails.length > 0 || activeSocialProfiles.length > 0) && (
-          <div className="pt-4 md:pt-6 border-t space-y-4 md:space-y-6">
-            {/* Personal details fields */}
-            {activePersonalDetails.length > 0 && (
-              <div className="space-y-3 md:space-y-4">
-                <p className="text-xs font-medium text-muted-foreground uppercase">Personal details</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-5">
-                  {activePersonalDetails.map((detail) => {
-                    const inputType = getInputType(detail.key);
-                    const placeholder = getPlaceholder(detail.label, detail.key);
-                    return (
-                      <Field
-                        key={detail.key}
-                        label={detail.label}
-                        icon={detail.icon || User}
-                        onRemove={() => removeField(detail.key as keyof HeaderItem)}
-                        type={inputType}
-                      >
-                        <Input
-                          type={inputType}
-                          placeholder={placeholder}
-                          className="h-8 md:h-9 text-xs focus-visible:ring-1 w-full"
-                          value={item[detail.key as keyof HeaderItem] || ""}
-                          onChange={(e) => update(detail.key as keyof HeaderItem, e.target.value)}
-                        />
-                      </Field>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Social profiles fields */}
-            {activeSocialProfiles.length > 0 && (
-              <div className="space-y-3 md:space-y-4">
-                <p className="text-xs font-medium text-muted-foreground uppercase">Links / Social profiles</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-5">
-                  {activeSocialProfiles.map((profile) => (
-                    <Field
-                      key={profile.key}
-                      label={profile.label}
-                      icon={profile.icon || Link}
-                      onRemove={() => removeField(profile.key as keyof HeaderItem)}
-                      type="url"
-                    >
-                      <Input
-                        type="url"
-                        placeholder={`${profile.label} URL or username`}
-                        className="h-8 md:h-9 text-xs focus-visible:ring-1 w-full"
-                        value={item[profile.key as keyof HeaderItem] || ""}
-                        onChange={(e) => update(profile.key as keyof HeaderItem, e.target.value)}
-                      />
-                    </Field>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+        </div>
+      </ControlGroup>
     </div>
   );
 }

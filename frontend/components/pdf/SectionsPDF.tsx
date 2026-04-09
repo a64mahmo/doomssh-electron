@@ -8,6 +8,8 @@ import type {
 import { parseBullets } from '@/lib/pdf/pdfStyles'
 import { formatDateRange } from '@/lib/utils/dates'
 import type { TemplateCtx } from '@/lib/pdf/templateCtx'
+import { BsIconPDF } from '@/lib/icons/BsIconPDF'
+import { DEFAULT_CONTACT_ICONS } from '@/lib/icons/bootstrapIcons'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -162,90 +164,116 @@ export interface HeaderData {
   weight?: string
 }
 
-export function ContactLinePDF({ h, ctx, display = 'inline', align = 'left' }: {
+export function ContactLinePDF({ h, ctx, display = 'inline', align = 'left', columns }: {
   h: HeaderData
   ctx: TemplateCtx
   display?: 'inline' | 'block'
   align?: 'left' | 'center' | 'right'
+  columns?: number
 }) {
   const { base, colors, s, pt, lh } = ctx
 
   const parts = [
     // Contact
-    { val: h.email,         label: 'E' },
-    { val: h.phone,         label: 'P' },
-    { val: h.secondPhone,   label: 'P2' },
-    { val: h.location,      label: 'L' },
+    { val: h.email,         label: 'E',   key: 'email' },
+    { val: h.phone,         label: 'P',   key: 'phone' },
+    { val: h.secondPhone,   label: 'P2',  key: 'secondPhone' },
+    { val: h.location,      label: 'L',   key: 'location' },
     // Links
-    { val: h.website,       label: 'W' },
-    { val: h.linkedin,      label: 'in' },
-    { val: h.github,        label: 'gh' },
-    { val: h.gitlab,        label: 'gl' },
-    { val: h.bitbucket,     label: 'bb' },
-    { val: h.stackoverflow, label: 'SO' },
+    { val: h.website,       label: 'W',   key: 'website' },
+    { val: h.linkedin,      label: 'in',  key: 'linkedin' },
+    { val: h.github,        label: 'gh',  key: 'github' },
+    { val: h.gitlab,        label: 'gl',  key: 'gitlab' },
+    { val: h.bitbucket,     label: 'bb',  key: 'bitbucket' },
+    { val: h.stackoverflow, label: 'SO',  key: 'stackoverflow' },
     // Social
-    { val: h.twitter,       label: 'X' },
-    { val: h.bluesky,       label: 'BS' },
-    { val: h.threads,       label: 'TH' },
-    { val: h.mastodon,      label: 'MT' },
-    { val: h.instagram,     label: 'IG' },
-    { val: h.facebook,      label: 'FB' },
-    { val: h.youtube,       label: 'YT' },
-    { val: h.tiktok,        label: 'TT' },
-    { val: h.pinterest,     label: 'PN' },
-    { val: h.reddit,        label: 'RD' },
-    { val: h.discord,       label: 'DC' },
-    { val: h.medium,        label: 'MD' },
-    { val: h.behance,       label: 'Bh' },
-    { val: h.dribbble,      label: 'Dr' },
+    { val: h.twitter,       label: 'X',   key: 'twitter' },
+    { val: h.bluesky,       label: 'BS',  key: 'bluesky' },
+    { val: h.threads,       label: 'TH',  key: 'threads' },
+    { val: h.mastodon,      label: 'MT',  key: 'mastodon' },
+    { val: h.instagram,     label: 'IG',  key: 'instagram' },
+    { val: h.facebook,      label: 'FB',  key: 'facebook' },
+    { val: h.youtube,       label: 'YT',  key: 'youtube' },
+    { val: h.tiktok,        label: 'TT',  key: 'tiktok' },
+    { val: h.pinterest,     label: 'PN',  key: 'pinterest' },
+    { val: h.reddit,        label: 'RD',  key: 'reddit' },
+    { val: h.discord,       label: 'DC',  key: 'discord' },
+    { val: h.medium,        label: 'MD',  key: 'medium' },
+    { val: h.behance,       label: 'Bh',  key: 'behance' },
+    { val: h.dribbble,      label: 'Dr',  key: 'dribbble' },
     // Personal details
-    { val: h.nationality,      label: 'Nat' },
-    { val: h.dateOfBirth,      label: 'DOB' },
-    { val: h.genderPronoun,    label: 'G' },
-    { val: h.maritalStatus,    label: 'MS' },
-    { val: h.visa,             label: 'Visa' },
-    { val: h.passportOrId,     label: 'ID' },
-    { val: h.drivingLicense,   label: 'DL' },
-    { val: h.availability,     label: 'Avail' },
-    { val: h.workMode,         label: 'WM' },
-    { val: h.relocation,       label: 'Rel' },
-    { val: h.expectedSalary,   label: '$' },
-    { val: h.securityClearance, label: 'SC' },
-    { val: h.militaryService,  label: 'Mil' },
-    { val: h.disability,       label: 'Dis' },
+    { val: h.nationality,      label: 'Nat',   key: 'nationality' },
+    { val: h.dateOfBirth,      label: 'DOB',   key: 'dateOfBirth' },
+    { val: h.genderPronoun,    label: 'G',     key: 'genderPronoun' },
+    { val: h.maritalStatus,    label: 'MS',    key: 'maritalStatus' },
+    { val: h.visa,             label: 'Visa',  key: 'visa' },
+    { val: h.passportOrId,     label: 'ID',    key: 'passportOrId' },
+    { val: h.drivingLicense,   label: 'DL',    key: 'drivingLicense' },
+    { val: h.availability,     label: 'Avail', key: 'availability' },
+    { val: h.workMode,         label: 'WM',    key: 'workMode' },
+    { val: h.relocation,       label: 'Rel',   key: 'relocation' },
+    { val: h.expectedSalary,   label: '$',     key: 'expectedSalary' },
+    { val: h.securityClearance, label: 'SC',    key: 'securityClearance' },
+    { val: h.militaryService,  label: 'Mil',   key: 'militaryService' },
+    { val: h.disability,       label: 'Dis',   key: 'disability' },
   ].filter(p => p.val)
 
   if (!parts.length) return null
 
   const arrangement = s.headerArrangement
+  const showIcons = s.contactIcons || arrangement === 'icon'
   const sep = arrangement === 'pipe' ? ' | ' : arrangement === 'bullet' ? ' • ' : arrangement === 'bar' ? ' / ' : ' · '
+  const iconPx = base * 0.8
 
   const itemStyle = { fontSize: pt(base * 0.85), color: colors.subtitle, lineHeight: lh, textAlign: align as 'left' | 'center' | 'right' }
 
-  if (display === 'block') {
+  const renderItem = (p: typeof parts[0], ci: number, flexStyle?: Record<string, unknown>) => {
+    const iconName = DEFAULT_CONTACT_ICONS[p.key]
     return (
-      <View style={{ gap: 2 }}>
-        {parts.map((p, i) => (
-          <Text key={i} style={itemStyle}>
-            {arrangement === 'icon' && <Text style={{ fontWeight: 'bold', color: colors.accent }}>{p.label}: </Text>}
-            {p.val}
-          </Text>
+      <View key={ci} style={{ flexDirection: 'row', alignItems: 'center', gap: 3, ...flexStyle }}>
+        {showIcons && iconName && <BsIconPDF name={iconName} size={iconPx} color={colors.accent} />}
+        <Text style={itemStyle}>{p.val}</Text>
+      </View>
+    )
+  }
+
+  // Column layout
+  if (columns && columns > 1) {
+    const rows: typeof parts[] = []
+    for (let i = 0; i < parts.length; i += columns) {
+      rows.push(parts.slice(i, i + columns))
+    }
+    return (
+      <View style={{ gap: 3 }}>
+        {rows.map((row, ri) => (
+          <View key={ri} style={{ flexDirection: 'row', gap: 12 }}>
+            {row.map((p, ci) => renderItem(p, ci, { flex: 1 }))}
+          </View>
         ))}
       </View>
     )
   }
 
-  // inline: all items in a wrapping row, centered via Text alignment
-  const allText = parts.map((p, i) => {
-    const prefix = i > 0 ? sep : ''
-    const labelPart = arrangement === 'icon' ? `${p.label}: ` : ''
-    return `${prefix}${labelPart}${p.val}`
-  }).join('')
+  if (display === 'block') {
+    return (
+      <View style={{ gap: 3 }}>
+        {parts.map((p, i) => renderItem(p, i))}
+      </View>
+    )
+  }
 
+  // Inline: wrapping row with separators
   return (
-    <Text style={{ ...itemStyle, textAlign: align as 'left' | 'center' | 'right' }}>
-      {allText}
-    </Text>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start', gap: 2, alignItems: 'center' }}>
+      {parts.map((p, i) => (
+        <React.Fragment key={i}>
+          {renderItem(p, i)}
+          {i < parts.length - 1 && arrangement !== 'icon' && (
+            <Text style={{ ...itemStyle, color: colors.subtitle + '80' }}>{sep}</Text>
+          )}
+        </React.Fragment>
+      ))}
+    </View>
   )
 }
 
@@ -280,7 +308,7 @@ export function SectionRendererPDF({ section, ctx, renderHeading, isSidebar = fa
 
 // ─── Section renderers ────────────────────────────────────────────────────────
 
-function SummarySectionPDF({ section, ctx, renderHeading, isSidebar }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn; isSidebar?: boolean }) {
+function SummarySectionPDF({ section, ctx, renderHeading }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn; isSidebar?: boolean }) {
   const text = (section.items as { text: string })?.text || ''
   if (!text) return null
   return (

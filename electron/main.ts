@@ -13,39 +13,66 @@ let mainWindow: BrowserWindow | null = null
 let nextProc: ChildProcess | null = null
 
 // ── Resolve paths ─────────────────────────────────────────────────────────────
-function rootDir(): string {
-  return isDev ? path.join(__dirname, '..') : path.join(process.resourcesPath, 'app')
+function projectRoot(): string {
+  // In dev, __dirname is projetRoot/electron/dist
+  // In prod, __dirname is proyectRoot/electron/dist (if using electron-builder default structure)
+  return isDev ? path.join(__dirname, '..', '..') : path.join(process.resourcesPath, 'app')
 }
 
 // ── Spawn Next.js ─────────────────────────────────────────────────────────────
 function startNextJs(): Promise<void> {
   return new Promise((resolve) => {
-    const frontendRoot = path.join(rootDir(), 'frontend')
-    const cmd = 'node'
+    const root = projectRoot()
+    const frontendRoot = path.join(root, 'frontend')
+    const cmd = process.argv[0] // Use the same node/electron binary that started this process
     const args = [
-      path.join(frontendRoot, 'node_modules', '.bin', 'next'),
+      path.join(frontendRoot, 'node_modules', 'next', 'dist', 'bin', 'next'),
       isDev ? 'dev' : 'start',
       '--port', String(NEXT_PORT),
+      '--hostname', '127.0.0.1',
     ]
+
+    console.log('[electron] project root:', root)
+    console.log('[electron] frontend root:', frontendRoot)
+    console.log('[electron] spawning:', cmd, args.join(' '))
 
     nextProc = spawn(cmd, args, {
       cwd: frontendRoot,
       env: { ...process.env, NODE_ENV: isDev ? 'development' : 'production' },
       stdio: ['ignore', 'pipe', 'pipe'],
-      shell: true,
     })
+
+    let resolved = false
+    const onReady = () => {
+      if (resolved) return
+      resolved = true
+      resolve()
+    }
 
     nextProc.stdout?.on('data', (data: Buffer) => {
       const msg = data.toString()
-      if (msg.includes('Ready') || msg.includes('started server')) resolve()
+      if (msg.includes('Ready') || msg.includes('started server') || msg.includes('127.0.0.1')) {
+        onReady()
+      }
       if (isDev) console.log('[next]', msg.trim())
     })
 
     nextProc.stderr?.on('data', (data: Buffer) => {
-      if (isDev) console.error('[next]', data.toString().trim())
+      if (isDev) console.error('[next-err]', data.toString().trim())
     })
 
-    setTimeout(resolve, 8000)
+    nextProc.on('error', (err) => {
+      console.error('[electron] Next.js process error:', err)
+      if (!resolved) resolve() // Fallback to let createWindow try anyway
+    })
+
+    nextProc.on('exit', (code) => {
+      if (code !== 0) {
+        console.error(`[electron] Next.js process exited with code ${code}`)
+      }
+    })
+
+    setTimeout(onReady, 10000)
   })
 }
 

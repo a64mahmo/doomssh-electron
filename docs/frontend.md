@@ -27,18 +27,21 @@ The `resumeStore` is the heart of the frontend. It maintains the `Resume` object
 ## Component Architecture
 
 -   **Builder Page (`/app/builder/[id]`):** The main workspace, split into:
-    -   `EditorPanel`: Left side. Contains input fields for each resume section.
+    -   `EditorPanel`: Left side. Contains input fields for each resume section. Features a simplified sidebar with square selection backgrounds and interactive **tooltips** powered by `@base-ui/react`.
     -   `PreviewPanel`: Right side. Provides a high-fidelity rendering of the resume.
-    -   `CustomizePanel`: Sidebar for adjusting fonts, colors, and layout settings.
+    -   `CustomizePanel`: Sidebar for adjusting fonts, colors, and layout settings. Also utilizes the standardized tooltip-enabled sidebar.
     -   `AIPanel`: Interactive assistant for generating and improving content.
 
-## Resume Templates
+## Form Validation & Robustness
 
-DoomSSH supports multiple templates, each defined in `frontend/components/templates`:
--   `ModernTemplate`: Clean, two-column layout.
--   `ClassicTemplate`: Traditional, single-column design.
--   `TokyoTemplate`: High-impact, modern aesthetic.
--   `MinimalTemplate`: Simple and elegant.
--   `CrispTemplate`: Sharp and professional.
+To ensure data integrity and a smooth user experience, DoomSSH implements strict validation patterns:
+-   **Image Uploads:** Profile photos are restricted to **JPEG, PNG, and WEBP** formats. The system manually validates the MIME type and provides immediate feedback via `sonner` toasts if unsupported formats (like HEIC) are selected, preventing Base64 rendering failures.
+-   **TypeScript Enforcement:** The application maintains zero `any` types in critical paths. All drag-and-drop interactions (`dnd-kit`) and complex form components (like the `MonthYearPicker`) are strictly typed to prevent runtime errors.
 
-Templates are implemented as React components that consume the `Resume` data and render it using either standard HTML (for web preview) or `@react-pdf/renderer` primitives (for PDF generation).
+## Resume Templates & The "Mirror Rule"
+
+DoomSSH supports multiple templates, each defined in `frontend/components/templates`. Following the project's **Mirror Rule**, all visual changes are synchronized between the DOM Reality (web preview) and the PDF Reality (PDF generation).
+
+### Visual Standards
+-   **Unified Headings:** Section headings (font size, margins, and spacing) are unified across both main and sidebar columns to ensure a balanced, professional layout.
+-   **Icon Rendering:** Section icons maintain their stroke (outline) definition across all modes. In "Filled" mode, the system uses a "reverse fill" or **etched** look, where the icon is solid-filled with the primary color but highlights its internal details using the background color.
