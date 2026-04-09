@@ -14,6 +14,11 @@ interface ElectronAPI {
     cancelled?: boolean
   }>
 
+  // Updates
+  onUpdateAvailable: (callback: (info: any) => void) => () => void
+  onUpdateDownloaded: (callback: (info: any) => void) => () => void
+  restartAndInstall: () => Promise<void>
+
   // AI streaming
   aiStream: (
     id: string,

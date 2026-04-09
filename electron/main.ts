@@ -3,6 +3,12 @@ import { spawn, type ChildProcess } from 'child_process'
 import path from 'path'
 import fs from 'fs'
 import Anthropic from '@anthropic-ai/sdk'
+import { autoUpdater } from 'electron-updater'
+
+// ── Auto Update Config ────────────────────────────────────────────────────────
+autoUpdater.logger = console
+autoUpdater.autoDownload = true
+autoUpdater.autoInstallOnAppQuit = true
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
 
@@ -153,6 +159,10 @@ async function createWindow(): Promise<void> {
 ipcMain.handle('set-api-key', (_event, key: string) => storeApiKey(key))
 ipcMain.handle('get-api-key', () => getStoredApiKey())
 
+ipcMain.handle('restart-and-install', () => {
+  autoUpdater.quitAndInstall()
+})
+
 ipcMain.handle('save-pdf', async (_event, { bytes, fileName }: { bytes: number[]; fileName: string }) => {
   try {
     const buffer = Buffer.from(bytes)
@@ -216,6 +226,11 @@ app.whenReady().then(async () => {
   console.log('[electron] ready, opening window')
   await createWindow()
 
+  // Check for updates
+  if (!isDev) {
+    autoUpdater.checkForUpdatesAndNotify()
+  }
+
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
@@ -227,4 +242,19 @@ app.on('window-all-closed', () => {
 
 app.on('will-quit', () => {
   nextProc?.kill()
+})
+
+// ── Auto Update Events ───────────────────────────────────────────────────────
+autoUpdater.on('update-available', (info) => {
+  console.log('[updater] update available:', info.version)
+  mainWindow?.webContents.send('app:update-available', info)
+})
+
+autoUpdater.on('update-downloaded', (info) => {
+  console.log('[updater] update downloaded:', info.version)
+  mainWindow?.webContents.send('app:update-downloaded', info)
+})
+
+autoUpdater.on('error', (err) => {
+  console.error('[updater] error:', err)
 })

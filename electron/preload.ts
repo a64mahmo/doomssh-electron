@@ -9,6 +9,19 @@ contextBridge.exposeInMainWorld('electron', {
   savePdf: (args: { bytes: number[]; fileName: string }): Promise<{ success: boolean; path?: string; error?: string; cancelled?: boolean }> =>
     ipcRenderer.invoke('save-pdf', args),
 
+  // ── Updates ────────────────────────────────────────────────────────────────
+  onUpdateAvailable: (callback: (info: any) => void) => {
+    const handler = (_: any, info: any) => callback(info)
+    ipcRenderer.on('app:update-available', handler)
+    return () => ipcRenderer.off('app:update-available', handler)
+  },
+  onUpdateDownloaded: (callback: (info: any) => void) => {
+    const handler = (_: any, info: any) => callback(info)
+    ipcRenderer.on('app:update-downloaded', handler)
+    return () => ipcRenderer.off('app:update-downloaded', handler)
+  },
+  restartAndInstall: () => ipcRenderer.invoke('restart-and-install'),
+
   // ── AI streaming ───────────────────────────────────────────────────────────
   // Returns a cleanup function that removes the listeners for this request.
   aiStream: (
