@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, safeStorage, shell, dialog } from 'electron'
+import { app, BrowserWindow, ipcMain, safeStorage, shell, dialog, protocol, net } from 'electron'
 import { spawn, type ChildProcess } from 'child_process'
 import path from 'path'
 import fs from 'fs'
@@ -11,6 +11,11 @@ autoUpdater.autoDownload = true
 autoUpdater.autoInstallOnAppQuit = true
 
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
+
+// ── Privileged Schemes ────────────────────────────────────────────────────────
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true } }
+])
 
 // Ports
 const NEXT_PORT = 3000
@@ -27,6 +32,8 @@ function projectRoot(): string {
 
 // ── Spawn Next.js ─────────────────────────────────────────────────────────────
 function startNextJs(): Promise<void> {
+  if (!isDev) return Promise.resolve() // In production, we load static files directly
+
   return new Promise((resolve) => {
     const root = projectRoot()
     const frontendRoot = path.join(root, 'frontend')
@@ -152,7 +159,37 @@ async function createWindow(): Promise<void> {
     return { action: 'deny' }
   })
 
-  await mainWindow.loadURL(`http://127.0.0.1:${NEXT_PORT}`)
+  if (isDev) {
+    await mainWindow.loadURL(`http://127.0.0.1:${NEXT_PORT}`)
+  } else {
+    await mainWindow.loadURL('app://-')
+  }
+}
+
+// ── Custom Protocol ──────────────────────────────────────────────────────────
+function registerAppProtocol() {
+  protocol.handle('app', async (request) => {
+    try {
+      const url = request.url.replace('app://-', '')
+      let relativePath = url || 'index.html'
+      if (relativePath.endsWith('/')) relativePath += 'index.html'
+      
+      // Remove query params or hashes
+      relativePath = relativePath.split(/[?#]/)[0]
+
+      const fullPath = path.join(projectRoot(), 'frontend', 'out', relativePath)
+      
+      // Fallback to index.html for SPA routing (e.g. /builder/123 -> /index.html)
+      if (!fs.existsSync(fullPath)) {
+        return net.fetch(`file://${path.join(projectRoot(), 'frontend', 'out', 'index.html')}`)
+      }
+
+      return net.fetch(`file://${fullPath}`)
+    } catch (err) {
+      console.error('Protocol error:', err)
+      return new Response('Not Found', { status: 404 })
+    }
+  })
 }
 
 // ── IPC: API key management ───────────────────────────────────────────────────
@@ -219,6 +256,8 @@ ipcMain.on('ai:start', async (event, { id, messages, maxTokens = 1024 }: {
 
 // ── App lifecycle ─────────────────────────────────────────────────────────────
 app.whenReady().then(async () => {
+  if (!isDev) registerAppProtocol()
+
   console.log('[electron] starting Next.js…')
   // Ensure JWT secret exists (for future auth use)
   getOrCreateSecret()

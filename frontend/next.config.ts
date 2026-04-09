@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 import path from "path";
 
 const nextConfig: NextConfig = {
+  output: 'export',
+  trailingSlash: true,
   experimental: {
     optimizePackageImports: [
       "@mantine/core",
@@ -14,11 +16,6 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
-  allowedDevOrigins: [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "127.0.0.1",
-  ],
 };
 
 export default nextConfig;

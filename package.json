@@ -29,12 +29,8 @@
       "output": "dist-electron"
     },
     "files": [
-      "frontend/.next/**/*",
-      "frontend/public/**/*",
-      "frontend/package.json",
-      "frontend/next.config.ts",
+      "frontend/out/**/*",
       "electron/dist/**/*",
-      "node_modules/**/*",
       "package.json"
     ],
     "mac": {
