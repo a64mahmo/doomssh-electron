@@ -269,7 +269,7 @@ export function CustomizePanel() {
     <div className="flex h-full overflow-hidden bg-background">
 
       {/* ── Icon Nav ──────────────────────────────────────────────── */}
-      <nav className="w-12 border-r border-border flex flex-col items-center py-3 gap-1 shrink-0 bg-muted/5">
+      <nav className="w-12 border-r border-border flex flex-col items-center py-3 gap-1 shrink-0 bg-sidebar">
         {PANEL_SECTIONS.map((section) => {
           const active = activeSection === section.id
           return (

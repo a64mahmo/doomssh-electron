@@ -136,18 +136,14 @@ export default function BuilderDashboard() {
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-border flex flex-col shrink-0">
+      <aside className="w-64 border-r border-border flex flex-col shrink-0 bg-sidebar">
+        {/* Sidebar Header - Dedicated to macOS spacing */}
         <div 
           className={cn(
-            "h-14 flex items-center gap-2.5 border-b border-border px-6",
+            "h-11 border-b border-border drag",
             isMac && "pl-[72px]"
           )}
-        >
-          <div className="w-7 h-7 rounded-lg bg-foreground flex items-center justify-center">
-            <FileText size={14} className="text-background" />
-          </div>
-          <span className="font-semibold text-sm tracking-tight">DoomSSH</span>
-        </div>
+        />
 
         <nav className="flex-1 p-4 space-y-1">
           <NavItem 
@@ -170,17 +166,15 @@ export default function BuilderDashboard() {
             label="Interview Prep" 
             comingSoon 
           />
-          <div className="pt-4 pb-2">
-            <div className="h-px bg-border mx-2" />
-          </div>
+        </nav>
+
+        <div className="p-4 border-t border-border space-y-4">
           <NavItem 
             icon={<SettingsIcon size={18} />} 
             label="Settings" 
             onClick={() => setSettingsOpen(true)}
           />
-        </nav>
 
-        <div className="p-4 border-t border-border space-y-4">
           {/* Theme Toggle */}
           <div className="flex bg-accent/50 rounded-lg p-1">
             <button
@@ -217,15 +211,25 @@ export default function BuilderDashboard() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="border-b border-border px-8 h-14 flex items-center justify-end shrink-0">
-          <Button
-            onClick={handleCreate}
-            size="sm"
-            className="bg-foreground text-background hover:bg-foreground/90 gap-1.5 font-medium"
-          >
-            <Plus size={14} />
-            New Resume
-          </Button>
+        <header className="border-b border-border px-6 h-11 flex items-center justify-between shrink-0 bg-background drag">
+          {/* Logo + Brand */}
+          <div className="flex items-center gap-2.5 no-drag">
+            <div className="w-5 h-5 rounded bg-foreground flex items-center justify-center shrink-0">
+              <FileText size={10} className="text-background" />
+            </div>
+            <span className="font-bold text-sm tracking-tight">DoomSSH</span>
+          </div>
+
+          <div className="no-drag">
+            <Button
+              onClick={handleCreate}
+              size="sm"
+              className="h-7.5 bg-foreground text-background hover:bg-foreground/90 gap-1.5 font-semibold text-xs px-4 rounded-lg"
+            >
+              <Plus size={14} />
+              New Resume
+            </Button>
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto px-8 py-12">

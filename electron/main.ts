@@ -126,6 +126,10 @@ async function createWindow(): Promise<void> {
     minWidth: 1024,
     minHeight: 700,
     titleBarStyle: 'hiddenInset',
+    vibrancy: 'under-window', // macOS
+    visualEffectState: 'active', // macOS
+    backgroundMaterial: 'acrylic', // Windows 11
+    transparent: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -133,7 +137,6 @@ async function createWindow(): Promise<void> {
       webSecurity: !isDev,
     },
     show: false,
-    backgroundColor: '#0d0f1a',
   })
 
   mainWindow.once('ready-to-show', () => mainWindow?.show())

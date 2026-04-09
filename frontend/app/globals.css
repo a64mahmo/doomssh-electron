@@ -130,9 +130,51 @@ html, body {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground transition-colors duration-300;
   }
   html {
     @apply font-sans;
   }
+}
+
+/* ── Electron Vibrancy Support ────────────────────────────────────────────── */
+
+.electron {
+  --background: oklch(1 0 0 / 98%);
+  --sidebar: oklch(1 0 0 / 88%);
+}
+
+.electron.dark {
+  --background: oklch(0.145 0 0 / 75%);
+  --sidebar: oklch(0.205 0 0 / 60%);
+}
+
+.electron body {
+  background-color: transparent !important;
+}
+
+.electron .bg-background {
+  background-color: var(--background);
+}
+
+.electron .bg-sidebar {
+  background-color: var(--sidebar);
+}
+
+.drag {
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Ensure the preview area has a slightly different background to look like a workspace */
+.electron .preview-area {
+  background-color: oklch(1 0 0 / 80%);
+}
+
+.electron.dark .preview-area {
+  background-color: oklch(0.1 0 0 / 40%);
 }

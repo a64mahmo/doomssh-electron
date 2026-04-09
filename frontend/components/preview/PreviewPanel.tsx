@@ -68,7 +68,7 @@ function PreviewInner({ resume }: { resume: Resume }) {
   return (
     <TooltipProvider>
       <div className={cn(
-        'flex flex-col h-full bg-[#f4f4f5] dark:bg-[#09090b] relative overflow-hidden',
+        'flex flex-col h-full bg-[#f4f4f5] dark:bg-[#09090b] relative overflow-hidden preview-area',
         isFullscreen && 'fixed inset-0 z-50',
       )}>
 

@@ -91,67 +91,30 @@ export default function BuilderPage() {
   return (
     <div className="fixed inset-0 flex flex-col overflow-hidden bg-background overscroll-none" style={{ overscrollBehavior: 'none' }}>
 
-      {/* ── Top bar ─────────────────────────────────────────────────── */}
-      <header 
-        className={cn(
-          "h-11 flex items-center gap-3 px-3 border-b border-border shrink-0 bg-background",
-          isMac && "pl-[72px]"
-        )}
-      >
-
-        <button
-          onClick={() => router.push('/builder')}
-          className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-        >
-          <ArrowLeft size={14} />
-        </button>
-
-        <div className="w-px h-4 bg-border" />
-
-        {/* Logo + name */}
-        <div className="flex items-center gap-2">
-          <div className="w-5 h-5 rounded bg-foreground flex items-center justify-center shrink-0">
-            <FileText size={10} className="text-background" />
-          </div>
-          {editingName ? (
-            <Input
-              value={resume.name}
-              onChange={(e) => setResume({ ...resume, name: e.target.value })}
-              onBlur={() => { setEditingName(false); saveResume(resume) }}
-              onKeyDown={(e) => e.key === 'Enter' && setEditingName(false)}
-              autoFocus
-              className="h-6 w-40 text-xs px-1.5 border-0 border-b border-border rounded-none focus-visible:ring-0 bg-transparent"
-            />
-          ) : (
-            <button onClick={() => setEditingName(true)} className="flex items-center gap-1 group">
-              <span className="text-sm font-medium leading-none">{resume.name}</span>
-              <Pencil size={10} className="text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
-            </button>
-          )}
-          {isDirty && <span className="text-[10px] text-muted-foreground/50 ml-1">Saving…</span>}
-        </div>
-
-        <div className="ml-auto">
-          <Button
-            size="sm"
-            onClick={() => downloadResumePDF(resume)}
-            className="h-7 gap-1.5 text-xs font-medium"
-          >
-            <Download size={12} />
-            Download
-          </Button>
-        </div>
-      </header>
-
       {/* ── Main ────────────────────────────────────────────────────── */}
       <div className="flex flex-1 min-h-0">
 
-        {/* Left panel */}
+        {/* Left panel (Editor/Style) */}
         <div
-          className="shrink-0 flex flex-col bg-background overflow-hidden relative"
+          className="shrink-0 flex flex-col bg-sidebar overflow-hidden relative border-r border-border"
           style={{ width: sideW }}
         >
-          {/* Panel nav */}
+          {/* Sidebar Header - Handles Back and macOS spacing */}
+          <header 
+            className={cn(
+              "h-11 flex items-center px-3 border-b border-border shrink-0 drag",
+              isMac && "pl-[72px]"
+            )}
+          >
+            <button
+              onClick={() => router.push('/builder')}
+              className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors no-drag"
+            >
+              <ArrowLeft size={14} />
+            </button>
+          </header>
+
+          {/* Panel nav (Content/Style Tabs) */}
           <nav className="flex items-center gap-0 px-4 border-b border-border shrink-0 h-10">
             {(['content', 'style'] as Panel[]).map((p) => (
               <button
@@ -213,9 +176,49 @@ export default function BuilderPage() {
           </div>
         </div>
 
-        {/* Preview */}
-        <div className="flex-1 min-w-0 overflow-hidden">
-          <PreviewPanel resume={resume} />
+        {/* Right panel (Preview) */}
+        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          {/* Main Content Header */}
+          <header className="h-11 flex items-center justify-between px-6 border-b border-border shrink-0 bg-background drag">
+            {/* Resume Identity */}
+            <div className="flex items-center gap-3 no-drag">
+              <div className="w-5 h-5 rounded bg-foreground flex items-center justify-center shrink-0">
+                <FileText size={10} className="text-background" />
+              </div>
+              {editingName ? (
+                <Input
+                  value={resume.name}
+                  onChange={(e) => setResume({ ...resume, name: e.target.value })}
+                  onBlur={() => { setEditingName(false); saveResume(resume) }}
+                  onKeyDown={(e) => e.key === 'Enter' && setEditingName(false)}
+                  autoFocus
+                  className="h-6 w-48 text-xs px-1.5 border-0 border-b border-border rounded-none focus-visible:ring-0 bg-transparent"
+                />
+              ) : (
+                <button onClick={() => setEditingName(true)} className="flex items-center gap-1.5 group">
+                  <span className="text-sm font-semibold tracking-tight leading-none">{resume.name}</span>
+                  <Pencil size={10} className="text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
+                </button>
+              )}
+              {isDirty && <span className="text-[10px] text-muted-foreground/40 font-medium ml-1">Saving…</span>}
+            </div>
+
+            {/* Actions */}
+            <div className="no-drag">
+              <Button
+                size="sm"
+                onClick={() => downloadResumePDF(resume)}
+                className="h-7.5 gap-1.5 text-xs font-semibold px-4 rounded-lg"
+              >
+                <Download size={13} />
+                Download
+              </Button>
+            </div>
+          </header>
+
+          <div className="flex-1 overflow-hidden">
+            <PreviewPanel resume={resume} />
+          </div>
         </div>
       </div>
     </div>

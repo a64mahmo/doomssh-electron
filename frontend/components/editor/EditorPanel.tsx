@@ -87,7 +87,7 @@ export function EditorPanel() {
   return (
     <div className="flex h-full overflow-hidden bg-background">
       {/* ── Icon Nav ──────────────────────────────────────────────── */}
-      <nav className="w-12 border-r border-border flex flex-col items-center py-3 gap-1 shrink-0 bg-muted/5 overflow-y-auto no-scrollbar">
+      <nav className="w-12 border-r border-border flex flex-col items-center py-3 gap-1 shrink-0 bg-sidebar overflow-y-auto no-scrollbar">
         {/* Special 'List' nav to see all sections & reorder */}
         <Tooltip>
           <TooltipTrigger
