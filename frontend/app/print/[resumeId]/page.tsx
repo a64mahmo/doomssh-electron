@@ -4,6 +4,10 @@ import { getResume } from '@/lib/db/database'
 import { MasterTemplate } from '@/components/templates'
 import type { Resume } from '@/lib/store/types'
 
+export function generateStaticParams() {
+  return [{ resumeId: 'new' }]
+}
+
 export default function PrintPage({ params }: { params: Promise<{ resumeId: string }> }) {
   const { resumeId } = use(params)
   const [resume, setResume] = useState<Resume | null>(null)

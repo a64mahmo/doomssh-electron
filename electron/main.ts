@@ -172,15 +172,26 @@ function registerAppProtocol() {
     try {
       const url = request.url.replace('app://-', '')
       let relativePath = url || 'index.html'
+      if (relativePath.startsWith('/')) relativePath = relativePath.slice(1)
       if (relativePath.endsWith('/')) relativePath += 'index.html'
+      if (!relativePath) relativePath = 'index.html'
       
       // Remove query params or hashes
       relativePath = relativePath.split(/[?#]/)[0]
 
       const fullPath = path.join(projectRoot(), 'frontend', 'out', relativePath)
       
-      // Fallback to index.html for SPA routing (e.g. /builder/123 -> /index.html)
+      // Dynamic route fallbacks for Static Export
       if (!fs.existsSync(fullPath)) {
+        // If it's a builder route, fallback to the pre-rendered 'new' page
+        if (relativePath.startsWith('builder/')) {
+          return net.fetch(`file://${path.join(projectRoot(), 'frontend', 'out', 'builder', 'new', 'index.html')}`)
+        }
+        // If it's a print route, fallback to the pre-rendered 'new' page
+        if (relativePath.startsWith('print/')) {
+          return net.fetch(`file://${path.join(projectRoot(), 'frontend', 'out', 'print', 'new', 'index.html')}`)
+        }
+        // General fallback to root index.html
         return net.fetch(`file://${path.join(projectRoot(), 'frontend', 'out', 'index.html')}`)
       }
 

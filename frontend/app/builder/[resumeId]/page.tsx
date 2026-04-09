@@ -19,6 +19,10 @@ const MIN_W = 260
 const MAX_W = 560
 const DEFAULT_W = 360
 
+export function generateStaticParams() {
+  return [{ resumeId: 'new' }]
+}
+
 export default function BuilderPage() {
   const params = useParams()
   const router = useRouter()
