@@ -96,7 +96,7 @@ function SectionHeading({ title, type, ctx, isSidebar = false }: {
     textTransform: hCap ?? 'none',
     letterSpacing: 0.06 * (isSidebar ? hSize * 0.9 : hSize),
     textAlign: 'left',
-    lineHeight: 1,
+    lineHeight: 1.1,
     flex: 1,
   }
 

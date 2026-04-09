@@ -182,16 +182,19 @@ export function HeaderSection({ sectionId }: Props) {
 
   function toggleField(field: keyof HeaderItem) {
     const currentValue = item[field as keyof HeaderItem];
-    if (currentValue) {
+    if (currentValue !== undefined && currentValue !== "") {
       removeField(field);
+    } else if (currentValue === undefined) {
+      // Mark field as active by setting a sentinel space value
+      update(field, " ");
     } else {
-      update(field, "");
+      removeField(field);
     }
   }
 
   function removeField(field: keyof HeaderItem) {
-    const updated = { ...item, [field]: "" };
-    updateItems(updated);
+    const { [field]: _, ...rest } = item as any;
+    updateItems(rest as HeaderItem);
   }
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -208,8 +211,8 @@ export function HeaderSection({ sectionId }: Props) {
   const visiblePersonalDetails = PERSONAL_DETAILS.slice(0, 4);
   const allPersonalDetails = PERSONAL_DETAILS;
 
-  const activePersonalDetails = allPersonalDetails.filter((d) => item[d.key as keyof HeaderItem]);
-  const activeSocialProfiles = SOCIAL_PROFILES.filter((d) => item[d.key as keyof HeaderItem]);
+  const activePersonalDetails = allPersonalDetails.filter((d) => (item as any)[d.key] !== undefined);
+  const activeSocialProfiles = SOCIAL_PROFILES.filter((d) => (item as any)[d.key] !== undefined);
 
   return (
     <div className="space-y-3 md:space-y-6">
@@ -324,7 +327,7 @@ export function HeaderSection({ sectionId }: Props) {
         {/* Initial detail buttons */}
         <div className="flex flex-wrap gap-2 md:gap-2">
           {visiblePersonalDetails.map((detail) => {
-            const isActive = !!item[detail.key as keyof HeaderItem];
+            const isActive = (item as any)[detail.key] !== undefined;
             return (
               <DetailsButton
                 key={detail.key}
@@ -353,7 +356,7 @@ export function HeaderSection({ sectionId }: Props) {
               <p className="text-xs font-medium text-muted-foreground">Personal details</p>
               <div className="flex flex-wrap gap-2">
                 {allPersonalDetails.map((detail) => {
-                  const isActive = !!item[detail.key as keyof HeaderItem];
+                  const isActive = (item as any)[detail.key] !== undefined;
                   return (
                     <DetailsButton
                       key={detail.key}
@@ -371,7 +374,7 @@ export function HeaderSection({ sectionId }: Props) {
               <p className="text-xs font-medium text-muted-foreground">Links / Social profiles</p>
               <div className="flex flex-wrap gap-2">
                 {SOCIAL_PROFILES.map((profile) => {
-                  const isActive = !!item[profile.key as keyof HeaderItem];
+                  const isActive = (item as any)[profile.key] !== undefined;
                   return (
                     <DetailsButton
                       key={profile.key}

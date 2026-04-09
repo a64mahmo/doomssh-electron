@@ -60,37 +60,38 @@ function Entry({
   const titleWeight = s.titleBold !== false ? 'bold' : 'normal'
 
   return (
-    <View style={{ marginBottom: Number(ctx.gap.replace('pt', '')) }}>
-      {/* Title row */}
-      <View style={{ 
-        flexDirection: isSidebar ? 'column' : 'row', 
-        justifyContent: 'space-between', 
-        flexWrap: 'wrap',
-        alignItems: isSidebar ? 'flex-start' : 'baseline'
-      }}>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', flex: 1, gap: 6 }}>
-          <Text style={{ fontWeight: titleWeight, fontSize: pt(titleFontSize) }}>{title}</Text>
-          {subtitle && isSameLine && (
-            <Text style={subStyle}>{subtitle}</Text>
+    <View style={{ marginBottom: Number(ctx.gap.replace('pt', '')) }} wrap={false}>
+      {/* Title + date row */}
+      {isSidebar ? (
+        <View>
+          <Text style={{ fontWeight: titleWeight, fontSize: pt(titleFontSize), lineHeight: lh }}>
+            {title}
+          </Text>
+          {date && (
+            <Text style={{ fontSize: pt(base * 0.85), color: colors.date, fontStyle: 'italic', marginTop: 1, lineHeight: lh }}>
+              {date}
+            </Text>
           )}
         </View>
-        {date && (
-          <Text style={{ 
-            fontSize: pt(base * 0.85), 
-            color: colors.date, 
-            marginLeft: isSidebar ? 0 : 8, 
-            flexShrink: 0,
-            marginTop: isSidebar ? 1 : 0,
-            fontStyle: isSidebar ? 'italic' : 'normal'
-          }}>
-            {date}
+      ) : (
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <Text style={{ fontWeight: titleWeight, fontSize: pt(titleFontSize), lineHeight: lh, flex: 1, marginRight: 8 }}>
+            {title}
+            {subtitle && isSameLine && (
+              <Text style={subStyle}>{'  '}{subtitle}</Text>
+            )}
           </Text>
-        )}
-      </View>
+          {date && (
+            <Text style={{ fontSize: pt(base * 0.85), color: colors.date, lineHeight: lh, flexShrink: 0, marginTop: 1 }}>
+              {date}
+            </Text>
+          )}
+        </View>
+      )}
 
       {/* Subtitle second line */}
       {subtitle && !isSameLine && (
-        <Text style={{ ...subStyle, marginTop: 1 }}>{subtitle}</Text>
+        <Text style={{ ...subStyle, marginTop: 2, lineHeight: lh }}>{subtitle}</Text>
       )}
 
       {extraLine}
@@ -543,7 +544,7 @@ function ReferencesSectionPDF({ section, ctx, renderHeading, isSidebar }: { sect
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: '8pt 24pt' }}>
         {items.map(item => (
           <View key={item.id} style={{ minWidth: 140 }}>
-            <Text style={{ fontWeight: 'bold', fontSize: pt(base * 0.9) }}>{item.name}</Text>
+            <Text style={{ fontWeight: 'bold', fontSize: pt(base * 0.9), lineHeight: 1.4 }}>{item.name}</Text>
             {item.position && <Text style={{ fontSize: pt(base * 0.85), color: colors.subtitle, lineHeight: lh }}>{item.position}</Text>}
             {item.company  && <Text style={{ fontSize: pt(base * 0.85), color: colors.subtitle, lineHeight: lh }}>{item.company}</Text>}
             {item.email    && <Text style={{ fontSize: pt(base * 0.82), color: colors.accent,   lineHeight: lh }}>{item.email}</Text>}

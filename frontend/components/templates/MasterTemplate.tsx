@@ -101,6 +101,7 @@ export function MasterTemplate({ resume, pads, hideFooter, hideHeader, isMeasure
       color:         colors.heading,
       textTransform: hCap ?? 'uppercase',
       letterSpacing: '0.06em',
+      lineHeight:    1.1,
       marginTop:     isSidebar ? '14pt' : gap,
       marginBottom:  '10pt',
       display:       'flex',

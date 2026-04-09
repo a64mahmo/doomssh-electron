@@ -53,37 +53,39 @@ function Entry({
 
   return (
     <div style={{ marginBottom: ctx.gap }}>
-      <div style={{ 
-        display: 'flex', 
+      <div style={{
+        display: 'flex',
         flexDirection: isSidebar ? 'column' : 'row',
-        justifyContent: 'space-between', 
-        alignItems: isSidebar ? 'flex-start' : 'baseline', 
+        justifyContent: 'space-between',
+        alignItems: isSidebar ? 'flex-start' : 'flex-start',
         flexWrap: 'wrap',
         gap: isSidebar ? '2pt' : '0'
       }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6pt', flex: 1, flexWrap: 'wrap' }}>
-          <span style={{ fontWeight: 'bold', fontSize: pt(base) }}>{title}</span>
-          {subtitle && isSameLine && (
-            <span style={subStyle}>{subtitle}</span>
-          )}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 'bold', fontSize: pt(base), lineHeight: 1.4 }}>{title}
+            {subtitle && isSameLine && (
+              <span style={{ ...subStyle, marginLeft: '6pt' }}>{subtitle}</span>
+            )}
+          </div>
         </div>
         {date && (
-          <span style={{ 
-            fontSize: pt(base * 0.85), 
-            color: colors.date, 
-            marginLeft: isSidebar ? '0' : '8pt', 
-            whiteSpace: 'nowrap', 
+          <div style={{
+            fontSize: pt(base * 0.85),
+            color: colors.date,
+            marginLeft: isSidebar ? '0' : '8pt',
+            whiteSpace: 'nowrap',
             flexShrink: 0,
             fontStyle: isSidebar ? 'italic' : 'normal',
-            marginTop: isSidebar ? '1pt' : '0'
+            marginTop: isSidebar ? '1pt' : '2pt',
+            lineHeight: 1.4,
           }}>
             {date}
-          </span>
+          </div>
         )}
       </div>
-      
+
       {subtitle && !isSameLine && (
-        <div style={{ ...subStyle, marginTop: '1pt' }}>{subtitle}</div>
+        <div style={{ ...subStyle, marginTop: '2pt', lineHeight: 1.4 }}>{subtitle}</div>
       )}
       
       {extraLine}
@@ -524,7 +526,7 @@ function ReferencesSection({ section, ctx, renderHeading, isSidebar }: { section
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8pt 24pt' }}>
         {items.map(item => (
           <div key={item.id} style={{ minWidth: '140pt' }}>
-            <div style={{ fontWeight: 'bold', fontSize: pt(base * 0.9) }}>{item.name}</div>
+            <div style={{ fontWeight: 'bold', fontSize: pt(base * 0.9), lineHeight: 1.3 }}>{item.name}</div>
             {item.position && <div style={{ fontSize: pt(base * 0.85), color: colors.subtitle, lineHeight: lh }}>{item.position}</div>}
             {item.company  && <div style={{ fontSize: pt(base * 0.85), color: colors.subtitle, lineHeight: lh }}>{item.company}</div>}
             {item.email    && <div style={{ fontSize: pt(base * 0.82), color: colors.accent,   lineHeight: lh }}>{item.email}</div>}
