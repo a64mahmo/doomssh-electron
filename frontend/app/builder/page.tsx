@@ -77,10 +77,23 @@ export default function BuilderDashboard() {
   const { theme, setTheme } = useTheme()
   const [resumes, setResumes] = useState<Resume[]>([])
   const [loading, setLoading] = useState(true)
+  const [vaultReady, setVaultReady] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [apiKey, setApiKey] = useState('')
 
   const [isMac, setIsMac] = useState(false)
+
+  // ── Vault gate ──────────────────────────────────────────────────────────────
+  useEffect(() => {
+    window.electron!.vault.getPath().then(p => {
+      if (p) setVaultReady(true)
+    })
+  }, [])
+
+  async function handlePickVault() {
+    const p = await window.electron!.vault.setPath()
+    if (p) setVaultReady(true)
+  }
 
   useEffect(() => {
     let unsubAvailable: (() => void) | undefined
@@ -107,6 +120,8 @@ export default function BuilderDashboard() {
       })
     }
 
+    if (!vaultReady) return
+
     getAllResumes().then(async (existing) => {
       if (existing.length === 0) {
         const samples = createSampleResumes()
@@ -122,7 +137,7 @@ export default function BuilderDashboard() {
       unsubAvailable?.()
       unsubDownloaded?.()
     }
-  }, [])
+  }, [vaultReady])
 
   async function handleCreate() {
     const id = generateId()
@@ -147,6 +162,26 @@ export default function BuilderDashboard() {
       await window.electron.setApiKey(apiKey)
     }
     setSettingsOpen(false)
+  }
+
+  if (!vaultReady) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center gap-6 bg-background text-foreground">
+        <div className="w-10 h-10 rounded-xl bg-foreground flex items-center justify-center">
+          <FileText size={20} className="text-background" />
+        </div>
+        <div className="text-center space-y-1">
+          <h1 className="text-lg font-bold tracking-tight">Choose a Vault Folder</h1>
+          <p className="text-sm text-muted-foreground max-w-xs">
+            Your resumes will be saved as JSON files in a folder you choose — portable, private, and yours.
+          </p>
+        </div>
+        <Button onClick={handlePickVault} className="gap-2">
+          <Database size={14} />
+          Choose Folder
+        </Button>
+      </div>
+    )
   }
 
   if (loading) {

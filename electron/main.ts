@@ -225,6 +225,71 @@ function registerAppProtocol() {
   })
 }
 
+// ── Vault helpers ─────────────────────────────────────────────────────────────
+const VAULT_PATH_FILE = path.join(app.getPath('userData'), 'vault-path.txt')
+
+function readVaultDir(): string | null {
+  try {
+    const p = fs.readFileSync(VAULT_PATH_FILE, 'utf8').trim()
+    return p || null
+  } catch { return null }
+}
+
+function writeVaultDir(p: string): void {
+  fs.writeFileSync(VAULT_PATH_FILE, p, 'utf8')
+}
+
+function vaultFile(dir: string, id: string): string {
+  return path.join(dir, `${id}.json`)
+}
+
+// ── IPC: Vault ────────────────────────────────────────────────────────────────
+ipcMain.handle('vault:get', () => readVaultDir())
+
+ipcMain.handle('vault:set', async () => {
+  const { filePaths, canceled } = await dialog.showOpenDialog({
+    title: 'Choose Vault Folder',
+    properties: ['openDirectory', 'createDirectory'],
+  })
+  if (canceled || !filePaths[0]) return null
+  writeVaultDir(filePaths[0])
+  return filePaths[0]
+})
+
+ipcMain.handle('resume:list', () => {
+  const dir = readVaultDir()
+  if (!dir || !fs.existsSync(dir)) return []
+  return fs.readdirSync(dir)
+    .filter(f => f.endsWith('.json'))
+    .map(f => {
+      try { return JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')) }
+      catch { return null }
+    })
+    .filter(Boolean)
+    .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
+})
+
+ipcMain.handle('resume:read', (_event, id: string) => {
+  const dir = readVaultDir()
+  if (!dir) return null
+  try { return JSON.parse(fs.readFileSync(vaultFile(dir, id), 'utf8')) }
+  catch { return null }
+})
+
+ipcMain.handle('resume:write', (_event, resume: { id: string; [key: string]: unknown }) => {
+  const dir = readVaultDir()
+  if (!dir) throw new Error('No vault set')
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
+  fs.writeFileSync(vaultFile(dir, resume.id), JSON.stringify(resume, null, 2), 'utf8')
+})
+
+ipcMain.handle('resume:delete', (_event, id: string) => {
+  const dir = readVaultDir()
+  if (!dir) return
+  const f = vaultFile(dir, id)
+  if (fs.existsSync(f)) fs.unlinkSync(f)
+})
+
 // ── IPC: API key management ───────────────────────────────────────────────────
 ipcMain.handle('set-api-key', (_event, key: string) => storeApiKey(key))
 ipcMain.handle('get-api-key', () => getStoredApiKey())

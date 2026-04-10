@@ -1,42 +1,28 @@
-// IndexedDB via Dexie — all resume persistence lives here
-import Dexie, { type Table } from 'dexie'
+// Vault-based file storage via Electron IPC
 import type { Resume } from '@/lib/store/types'
 import { generateId } from '@/lib/utils/ids'
 import { DEFAULT_SETTINGS, DEFAULT_HEADER, SECTION_LABELS } from '@/lib/store/types'
 
-class ResumeDatabase extends Dexie {
-  resumes!: Table<Resume, string>
-
-  constructor() {
-    super('doomssh')
-    this.version(1).stores({
-      resumes: 'id, name, updatedAt',
-    })
-  }
-}
-
-export const db = new ResumeDatabase()
-
 // ─── CRUD Operations ──────────────────────────────────────────────────────────
 
 export async function getAllResumes(): Promise<Resume[]> {
-  return db.resumes.orderBy('updatedAt').reverse().toArray()
+  return (await window.electron!.vault.list()) as Resume[]
 }
 
 export async function getResume(id: string): Promise<Resume | undefined> {
-  return db.resumes.get(id)
+  return (await window.electron!.vault.read(id)) as Resume | undefined
 }
 
 export async function saveResume(resume: Resume): Promise<void> {
-  await db.resumes.put({ ...resume, updatedAt: Date.now() })
+  await window.electron!.vault.write({ ...resume, updatedAt: Date.now() })
 }
 
 export async function deleteResume(id: string): Promise<void> {
-  await db.resumes.delete(id)
+  await window.electron!.vault.delete(id)
 }
 
 export async function duplicateResume(id: string): Promise<Resume> {
-  const original = await db.resumes.get(id)
+  const original = await getResume(id)
   if (!original) throw new Error('Resume not found')
   const copy: Resume = {
     ...original,
@@ -45,7 +31,7 @@ export async function duplicateResume(id: string): Promise<Resume> {
     createdAt: Date.now(),
     updatedAt: Date.now(),
   }
-  await db.resumes.put(copy)
+  await saveResume(copy)
   return copy
 }
 

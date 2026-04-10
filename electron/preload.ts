@@ -22,6 +22,16 @@ contextBridge.exposeInMainWorld('electron', {
   },
   restartAndInstall: () => ipcRenderer.invoke('restart-and-install'),
 
+  // ── Vault / resume file storage ───────────────────────────────────────────
+  vault: {
+    getPath: (): Promise<string | null>    => ipcRenderer.invoke('vault:get'),
+    setPath: (): Promise<string | null>    => ipcRenderer.invoke('vault:set'),
+    list:    (): Promise<unknown[]>        => ipcRenderer.invoke('resume:list'),
+    read:    (id: string): Promise<unknown | null> => ipcRenderer.invoke('resume:read', id),
+    write:   (resume: unknown): Promise<void>      => ipcRenderer.invoke('resume:write', resume),
+    delete:  (id: string): Promise<void>           => ipcRenderer.invoke('resume:delete', id),
+  },
+
   // ── AI streaming ───────────────────────────────────────────────────────────
   // Returns a cleanup function that removes the listeners for this request.
   aiStream: (

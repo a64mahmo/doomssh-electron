@@ -14,6 +14,16 @@ interface ElectronAPI {
     cancelled?: boolean
   }>
 
+  // Vault / resume file storage
+  vault: {
+    getPath: () => Promise<string | null>
+    setPath: () => Promise<string | null>
+    list:    () => Promise<unknown[]>
+    read:    (id: string) => Promise<unknown | null>
+    write:   (resume: unknown) => Promise<void>
+    delete:  (id: string) => Promise<void>
+  }
+
   // Updates
   onUpdateAvailable: (callback: (info: any) => void) => () => void
   onUpdateDownloaded: (callback: (info: any) => void) => () => void
