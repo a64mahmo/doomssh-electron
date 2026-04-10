@@ -6,15 +6,15 @@ A privacy-first, local-only resume builder. No accounts. No servers. Your data l
 
 ## Tech Stack
 
-| Layer | Technology |
-| :--- | :--- |
-| Runtime | Electron 34 |
-| Frontend | Next.js 15 (App Router, static export) |
-| State | Zustand + Immer |
-| Storage | Vault — local `.json` files (Obsidian-style) |
-| Styles | Tailwind CSS 4 |
-| PDF | @react-pdf/renderer |
-| AI | Anthropic SDK (claude-opus-4-6, streamed via IPC) |
+| Layer    | Technology                                        |
+| :------- | :------------------------------------------------ |
+| Runtime  | Electron 34                                       |
+| Frontend | Next.js 15 (App Router, static export)            |
+| State    | Zustand + Immer                                   |
+| Storage  | Vault — local `.json` files (Obsidian-style)      |
+| Styles   | Tailwind CSS 4                                    |
+| PDF      | @react-pdf/renderer                               |
+| AI       | Anthropic SDK (claude-opus-4-6, streamed via IPC) |
 
 ---
 
@@ -43,11 +43,12 @@ API keys are stored encrypted via Electron `safeStorage` (OS keychain). The rend
 
 ### PDF Export
 
-`@react-pdf/renderer` generates the PDF binary entirely in the renderer. Nothing leaves the machine.
+`@react-pdf/renderer` generates the PDF binary entirely in the renderer. Nothing leaves the machine
 
 ### Rendering
 
 Two synchronized paths from the same Zustand store:
+
 - **HTML preview** — interactive, real-time, drag-and-drop
 - **PDF** — `@react-pdf/renderer`, pixel-matched to the preview
 
