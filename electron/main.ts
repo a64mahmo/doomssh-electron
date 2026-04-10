@@ -1,16 +1,16 @@
-import { app, BrowserWindow, ipcMain, safeStorage, shell, dialog, protocol, net } from 'electron'
+import { app, BrowserWindow, ipcMain, safeStorage, shell, dialog, protocol } from 'electron'
 import { spawn, type ChildProcess } from 'child_process'
 import path from 'path'
 import fs from 'fs'
 import Anthropic from '@anthropic-ai/sdk'
-import { autoUpdater } from 'electron-updater'
+import { autoUpdater, UpdateInfo } from 'electron-updater'
 
 // ── Auto Update Config ────────────────────────────────────────────────────────
 autoUpdater.logger = console
 autoUpdater.autoDownload = true
 autoUpdater.autoInstallOnAppQuit = true
 
-const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
+const isDev = process.env.NODE_ENV !== 'production' && (process.env.NODE_ENV === 'development' || !app.isPackaged)
 
 // ── Privileged Schemes ────────────────────────────────────────────────────────
 protocol.registerSchemesAsPrivileged([
@@ -27,7 +27,7 @@ let nextProc: ChildProcess | null = null
 function projectRoot(): string {
   // In dev, __dirname is projetRoot/electron/dist
   // In prod, __dirname is proyectRoot/electron/dist (if using electron-builder default structure)
-  return isDev ? path.join(__dirname, '..', '..') : path.join(process.resourcesPath, 'app')
+  return isDev ? path.join(__dirname, '..', '..') : path.join(process.resourcesPath, 'app.asar')
 }
 
 // ── Spawn Next.js ─────────────────────────────────────────────────────────────
@@ -166,36 +166,58 @@ async function createWindow(): Promise<void> {
   }
 }
 
+// ── MIME type helper ─────────────────────────────────────────────────────────
+const MIME: Record<string, string> = {
+  html: 'text/html; charset=utf-8',
+  js:   'application/javascript',
+  mjs:  'application/javascript',
+  css:  'text/css',
+  json: 'application/json',
+  png:  'image/png',
+  jpg:  'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif:  'image/gif',
+  svg:  'image/svg+xml',
+  ico:  'image/x-icon',
+  woff: 'font/woff',
+  woff2:'font/woff2',
+  ttf:  'font/ttf',
+  txt:  'text/plain',
+}
+
+function serveFile(filePath: string): Response {
+  // fs is ASAR-aware; net.fetch('file://') is not — always use fs here
+  const data = fs.readFileSync(filePath)
+  const ext  = path.extname(filePath).slice(1).toLowerCase()
+  return new Response(data, {
+    headers: { 'Content-Type': MIME[ext] ?? 'application/octet-stream' },
+  })
+}
+
 // ── Custom Protocol ──────────────────────────────────────────────────────────
 function registerAppProtocol() {
-  protocol.handle('app', async (request) => {
+  const outDir = path.join(projectRoot(), 'frontend', 'out')
+
+  protocol.handle('app', (request) => {
     try {
       const url = request.url.replace('app://-', '')
-      let relativePath = url || 'index.html'
+      let relativePath = url.split(/[?#]/)[0]
       if (relativePath.startsWith('/')) relativePath = relativePath.slice(1)
-      if (relativePath.endsWith('/')) relativePath += 'index.html'
-      if (!relativePath) relativePath = 'index.html'
-      
-      // Remove query params or hashes
-      relativePath = relativePath.split(/[?#]/)[0]
+      if (!relativePath || relativePath.endsWith('/')) relativePath += 'index.html'
 
-      const fullPath = path.join(projectRoot(), 'frontend', 'out', relativePath)
-      
-      // Dynamic route fallbacks for Static Export
+      let fullPath = path.join(outDir, relativePath)
+
       if (!fs.existsSync(fullPath)) {
-        // If it's a builder route, fallback to the pre-rendered 'new' page
         if (relativePath.startsWith('builder/')) {
-          return net.fetch(`file://${path.join(projectRoot(), 'frontend', 'out', 'builder', 'new', 'index.html')}`)
+          fullPath = path.join(outDir, 'builder', 'new', 'index.html')
+        } else if (relativePath.startsWith('print/')) {
+          fullPath = path.join(outDir, 'print', 'new', 'index.html')
+        } else {
+          fullPath = path.join(outDir, 'index.html')
         }
-        // If it's a print route, fallback to the pre-rendered 'new' page
-        if (relativePath.startsWith('print/')) {
-          return net.fetch(`file://${path.join(projectRoot(), 'frontend', 'out', 'print', 'new', 'index.html')}`)
-        }
-        // General fallback to root index.html
-        return net.fetch(`file://${path.join(projectRoot(), 'frontend', 'out', 'index.html')}`)
       }
 
-      return net.fetch(`file://${fullPath}`)
+      return serveFile(fullPath)
     } catch (err) {
       console.error('Protocol error:', err)
       return new Response('Not Found', { status: 404 })
@@ -295,16 +317,16 @@ app.on('will-quit', () => {
 })
 
 // ── Auto Update Events ───────────────────────────────────────────────────────
-autoUpdater.on('update-available', (info) => {
+autoUpdater.on('update-available', (info: UpdateInfo) => {
   console.log('[updater] update available:', info.version)
   mainWindow?.webContents.send('app:update-available', info)
 })
 
-autoUpdater.on('update-downloaded', (info) => {
+autoUpdater.on('update-downloaded', (info: UpdateInfo) => {
   console.log('[updater] update downloaded:', info.version)
   mainWindow?.webContents.send('app:update-downloaded', info)
 })
 
-autoUpdater.on('error', (err) => {
+autoUpdater.on('error', (err: Error) => {
   console.error('[updater] error:', err)
 })

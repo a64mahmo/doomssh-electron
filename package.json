@@ -10,6 +10,7 @@
     "frontend:install": "cd frontend && npm install",
     "electron:build": "tsc -p electron/tsconfig.json",
     "electron:dev": "NODE_ENV=development electron electron/dist/main.js",
+    "electron:preview": "npm run build && npm run electron:build && NODE_ENV=production electron electron/dist/main.js",
     "electron:dist": "npm run build && npm run electron:build && electron-builder",
     "dev:all": "npm run dev",
     "test:e2e": "playwright test",

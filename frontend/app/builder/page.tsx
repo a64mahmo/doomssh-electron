@@ -83,19 +83,20 @@ export default function BuilderDashboard() {
   const [isMac, setIsMac] = useState(false)
 
   useEffect(() => {
-    // Get API key from electron if available
+    let unsubAvailable: (() => void) | undefined
+    let unsubDownloaded: (() => void) | undefined
+
     if (window.electron) {
       window.electron.getApiKey().then(key => setApiKey(key || ''))
       setIsMac(window.electron.platform === 'darwin')
 
-      // Listen for updates
-      const unsubAvailable = window.electron.onUpdateAvailable((info) => {
+      unsubAvailable = window.electron.onUpdateAvailable((info) => {
         toast.info(`Update Available: Version ${info.version} is being downloaded.`, {
           duration: 10000,
         })
       })
 
-      const unsubDownloaded = window.electron.onUpdateDownloaded((info) => {
+      unsubDownloaded = window.electron.onUpdateDownloaded((info) => {
         toast.success(`Update Ready: Version ${info.version} has been downloaded.`, {
           action: {
             label: 'Restart & Install',
@@ -104,11 +105,6 @@ export default function BuilderDashboard() {
           duration: Infinity,
         })
       })
-
-      return () => {
-        unsubAvailable()
-        unsubDownloaded()
-      }
     }
 
     getAllResumes().then(async (existing) => {
@@ -121,6 +117,11 @@ export default function BuilderDashboard() {
       }
       setLoading(false)
     })
+
+    return () => {
+      unsubAvailable?.()
+      unsubDownloaded?.()
+    }
   }, [])
 
   async function handleCreate() {
