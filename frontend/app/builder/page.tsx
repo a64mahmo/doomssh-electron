@@ -12,7 +12,6 @@ import { getAllResumes, deleteResume, duplicateResume, createNewResume, createSa
 import { generateId } from '@/lib/utils/ids'
 import type { Resume } from '@/lib/store/types'
 import { cn } from '@/lib/utils'
-import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -96,30 +95,13 @@ export default function BuilderDashboard() {
   }
 
   useEffect(() => {
-    let unsubAvailable: (() => void) | undefined
-    let unsubDownloaded: (() => void) | undefined
-
     if (window.electron) {
       window.electron.getApiKey().then(key => setApiKey(key || ''))
       setIsMac(window.electron.platform === 'darwin')
-
-      unsubAvailable = window.electron.onUpdateAvailable((info) => {
-        toast.info(`Update Available: Version ${info.version} is being downloaded.`, {
-          duration: 10000,
-        })
-      })
-
-      unsubDownloaded = window.electron.onUpdateDownloaded((info) => {
-        toast.success(`Update Ready: Version ${info.version} has been downloaded.`, {
-          action: {
-            label: 'Restart & Install',
-            onClick: () => window.electron?.restartAndInstall()
-          },
-          duration: Infinity,
-        })
-      })
     }
+  }, [])
 
+  useEffect(() => {
     if (!vaultReady) return
 
     getAllResumes().then(async (existing) => {
@@ -132,11 +114,6 @@ export default function BuilderDashboard() {
       }
       setLoading(false)
     })
-
-    return () => {
-      unsubAvailable?.()
-      unsubDownloaded?.()
-    }
   }, [vaultReady])
 
   async function handleCreate() {

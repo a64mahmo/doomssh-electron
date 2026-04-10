@@ -9,7 +9,7 @@ import { EditorPanel } from '@/components/editor/EditorPanel'
 import { PreviewPanel } from '@/components/preview/PreviewPanel'
 import { CustomizePanel } from '@/components/customize/CustomizePanel'
 import { useResumeStore } from '@/lib/store/resumeStore'
-import { getResume, createNewResume, saveResume } from '@/lib/db/database'
+import { getResume } from '@/lib/db/database'
 import { downloadResumePDF } from '@/lib/utils/export'
 import { cn } from '@/lib/utils'
 
@@ -37,17 +37,21 @@ export function BuilderClient() {
       setIsMac(window.electron.platform === 'darwin')
     }
 
+    setResume(null)
+
+    let cancelled = false
     async function load() {
-      let r = await getResume(resumeId)
+      const r = await getResume(resumeId)
+      if (cancelled) return
       if (!r) {
-        r = createNewResume('My Resume')
-        r.id = resumeId
-        await saveResume(r)
+        router.replace('/builder')
+        return
       }
       setResume(r)
     }
     load()
-  }, [resumeId, setResume])
+    return () => { cancelled = true }
+  }, [resumeId, setResume, router])
 
   // ── Resize drag ──────────────────────────────────────────────────
   const onMouseMove = useCallback((e: MouseEvent) => {
