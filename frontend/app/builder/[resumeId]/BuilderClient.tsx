@@ -23,7 +23,7 @@ export function BuilderClient() {
   const params = useParams()
   const router = useRouter()
   const resumeId = params.resumeId as string
-  const { resume, setResume, isDirty } = useResumeStore()
+  const { resume, setResume, updateResumeName, isDirty } = useResumeStore()
   const [editingName, setEditingName] = useState(false)
   const [panel, setPanel] = useState<Panel>('content')
   const [sideW, setSideW] = useState(DEFAULT_W)
@@ -188,8 +188,8 @@ export function BuilderClient() {
               {editingName ? (
                 <Input
                   value={resume.name}
-                  onChange={(e) => setResume({ ...resume, name: e.target.value })}
-                  onBlur={() => { setEditingName(false); saveResume(resume) }}
+                  onChange={(e) => updateResumeName(e.target.value)}
+                  onBlur={() => setEditingName(false)}
                   onKeyDown={(e) => e.key === 'Enter' && setEditingName(false)}
                   autoFocus
                   className="h-6 w-48 text-xs px-1.5 border-0 border-b border-border rounded-none focus-visible:ring-0 bg-transparent"

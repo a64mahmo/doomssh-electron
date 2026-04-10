@@ -227,16 +227,13 @@ function registerAppProtocol() {
 
 // ── Vault helpers ─────────────────────────────────────────────────────────────
 const VAULT_PATH_FILE = path.join(app.getPath('userData'), 'vault-path.txt')
+const fsp = fs.promises
 
-function readVaultDir(): string | null {
+async function readVaultDir(): Promise<string | null> {
   try {
-    const p = fs.readFileSync(VAULT_PATH_FILE, 'utf8').trim()
+    const p = (await fsp.readFile(VAULT_PATH_FILE, 'utf8')).trim()
     return p || null
   } catch { return null }
-}
-
-function writeVaultDir(p: string): void {
-  fs.writeFileSync(VAULT_PATH_FILE, p, 'utf8')
 }
 
 function vaultFile(dir: string, id: string): string {
@@ -252,42 +249,45 @@ ipcMain.handle('vault:set', async () => {
     properties: ['openDirectory', 'createDirectory'],
   })
   if (canceled || !filePaths[0]) return null
-  writeVaultDir(filePaths[0])
+  await fsp.writeFile(VAULT_PATH_FILE, filePaths[0], 'utf8')
   return filePaths[0]
 })
 
-ipcMain.handle('resume:list', () => {
-  const dir = readVaultDir()
-  if (!dir || !fs.existsSync(dir)) return []
-  return fs.readdirSync(dir)
-    .filter(f => f.endsWith('.json'))
-    .map(f => {
-      try { return JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')) }
-      catch { return null }
-    })
-    .filter(Boolean)
-    .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
+ipcMain.handle('resume:list', async () => {
+  const dir = await readVaultDir()
+  if (!dir) return []
+  try {
+    const files = (await fsp.readdir(dir)).filter(f => f.endsWith('.json'))
+    const resumes = await Promise.all(
+      files.map(async f => {
+        try { return JSON.parse(await fsp.readFile(path.join(dir, f), 'utf8')) }
+        catch { return null }
+      })
+    )
+    return resumes
+      .filter(Boolean)
+      .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
+  } catch { return [] }
 })
 
-ipcMain.handle('resume:read', (_event, id: string) => {
-  const dir = readVaultDir()
+ipcMain.handle('resume:read', async (_event, id: string) => {
+  const dir = await readVaultDir()
   if (!dir) return null
-  try { return JSON.parse(fs.readFileSync(vaultFile(dir, id), 'utf8')) }
+  try { return JSON.parse(await fsp.readFile(vaultFile(dir, id), 'utf8')) }
   catch { return null }
 })
 
-ipcMain.handle('resume:write', (_event, resume: { id: string; [key: string]: unknown }) => {
-  const dir = readVaultDir()
+ipcMain.handle('resume:write', async (_event, resume: { id: string; [key: string]: unknown }) => {
+  const dir = await readVaultDir()
   if (!dir) throw new Error('No vault set')
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
-  fs.writeFileSync(vaultFile(dir, resume.id), JSON.stringify(resume, null, 2), 'utf8')
+  await fsp.mkdir(dir, { recursive: true })
+  await fsp.writeFile(vaultFile(dir, resume.id), JSON.stringify(resume, null, 2), 'utf8')
 })
 
-ipcMain.handle('resume:delete', (_event, id: string) => {
-  const dir = readVaultDir()
+ipcMain.handle('resume:delete', async (_event, id: string) => {
+  const dir = await readVaultDir()
   if (!dir) return
-  const f = vaultFile(dir, id)
-  if (fs.existsSync(f)) fs.unlinkSync(f)
+  try { await fsp.unlink(vaultFile(dir, id)) } catch { /* already gone */ }
 })
 
 // ── IPC: API key management ───────────────────────────────────────────────────

@@ -47,7 +47,7 @@ function PreviewInner({ resume }: { resume: Resume }) {
       } finally {
         setLoading(false)
       }
-    }, 400)
+    }, 800)
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)

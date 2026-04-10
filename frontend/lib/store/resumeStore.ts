@@ -56,6 +56,14 @@ export const useResumeStore = create<ResumeStore>()(
 
     setResume: (resume) => set({ resume, isDirty: false }),
 
+    updateResumeName: (name) =>
+      set((state) => {
+        if (!state.resume) return
+        state.resume.name = name
+        state.isDirty = true
+        scheduleSave(get)
+      }),
+
     updateSettings: (updates) =>
       set((state) => {
         if (!state.resume) return
