@@ -4,8 +4,9 @@ import type {
   ResumeSection, ExperienceItem, EducationItem, SkillItem,
   ProjectItem, CertificationItem, LanguageItem, AwardItem,
   VolunteeringItem, PublicationItem, ReferenceItem, CustomItem,
+  HeaderData,
 } from '@/lib/store/types'
-import { parseBullets } from '@/lib/pdf/pdfStyles'
+import { parseMdLines, tokenizeMd } from '@/lib/utils/text'
 import { formatDateRange } from '@/lib/utils/dates'
 import type { TemplateCtx } from '@/lib/pdf/templateCtx'
 import { BsIconPDF } from '@/lib/icons/BsIconPDF'
@@ -22,25 +23,59 @@ export function hexA(hex: string, opacity: number): string {
   return `rgba(${r},${g},${b},${opacity})`
 }
 
-/** Render **bold** / _italic_ markdown inside a <Text> */
-function renderMd(text: string): React.ReactNode[] {
-  if (!text) return []
-  return text.split(/(\*\*.*?\*\*|_.*?_)/g).map((tok, i) => {
-    if (tok.startsWith('**') && tok.endsWith('**'))
-      return <Text key={i} style={{ fontWeight: 'bold' }}>{tok.slice(2, -2)}</Text>
-    if (tok.startsWith('_') && tok.endsWith('_'))
-      return <Text key={i} style={{ fontStyle: 'italic' }}>{tok.slice(1, -1)}</Text>
-    return tok || null
-  }).filter(Boolean) as React.ReactNode[]
+/** Render **bold** / _italic_ markdown inside a <Text> or <View> list */
+function renderMd(text: string, ctx: TemplateCtx) {
+  const { base, lh, colors, bullet, pt, s } = ctx;
+  const lines = parseMdLines(text);
+
+  return lines.map((line, i) => {
+    const renderedContent = tokenizeMd(line.content).map((tok, j) => (
+      <Text key={j} style={{ 
+        fontWeight: tok.bold ? 'bold' : 'normal',
+        fontStyle: tok.italic ? 'italic' : 'normal'
+      }}>
+        {tok.text}
+      </Text>
+    ));
+
+    if (line.type === 'bullet') {
+      return (
+        <View key={i} style={{
+          flexDirection: 'row',
+          marginLeft: s.indentBody ? 12 : 0,
+          marginBottom: 1.5,
+        }}>
+          <Text style={{ fontSize: pt(base * 0.92), lineHeight: lh, marginRight: 6, color: s.applyAccentDotsBarsBubbles ? colors.accent : colors.text, flexShrink: 0 }}>
+            {bullet}
+          </Text>
+          <Text style={{ fontSize: pt(base * 0.92), lineHeight: lh, flex: 1, color: colors.text }}>
+            {renderedContent}
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <Text key={i} style={{ 
+        fontSize: pt(base * 0.92), 
+        lineHeight: lh, 
+        marginBottom: 3,
+        color: colors.text 
+      }}>
+        {renderedContent}
+      </Text>
+    );
+  });
 }
 
 // ─── Shared Entry primitive ───────────────────────────────────────────────────
 
 function Entry({
-  title, subtitle, date, description, ctx, extraLine, isSidebar = false,
+  title, subtitle, location, date, description, ctx, extraLine, isSidebar = false,
 }: {
   title: React.ReactNode
   subtitle?: React.ReactNode
+  location?: string
   date?: string
   description?: string
   ctx: TemplateCtx
@@ -48,73 +83,137 @@ function Entry({
   isSidebar?: boolean
 }) {
   const { base, lh, colors, bullet, s, pt } = ctx
-  const bullets = parseBullets(description || '')
 
-  const subStyle = {
+  const subStyle: any = {
     fontSize:    pt(base * 0.9),
     fontStyle:   (s.subtitleStyle === 'italic' ? 'italic' : 'normal') as 'italic' | 'normal',
     fontWeight:  (s.subtitleStyle === 'bold'   ? 'bold'   : 'normal') as 'bold' | 'normal',
-    color:       colors.subtitle,
+    color:       s.applyAccentEntrySubtitle ? colors.accent : colors.subtitle,
   }
 
-  const isSameLine = s.subtitlePlacement === 'same-line' && !isSidebar
-  const titleFontSize = s.titleSize === 'S' ? base * 0.9 : s.titleSize === 'L' ? base * 1.1 : base
+  const titleSizes = { S: 1.0, M: 1.05, L: 1.15 };
+  const currentTitleSize = titleSizes[s.titleSize || "M"];
+  const titleFontSize = base * currentTitleSize;
   const titleWeight = s.titleBold !== false ? 'bold' : 'normal'
+
+  const layout = isSidebar ? "full-width" : (s.entryLayout || "date-location-right");
+
+  const DateElement = date ? (
+    <View style={{ flexDirection: 'row', alignItems: 'center', opacity: 0.8 }}>
+      <View style={{ marginRight: 4 }}>
+        <BsIconPDF name="calendar" size={8} color={s.applyAccentDates ? colors.accent : colors.date} />
+      </View>
+      <Text style={{ fontSize: pt(base * 0.85), color: s.applyAccentDates ? colors.accent : colors.date, fontWeight: 500 }}>
+        {date}
+      </Text>
+    </View>
+  ) : null;
+
+  const LocationElement = location ? (
+    <View style={{ flexDirection: 'row', alignItems: 'center', opacity: 0.8 }}>
+      <View style={{ marginRight: 4 }}>
+        <BsIconPDF name="geo-alt" size={8} color={colors.subtitle} />
+      </View>
+      <Text style={{ fontSize: pt(base * 0.85), color: colors.subtitle, fontWeight: 500 }}>
+        {location}
+      </Text>
+    </View>
+  ) : null;
+
+  const isSameLine = s.subtitlePlacement === "same-line";
 
   return (
     <View style={{ marginBottom: Number(ctx.gap.replace('pt', '')) }} wrap={false}>
-      {/* Title + date row */}
-      {isSidebar ? (
-        <View>
-          <Text style={{ fontWeight: titleWeight, fontSize: pt(titleFontSize), lineHeight: lh }}>
-            {title}
-          </Text>
-          {date && (
-            <Text style={{ fontSize: pt(base * 0.85), color: colors.date, fontStyle: 'italic', marginTop: 1, lineHeight: lh }}>
-              {date}
+      {layout === "date-location-right" ? (
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <View style={{ flex: 1, marginRight: 8 }}>
+            <Text style={{ fontWeight: titleWeight, fontSize: pt(titleFontSize), lineHeight: lh, color: colors.text }}>
+              {title}
+              {subtitle && isSameLine && (
+                <Text style={subStyle}>{"  "}{subtitle}</Text>
+              )}
             </Text>
+            {subtitle && !isSameLine && (
+              <Text style={{ ...subStyle, marginTop: 1, lineHeight: lh }}>{subtitle}</Text>
+            )}
+          </View>
+          <View style={{ alignItems: 'flex-end', marginTop: 2 }}>
+            {DateElement}
+            {LocationElement}
+          </View>
+        </View>
+      ) : layout === "date-location-left" ? (
+        <View style={{ flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <View style={{ flex: 1, marginLeft: 8, alignItems: 'flex-end' }}>
+            <Text style={{ fontWeight: titleWeight, fontSize: pt(titleFontSize), lineHeight: lh, color: colors.text, textAlign: 'right' }}>
+              {title}
+              {subtitle && isSameLine && (
+                <Text style={subStyle}>{"  "}{subtitle}</Text>
+              )}
+            </Text>
+            {subtitle && !isSameLine && (
+              <Text style={{ ...subStyle, marginTop: 1, lineHeight: lh, textAlign: 'right' }}>{subtitle}</Text>
+            )}
+          </View>
+          <View style={{ alignItems: 'flex-start', marginTop: 2 }}>
+            {DateElement}
+            {LocationElement}
+          </View>
+        </View>
+      ) : layout === "date-content-location" ? (
+        <View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+            <Text style={{ fontWeight: titleWeight, fontSize: pt(titleFontSize), lineHeight: lh, color: colors.text, marginRight: 12 }}>
+              {title}
+              {subtitle && isSameLine && (
+                <Text style={subStyle}>{"  "}{subtitle}</Text>
+              )}
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {DateElement}
+              {date && location && <View style={{ width: 12 }} />}
+              {LocationElement}
+            </View>
+          </View>
+          {subtitle && !isSameLine && (
+            <Text style={{ ...subStyle, marginTop: 1, lineHeight: lh }}>{subtitle}</Text>
           )}
         </View>
       ) : (
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Text style={{ fontWeight: titleWeight, fontSize: pt(titleFontSize), lineHeight: lh, flex: 1, marginRight: 8 }}>
+        <View>
+          <Text style={{ fontWeight: titleWeight, fontSize: pt(titleFontSize), lineHeight: lh, color: colors.text }}>
             {title}
             {subtitle && isSameLine && (
-              <Text style={subStyle}>{'  '}{subtitle}</Text>
+              <Text style={subStyle}>{"  "}{subtitle}</Text>
             )}
           </Text>
-          {date && (
-            <Text style={{ fontSize: pt(base * 0.85), color: colors.date, lineHeight: lh, flexShrink: 0, marginTop: 1 }}>
-              {date}
-            </Text>
+          {subtitle && !isSameLine && (
+            <Text style={{ ...subStyle, marginTop: 1, lineHeight: lh }}>{subtitle}</Text>
+          )}
+          {!isSidebar && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+              {DateElement}
+              {date && location && <View style={{ width: 12 }} />}
+              {LocationElement}
+            </View>
           )}
         </View>
-      )}
-
-      {/* Subtitle second line */}
-      {subtitle && !isSameLine && (
-        <Text style={{ ...subStyle, marginTop: 2, lineHeight: lh }}>{subtitle}</Text>
       )}
 
       {extraLine}
 
-      {/* Bullet list */}
-      {bullets.length > 0 && (
+      {/* Structured content (paragraphs & bullets) */}
+      {description && (
         <View style={{ marginTop: 3 }}>
-          {bullets.map((b, i) => (
-            <View key={i} style={{
-              flexDirection: 'row',
-              marginLeft: s.indentBody ? 12 : 0,
-              marginBottom: 1.5,
-            }}>
-              <Text style={{ fontSize: pt(base * 0.92), lineHeight: lh, marginRight: 6, color: colors.accent, flexShrink: 0 }}>
-                {bullet}
-              </Text>
-              <Text style={{ fontSize: pt(base * 0.92), lineHeight: lh, flex: 1, color: colors.text }}>
-                {renderMd(b)}
-              </Text>
-            </View>
-          ))}
+          {renderMd(description, ctx)}
+        </View>
+      )}
+
+      {isSidebar && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+          {DateElement}
+          {date && location && <View style={{ width: 12 }} />}
+          {LocationElement}
         </View>
       )}
     </View>
@@ -123,158 +222,239 @@ function Entry({
 
 // ─── Contact line ─────────────────────────────────────────────────────────────
 
-export interface HeaderData {
-  fullName: string; jobTitle: string; email: string; phone: string
-  location: string; website: string; linkedin: string; github: string
-  photo?: string
-  twitter?: string
-  instagram?: string
-  facebook?: string
-  youtube?: string
-  tiktok?: string
-  pinterest?: string
-  medium?: string
-  behance?: string
-  dribbble?: string
-  stackoverflow?: string
-  gitlab?: string
-  bitbucket?: string
-  discord?: string
-  reddit?: string
-  bluesky?: string
-  threads?: string
-  mastodon?: string
-  nationality?: string
-  dateOfBirth?: string
-  visa?: string
-  passportOrId?: string
-  availability?: string
-  genderPronoun?: string
-  disability?: string
-  workMode?: string
-  relocation?: string
-  expectedSalary?: string
-  secondPhone?: string
-  drivingLicense?: string
-  securityClearance?: string
-  maritalStatus?: string
-  militaryService?: string
-  smoking?: string
-  height?: string
-  weight?: string
+function ContactItemPDF({ 
+  iconName, 
+  value, 
+  ctx,
+  itemStyleOverrides,
+  textColorOverride
+}: { 
+  iconName?: string; 
+  value: string; 
+  ctx: TemplateCtx;
+  itemStyleOverrides?: any;
+  textColorOverride?: string;
+}) {
+  const { colors, s, pt, base, lh } = ctx
+  const isBlue = s.linkBlue
+  const showIcons = s.contactIcons
+  const iconStyle = s.contactIconStyle || 'none'
+
+  const defaultText = s.themeColorStyle === 'advanced' ? colors.background : colors.text;
+  const finalTextColor = isBlue ? '#2563eb' : (textColorOverride || defaultText);
+  const finalIconColor = isBlue ? "#2563eb" : (s.applyAccentHeaderIcons ? (s.themeColorStyle === 'advanced' ? colors.background : colors.accent) : finalTextColor);
+
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', ...itemStyleOverrides }}>
+      {showIcons && iconName && (
+        <View style={{ 
+          marginRight: 6,
+          alignItems: 'center',
+          justifyContent: 'center',
+          ...(iconStyle === 'circle-filled' && { borderRadius: 999 }),
+          ...(iconStyle === 'rounded-filled' && { borderRadius: 2 }),
+          ...(iconStyle === 'square-filled' && { borderRadius: 0 }),
+          ...(iconStyle === 'circle-outline' && { borderRadius: 999, borderWidth: 0.5, borderColor: finalIconColor }),
+          ...(iconStyle === 'rounded-outline' && { borderRadius: 2, borderWidth: 0.5, borderColor: finalIconColor }),
+          ...(iconStyle === 'square-outline' && { borderRadius: 0, borderWidth: 0.5, borderColor: finalIconColor }),
+          ...(iconStyle.includes('filled') ? { 
+            width: 13, 
+            height: 13, 
+            backgroundColor: finalIconColor 
+          } : (iconStyle.includes('outline') ? {
+            width: 13,
+            height: 13,
+            backgroundColor: 'transparent'
+          } : {}))
+        }}>
+          <BsIconPDF 
+            name={iconName} 
+            size={iconStyle === 'none' ? 11 : 8} 
+            color={iconStyle.includes('filled') ? '#ffffff' : finalIconColor} 
+          />
+        </View>
+      )}
+      <Text 
+        style={{ 
+          fontSize: pt(base * 0.85),
+          color: finalTextColor,
+          lineHeight: lh,
+        }}
+      >
+        {value}
+      </Text>
+    </View>
+  )
 }
 
-export function ContactLinePDF({ h, ctx, display = 'inline', align = 'left', columns }: {
-  h: HeaderData
-  ctx: TemplateCtx
-  display?: 'inline' | 'block'
-  align?: 'left' | 'center' | 'right'
-  columns?: number
+export function ContactLinePDF({
+  h,
+  ctx,
+  alignOverride,
+  textColorOverride,
+}: {
+  h: HeaderData;
+  ctx: TemplateCtx;
+  alignOverride?: "left" | "center" | "right";
+  textColorOverride?: string;
 }) {
-  const { base, colors, s, pt, lh } = ctx
+  const { s, pt, base, colors } = ctx;
 
   const parts = [
     // Contact
-    { val: h.email,         label: 'E',   key: 'email' },
-    { val: h.phone,         label: 'P',   key: 'phone' },
-    { val: h.secondPhone,   label: 'P2',  key: 'secondPhone' },
-    { val: h.location,      label: 'L',   key: 'location' },
+    { val: h.email, key: "email" },
+    { val: h.phone, key: "phone" },
+    { val: h.secondPhone, key: "secondPhone" },
+    { val: h.location, key: "location" },
     // Links
-    { val: h.website,       label: 'W',   key: 'website' },
-    { val: h.linkedin,      label: 'in',  key: 'linkedin' },
-    { val: h.github,        label: 'gh',  key: 'github' },
-    { val: h.gitlab,        label: 'gl',  key: 'gitlab' },
-    { val: h.bitbucket,     label: 'bb',  key: 'bitbucket' },
-    { val: h.stackoverflow, label: 'SO',  key: 'stackoverflow' },
+    { val: h.website, key: "website" },
+    { val: h.linkedin, key: "linkedin" },
+    { val: h.github, key: "github" },
+    { val: h.gitlab, key: "gitlab" },
+    { val: h.bitbucket, key: "bitbucket" },
+    { val: h.stackoverflow, key: "stackoverflow" },
     // Social
-    { val: h.twitter,       label: 'X',   key: 'twitter' },
-    { val: h.bluesky,       label: 'BS',  key: 'bluesky' },
-    { val: h.threads,       label: 'TH',  key: 'threads' },
-    { val: h.mastodon,      label: 'MT',  key: 'mastodon' },
-    { val: h.instagram,     label: 'IG',  key: 'instagram' },
-    { val: h.facebook,      label: 'FB',  key: 'facebook' },
-    { val: h.youtube,       label: 'YT',  key: 'youtube' },
-    { val: h.tiktok,        label: 'TT',  key: 'tiktok' },
-    { val: h.pinterest,     label: 'PN',  key: 'pinterest' },
-    { val: h.reddit,        label: 'RD',  key: 'reddit' },
-    { val: h.discord,       label: 'DC',  key: 'discord' },
-    { val: h.medium,        label: 'MD',  key: 'medium' },
-    { val: h.behance,       label: 'Bh',  key: 'behance' },
-    { val: h.dribbble,      label: 'Dr',  key: 'dribbble' },
+    { val: h.twitter, key: "twitter" },
+    { val: h.bluesky, key: "bluesky" },
+    { val: h.threads, key: "threads" },
+    { val: h.mastodon, key: "mastodon" },
+    { val: h.instagram, key: "instagram" },
+    { val: h.facebook, key: "facebook" },
+    { val: h.youtube, key: "youtube" },
+    { val: h.tiktok, key: "tiktok" },
+    { val: h.pinterest, key: "pinterest" },
+    { val: h.reddit, key: "reddit" },
+    { val: h.discord, key: "discord" },
+    { val: h.medium, key: "medium" },
+    { val: h.behance, key: "behance" },
+    { val: h.dribbble, key: "dribbble" },
     // Personal details
-    { val: h.nationality,      label: 'Nat',   key: 'nationality' },
-    { val: h.dateOfBirth,      label: 'DOB',   key: 'dateOfBirth' },
-    { val: h.genderPronoun,    label: 'G',     key: 'genderPronoun' },
-    { val: h.maritalStatus,    label: 'MS',    key: 'maritalStatus' },
-    { val: h.visa,             label: 'Visa',  key: 'visa' },
-    { val: h.passportOrId,     label: 'ID',    key: 'passportOrId' },
-    { val: h.drivingLicense,   label: 'DL',    key: 'drivingLicense' },
-    { val: h.availability,     label: 'Avail', key: 'availability' },
-    { val: h.workMode,         label: 'WM',    key: 'workMode' },
-    { val: h.relocation,       label: 'Rel',   key: 'relocation' },
-    { val: h.expectedSalary,   label: '$',     key: 'expectedSalary' },
-    { val: h.securityClearance, label: 'SC',    key: 'securityClearance' },
-    { val: h.militaryService,  label: 'Mil',   key: 'militaryService' },
-    { val: h.disability,       label: 'Dis',   key: 'disability' },
-  ].filter(p => p.val)
+    { val: h.nationality, key: "nationality" },
+    { val: h.dateOfBirth, key: "dateOfBirth" },
+    { val: h.genderPronoun, key: "genderPronoun" },
+    { val: h.maritalStatus, key: "maritalStatus" },
+    { val: h.visa, key: "visa" },
+    { val: h.passportOrId, key: "passportOrId" },
+    { val: h.drivingLicense, key: "drivingLicense" },
+    { val: h.availability, key: "availability" },
+    { val: h.workMode, key: "workMode" },
+    { val: h.relocation, key: "relocation" },
+    { val: h.expectedSalary, key: "expectedSalary" },
+    { val: h.securityClearance, key: "securityClearance" },
+    { val: h.militaryService, key: "militaryService" },
+    { val: h.disability, key: "disability" },
+  ].filter((p) => p.val && p.val.trim());
 
-  if (!parts.length) return null
+  if (!parts.length) return null;
 
-  const arrangement = s.headerArrangement
-  const showIcons = s.contactIcons || arrangement === 'icon'
-  const sep = arrangement === 'pipe' ? ' | ' : arrangement === 'bullet' ? ' • ' : arrangement === 'bar' ? ' / ' : ' · '
-  const iconPx = base * 0.8
+  const arrangement = s.detailsArrangement || "wrap";
+  const gapSize = s.detailsSpacing === "comfortable" ? 10 : 6;
+  const align = s.headerAlignment;
+  const textAlign = alignOverride || s.detailsTextAlignment || align;
+  const isCenter = textAlign === "center";
+  const isRight = textAlign === "right";
+  const delimiter = s.headerArrangement;
 
-  const itemStyle = { fontSize: pt(base * 0.85), color: colors.subtitle, lineHeight: lh, textAlign: align as 'left' | 'center' | 'right' }
-
-  const renderItem = (p: typeof parts[0], ci: number, flexStyle?: Record<string, unknown>) => {
-    const iconName = DEFAULT_CONTACT_ICONS[p.key]
-    return (
-      <View key={ci} style={{ flexDirection: 'row', alignItems: 'center', gap: 3, ...flexStyle }}>
-        {showIcons && iconName && <BsIconPDF name={iconName} size={iconPx} color={colors.accent} />}
-        <Text style={itemStyle}>{p.val}</Text>
-      </View>
-    )
-  }
-
-  // Column layout
-  if (columns && columns > 1) {
+  if (arrangement === 'grid') {
     const rows: typeof parts[] = []
-    for (let i = 0; i < parts.length; i += columns) {
-      rows.push(parts.slice(i, i + columns))
+    for (let i = 0; i < parts.length; i += 2) {
+      rows.push(parts.slice(i, i + 2))
     }
     return (
-      <View style={{ gap: 3 }}>
+      <View style={{ 
+        alignItems: isCenter ? 'center' : (isRight ? 'flex-end' : 'flex-start'),
+        width: '100%'
+      }}>
         {rows.map((row, ri) => (
-          <View key={ri} style={{ flexDirection: 'row', gap: 12 }}>
-            {row.map((p, ci) => renderItem(p, ci, { flex: 1 }))}
+          <View key={ri} style={{ 
+            flexDirection: 'row', 
+            marginBottom: ri < rows.length - 1 ? 4 : 0,
+            justifyContent: isCenter ? 'center' : (isRight ? 'flex-end' : 'flex-start'),
+            width: isCenter ? 'auto' : '100%'
+          }}>
+            {row.map((p, ci) => (
+              <ContactItemPDF 
+                key={ci} 
+                value={p.val!} 
+                iconName={DEFAULT_CONTACT_ICONS[p.key]} 
+                ctx={ctx} 
+                itemStyleOverrides={{ 
+                   width: isCenter ? 'auto' : '50%',
+                   marginRight: (isCenter && ci === 0) ? 20 : 0 
+                }}
+                textColorOverride={textColorOverride}
+              />
+            ))}
           </View>
         ))}
       </View>
     )
   }
 
-  if (display === 'block') {
-    return (
-      <View style={{ gap: 3 }}>
-        {parts.map((p, i) => renderItem(p, i))}
-      </View>
-    )
-  }
-
-  // Inline: wrapping row with separators
+  const sep = delimiter === 'bullet' ? '•' : delimiter === 'verticalBar' ? '|' : ''
+  const hasVisibleDelimiter = !!sep;
+  const horizontalGap = s.detailsSpacing === "comfortable" ? 12 : 8;
+  
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start', gap: 2, alignItems: 'center' }}>
+    <View
+      style={{
+        flexDirection: arrangement === "column" ? "column" : "row",
+        flexWrap: arrangement === "column" ? "nowrap" : "wrap",
+        width: "100%",
+        justifyContent: isCenter
+          ? "center"
+          : isRight
+            ? "flex-end"
+            : "flex-start",
+        alignItems: isCenter ? "center" : isRight ? "flex-end" : "flex-start",
+      }}
+    >
       {parts.map((p, i) => (
         <React.Fragment key={i}>
-          {renderItem(p, i)}
-          {i < parts.length - 1 && arrangement !== 'icon' && (
-            <Text style={{ ...itemStyle, color: colors.subtitle + '80' }}>{sep}</Text>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              ...(arrangement === "column" ? {
+                width: "100%",
+                justifyContent: isCenter
+                  ? "center"
+                  : isRight
+                    ? "flex-end"
+                    : "flex-start",
+              } : {
+                marginRight: (!hasVisibleDelimiter && i < parts.length - 1) ? horizontalGap : 0
+              }),
+            }}
+          >
+            <ContactItemPDF
+              value={p.val!}
+              iconName={DEFAULT_CONTACT_ICONS[p.key]}
+              ctx={ctx}
+              itemStyleOverrides={{
+                marginBottom:
+                  arrangement === "column" && i < parts.length - 1 ? 4 : 2,
+              }}
+              textColorOverride={textColorOverride}
+            />
+          </View>
+          {arrangement === "wrap" && i < parts.length - 1 && hasVisibleDelimiter && (
+            <View
+              style={{
+                width: s.detailsSpacing === "comfortable" ? 24 : 16,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text style={{ fontSize: pt(base * 0.8), color: s.applyAccentDotsBarsBubbles ? colors.accent : colors.text, opacity: 0.3 }}>
+                {sep}
+              </Text>
+            </View>
           )}
         </React.Fragment>
       ))}
     </View>
-  )
+  );
 }
 
 // ─── Section dispatcher ───────────────────────────────────────────────────────
@@ -314,7 +494,7 @@ function SummarySectionPDF({ section, ctx, renderHeading }: { section: ResumeSec
   return (
     <View>
       {renderHeading(section.title)}
-      <Text style={{ fontSize: ctx.pt(ctx.base), lineHeight: ctx.lh }}>{renderMd(text)}</Text>
+      <View style={{ marginTop: 2 }}>{renderMd(text, ctx)}</View>
     </View>
   )
 }
@@ -332,7 +512,8 @@ function ExperienceSectionPDF({ section, ctx, renderHeading, isSidebar }: { sect
         return (
           <Entry key={item.id}
             title={title}
-            subtitle={sub ? `${sub}${item.location ? ` · ${item.location}` : ''}` : undefined}
+            subtitle={sub || undefined}
+            location={item.location}
             date={formatDateRange(item.startDate, item.endDate, item.present, s.dateFormat)}
             description={item.description}
             ctx={ctx}
@@ -359,6 +540,7 @@ function EducationSectionPDF({ section, ctx, renderHeading, isSidebar }: { secti
           <Entry key={item.id}
             title={title}
             subtitle={sub || undefined}
+            location={item.location}
             date={formatDateRange(item.startDate, item.endDate, item.present, s.dateFormat)}
             description={item.description}
             ctx={ctx}
@@ -417,7 +599,7 @@ function SkillsSectionPDF({ section, ctx, renderHeading, isSidebar }: { section:
           {items.map(sk => (
             <Text key={sk.id} style={{
               fontSize: pt(base * 0.85),
-              backgroundColor: colors.accent,
+              backgroundColor: s.applyAccentDotsBarsBubbles ? colors.accent : colors.text,
               color: colors.background,
               paddingVertical: 2,
               paddingHorizontal: 7,
@@ -446,11 +628,10 @@ function ProjectsSectionPDF({ section, ctx, renderHeading, isSidebar }: { sectio
           subtitle={item.url ? (
             <Text style={{
               fontSize: pt(base * 0.85),
-              color: s.linkBlue ? '#0066cc' : colors.accent,
+              color: s.linkBlue ? '#0066cc' : (s.applyAccentLinkIcons ? colors.accent : colors.text),
               textDecoration: s.linkUnderline ? 'underline' : 'none',
             }}>{item.url}</Text>
-          ) : undefined}
-          date={item.date ? formatDateRange(item.date, '', false, s.dateFormat) : undefined}
+          ) : undefined}          date={item.date ? formatDateRange(item.date, '', false, s.dateFormat) : undefined}
           description={item.description}
           ctx={ctx}
           isSidebar={isSidebar}
@@ -565,7 +746,7 @@ function PublicationsSectionPDF({ section, ctx, renderHeading, isSidebar }: { se
 function ReferencesSectionPDF({ section, ctx, renderHeading, isSidebar }: { section: ResumeSection; ctx: TemplateCtx; renderHeading: HeadingFn; isSidebar?: boolean }) {
   const items = (section.items as ReferenceItem[]) || []
   if (!items.length) return null
-  const { base, colors, lh, pt } = ctx
+  const { base, colors, lh, pt, s } = ctx
   return (
     <View>
       {renderHeading(section.title)}
@@ -575,7 +756,7 @@ function ReferencesSectionPDF({ section, ctx, renderHeading, isSidebar }: { sect
             <Text style={{ fontWeight: 'bold', fontSize: pt(base * 0.9), lineHeight: 1.4 }}>{item.name}</Text>
             {item.position && <Text style={{ fontSize: pt(base * 0.85), color: colors.subtitle, lineHeight: lh }}>{item.position}</Text>}
             {item.company  && <Text style={{ fontSize: pt(base * 0.85), color: colors.subtitle, lineHeight: lh }}>{item.company}</Text>}
-            {item.email    && <Text style={{ fontSize: pt(base * 0.82), color: colors.accent,   lineHeight: lh }}>{item.email}</Text>}
+            {item.email    && <Text style={{ fontSize: pt(base * 0.82), color: s.applyAccentLinkIcons ? colors.accent : colors.text,   lineHeight: lh }}>{item.email}</Text>}
             {item.phone    && <Text style={{ fontSize: pt(base * 0.82), color: colors.subtitle, lineHeight: lh }}>{item.phone}</Text>}
           </View>
         ))}

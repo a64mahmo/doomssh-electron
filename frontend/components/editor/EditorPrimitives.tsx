@@ -9,19 +9,22 @@ import { Button } from '@/components/ui/button'
 
 export function FieldLabel({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <Label className={cn('block text-[10px] font-semibold text-muted-foreground/70 mb-1.5 uppercase tracking-widest', className)}>
+    <Label className={cn('block text-[10px] font-bold text-muted-foreground/80 mb-1.5 tracking-wide', className)}>
       {children}
     </Label>
   )
 }
 
-export function ControlGroup({ title, children, className }: { title?: string; children: React.ReactNode; className?: string }) {
+export function ControlGroup({ title, children, className, rightElement }: { title?: string; children: React.ReactNode; className?: string; rightElement?: React.ReactNode }) {
   return (
     <div className={cn('space-y-3', className)}>
       {title && (
-        <p className="text-[9px] font-bold text-muted-foreground/35 uppercase tracking-[0.12em] pb-1 border-b border-border/40">
-          {title}
-        </p>
+        <div className="flex items-center justify-between pb-1 border-b border-border/40">
+          <p className="text-[9px] font-bold text-muted-foreground/35 uppercase tracking-[0.12em]">
+            {title}
+          </p>
+          {rightElement}
+        </div>
       )}
       <div className="space-y-3">
         {children}
@@ -206,7 +209,7 @@ export function SegmentGroup<T extends string>({
           onClick={() => onChange(o.value)}
           title={o.label}
           className={cn(
-            'flex-1 flex items-center justify-center py-1.5 rounded-md transition-all text-xs',
+            'flex-1 flex items-center justify-center py-1.5 rounded-md transition-all text-xs cursor-pointer',
             value === o.value
               ? 'bg-background text-foreground shadow-sm font-semibold'
               : 'text-muted-foreground hover:text-foreground hover:bg-background/50',

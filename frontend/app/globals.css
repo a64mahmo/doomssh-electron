@@ -135,6 +135,15 @@ html, body {
   html {
     @apply font-sans;
   }
+  button, 
+  [role="button"],
+  .cursor-pointer {
+    cursor: pointer;
+  }
+  button:disabled,
+  [role="button"]:disabled {
+    cursor: not-allowed;
+  }
 }
 
 /* ── Electron Vibrancy Support ────────────────────────────────────────────── */

@@ -4,15 +4,6 @@ import type { ResumeSettings, FontOption, NameSize, SectionHeadingSize, ListStyl
 export const A4 = { width: 595.28, height: 841.89 }
 export const LETTER = { width: 612, height: 792 }
 
-// Parse bullet points from description string
-export function parseBullets(text: string): string[] {
-  if (!text) return []
-  return text
-    .split('\n')
-    .map((line) => line.replace(/^[•\-\*]\s*/, '').trim())
-    .filter(Boolean)
-}
-
 // ── Settings → PDF values ─────────────────────────────────────────────────────
 
 /** 1 mm = 2.83465 pt */
@@ -32,7 +23,7 @@ export function pdfFontItalic(fontFamily: FontOption): string {
   return SERIF_FONTS.includes(fontFamily) ? 'Times-Italic' : 'Helvetica-Oblique'
 }
 
-const NAME_PT: Record<NameSize, number> = { XS: 16, S: 18, M: 20, L: 22, XL: 26 }
+const NAME_PT: Record<NameSize, number> = { XS: 16, S: 18, M: 20, L: 22, XL: 26, XXL: 32 }
 export function nameFontSize(size: NameSize): number {
   return NAME_PT[size] ?? 20
 }
@@ -57,7 +48,7 @@ export interface ResolvedColors {
 }
 
 export function resolveColors(s: ResumeSettings): ResolvedColors {
-  if (s.colorMode === 'multi') {
+  if (s.colorMode === 'multi' || s.colorMode === 'image') {
     return {
       text: s.textColor,
       heading: s.headingColor,
@@ -69,11 +60,11 @@ export function resolveColors(s: ResumeSettings): ResolvedColors {
   }
   // basic mode
   return {
-    text: '#1a1a1a',
+    text: s.textColor,
     heading: s.accentColor,
-    subtitle: '#4a5568',
-    date: '#4a5568',
-    background: '#ffffff',
+    subtitle: s.subtitleColor,
+    date: s.dateColor,
+    background: s.backgroundColor,
     accent: s.accentColor,
   }
 }

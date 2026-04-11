@@ -8,13 +8,13 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { KanbanCard } from './KanbanCard'
-import type { JobApplication, StatusConfig } from '@/lib/store/jobTypes'
+import type { JobApplication, StatusConfig, JobStatus } from '@/lib/store/jobTypes'
 
 interface KanbanColumnProps {
   config: StatusConfig
   jobs: JobApplication[]
   onSelectJob: (id: string) => void
-  onAddJob: (status: string) => void
+  onAddJob: (status: JobStatus) => void
 }
 
 export function KanbanColumn({ config, jobs, onSelectJob, onAddJob }: KanbanColumnProps) {

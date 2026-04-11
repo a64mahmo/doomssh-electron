@@ -4,7 +4,7 @@ import type { UIStore } from '@/lib/store/types'
 export const useUIStore = create<UIStore>()((set) => ({
   activeSection: null,
   showAIPanel: false,
-  previewZoom: 0.7,
+  previewZoom: 2.0,
   isExporting: false,
   selectedText: '',
 

@@ -1,5 +1,5 @@
 import type { ResumeSettings } from '@/lib/store/types'
-import { resolveColors, nameFontSize, headingFontSize, bulletChar, type ResolvedColors } from './pdfStyles'
+import { resolveColors, nameFontSize, headingFontSize, bulletChar, type ResolvedColors } from './styleUtils'
 import { cssFont, googleFontHref } from './templateHelpers'
 
 export interface TemplateCtx {
@@ -23,7 +23,7 @@ export function buildCtx(s: ResumeSettings): TemplateCtx {
     colors:   resolveColors(s),
     base:     s.fontSize,
     lh:       s.lineHeight,
-    gap:      `${8 * s.entrySpacing}pt`,
+    gap:      pt(s.fontSize * s.entrySpacing * 1.2),
     bullet:   bulletChar(s.listStyle),
     hSize:    headingFontSize(s.sectionHeadingSize),
     hCap:     s.sectionHeadingCapitalization !== 'none' ? s.sectionHeadingCapitalization : undefined,

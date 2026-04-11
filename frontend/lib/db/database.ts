@@ -42,7 +42,7 @@ export function createNewResume(name: string = 'My Resume'): Resume {
     name,
     createdAt: now,
     updatedAt: now,
-    template: 'classic',
+    template: 'custom',
     settings: { ...DEFAULT_SETTINGS },
     sections: [
       {
@@ -100,7 +100,7 @@ export function createSampleResume(): Resume {
     name: 'Abdallh Mahmood',
     createdAt: now,
     updatedAt: now,
-    template: 'classic',
+    template: 'custom',
     settings: { ...DEFAULT_SETTINGS },
     sections: [
       {

@@ -29,14 +29,18 @@ import {
   Contact,
   Grid2X2,
   Grid3X3,
+  FileText,
+  RotateCcw,
 } from 'lucide-react'
 import {
   FontOption, DateFormat, PaperSize, ColumnLayout, ListStyle,
   SubtitleStyle, SubtitlePlacement, SectionHeadingSize, SectionHeadingCapitalization,
   SectionHeadingIcon, HeaderAlignment, HeaderArrangement, NameSize, ColorMode,
   SkillDisplayOption, EducationOrder, ExperienceOrder, SectionHeadingStyle,
-  PhotoSize, PhotoShape, PhotoPosition, ContactLayout,
-  DEFAULT_SETTINGS,
+  PhotoSize, PhotoShape, PhotoPosition,
+  ContactIconStyle, DetailsArrangement, DetailsPosition, DetailsTextAlignment, DetailsSpacing,
+  EntryLayout, ColumnWidthMode, ThemeColorStyle,
+  ResumeSettings, DEFAULT_SETTINGS,
 } from '@/lib/store/types'
 import type { TemplateId } from '@/lib/store/types'
 import {
@@ -65,7 +69,7 @@ import {
   SegmentGroup
 } from '@/components/editor/EditorPrimitives'
 
-// ── Constants ─────────────────────────────────────────────────────────────────
+// -- Constants -----------------------------------------------------------------
 
 const TEMPLATE_IDS = Object.keys(TEMPLATE_META) as TemplateId[]
 
@@ -83,6 +87,7 @@ const PANEL_SECTIONS = [
   { id: 'templates', label: 'Templates',  icon: LayoutTemplate },
   { id: 'layout',    label: 'Layout',     icon: LayoutIcon },
   { id: 'typography',label: 'Typography', icon: TypeIcon },
+  { id: 'entry',     label: 'Entry',      icon: FileText },
   { id: 'colors',    label: 'Colors',     icon: Palette },
   { id: 'header',    label: 'Header',     icon: HeaderIcon },
   { id: 'sections',  label: 'Sections',   icon: Settings2 },
@@ -90,7 +95,7 @@ const PANEL_SECTIONS = [
 
 type PanelSectionId = typeof PANEL_SECTIONS[number]['id']
 
-// ── Drag & Drop ───────────────────────────────────────────────────────────────
+// -- Drag & Drop ---------------------------------------------------------------
 
 function SortableSectionItem({ id, title }: { id: string; title: string }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
@@ -134,7 +139,77 @@ function DroppableColumn({ id, title, items, resumeSections }: {
   )
 }
 
-// ── Heading style visual ──────────────────────────────────────────────────────
+// -- Templates visual ---------------------------------------------------------
+
+function TemplateVisual({ id }: { id: TemplateId }) {
+  const settings = getTemplateSettings(id)
+  const layout = settings.columnLayout || 'one'
+  const isSidebar = layout === 'two' || layout === 'mix'
+  const isReverse = settings.columnReverse
+  const headerAlign = settings.headerAlignment || 'left'
+  const accent = settings.accentColor || '#3b82f6'
+
+  return (
+    <div className="flex-1 bg-muted/15 p-4 flex flex-col gap-4 overflow-hidden select-none group-hover:bg-muted/25 transition-colors">
+      {/* Mini Header Area */}
+      <div className={cn(
+        "flex flex-col gap-2 pb-3 border-b border-foreground/5",
+        headerAlign === 'center' && "items-center text-center",
+        headerAlign === 'right' && "items-end text-right"
+      )}>
+        <div className="h-2.5 w-2/3 rounded-full opacity-80" style={{ backgroundColor: accent }} />
+        <div className={cn("flex gap-1.5 w-full", 
+          headerAlign === 'center' ? "justify-center" : 
+          headerAlign === 'right' ? "justify-end" : "justify-start"
+        )}>
+          <div className="h-1 w-3 bg-foreground/20 rounded-full" />
+          <div className="h-1 w-5 bg-foreground/20 rounded-full" />
+          <div className="h-1 w-3 bg-foreground/20 rounded-full" />
+        </div>
+      </div>
+
+      <div className={cn("flex-1 flex gap-4", isReverse && "flex-row-reverse")}>
+        {/* Main Column */}
+        <div className="flex-1 flex flex-col gap-4">
+          <div className="space-y-2">
+            <div className="h-1.5 w-1/3 bg-foreground/30 rounded-full" />
+            <div className="space-y-1">
+              <div className="h-0.5 w-full bg-foreground/10 rounded-full" />
+              <div className="h-0.5 w-full bg-foreground/10 rounded-full" />
+              <div className="h-0.5 w-4/5 bg-foreground/10 rounded-full" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="h-1.5 w-1/2 bg-foreground/30 rounded-full" />
+            <div className="space-y-1">
+              <div className="h-0.5 w-full bg-foreground/10 rounded-full" />
+              <div className="h-0.5 w-5/6 bg-foreground/10 rounded-full" />
+            </div>
+          </div>
+        </div>
+
+        {/* Sidebar */}
+        {isSidebar && (
+          <div className={cn(
+            "w-1/3 flex flex-col gap-4 border-foreground/5",
+            isReverse ? "border-r pr-3" : "border-l pl-3"
+          )}>
+            <div className="space-y-2">
+              <div className="h-1.5 w-full bg-foreground/20 rounded-full" />
+              <div className="h-0.5 w-full bg-foreground/10 rounded-full" />
+            </div>
+            <div className="space-y-2">
+              <div className="h-1.5 w-full bg-foreground/20 rounded-full" />
+              <div className="h-0.5 w-full bg-foreground/10 rounded-full" />
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// -- Heading style visual ------------------------------------------------------
 
 const HEADING_STYLES: { id: SectionHeadingStyle; label: string }[] = [
   { id: 'none',       label: 'None'     },
@@ -145,6 +220,58 @@ const HEADING_STYLES: { id: SectionHeadingStyle; label: string }[] = [
   { id: 'box',        label: 'Box'      },
   { id: 'background', label: 'Fill'     },
 ]
+
+function VisualSegmentGroup<T extends string>({
+  value,
+  onChange,
+  options,
+  columns = 3,
+  showLabel = true,
+}: {
+  value: T
+  onChange: (v: T) => void
+  options: { value: T; render: () => React.ReactNode; label: string }[]
+  columns?: number
+  showLabel?: boolean
+}) {
+  return (
+    <div className={cn("grid gap-2", columns === 2 ? "grid-cols-2" : columns === 3 ? "grid-cols-3" : "grid-cols-4")}>
+      {options.map((o) => {
+        const active = value === o.value
+        return (
+          <button
+            key={o.value}
+            type="button"
+            onClick={() => onChange(o.value)}
+            className="group flex flex-col items-center gap-1.5 cursor-pointer outline-none"
+          >
+            <div className={cn(
+              "w-full h-12 flex items-center justify-center rounded-xl border transition-all duration-200 relative overflow-hidden",
+              active 
+                ? "bg-primary/10 border-primary text-primary shadow-[0_0_0_1px_inset_rgba(var(--primary),0.1)]" 
+                : "bg-muted/20 border-border/50 text-muted-foreground/60 hover:border-border hover:bg-muted/40"
+            )}>
+              {active && (
+                <div className="absolute inset-0 bg-primary/5 animate-in fade-in duration-500" />
+              )}
+              <div className="relative z-10 w-full flex items-center justify-center">
+                {o.render()}
+              </div>
+            </div>
+            {showLabel && (
+              <span className={cn(
+                "text-[10px] font-bold uppercase tracking-widest transition-colors",
+                active ? "text-primary" : "text-muted-foreground/40 group-hover:text-muted-foreground/70"
+              )}>
+                {o.label}
+              </span>
+            )}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
 function HeadingStyleButton({ style, active, onClick, accentColor }: {
   style: { id: SectionHeadingStyle; label: string }
@@ -209,7 +336,7 @@ function HeadingStyleButton({ style, active, onClick, accentColor }: {
   )
 }
 
-// ── Main Panel ────────────────────────────────────────────────────────────────
+// -- Main Panel ----------------------------------------------------------------
 
 export function CustomizePanel() {
   const { resume, updateSettings, setResume } = useResume()
@@ -268,7 +395,7 @@ export function CustomizePanel() {
   return (
     <div className="flex h-full overflow-hidden bg-background">
 
-      {/* ── Icon Nav ──────────────────────────────────────────────── */}
+      {/* -- Icon Nav ------------------------------------------------ */}
       <nav className="w-12 border-r border-border flex flex-col items-center py-3 gap-1 shrink-0 bg-sidebar">
         {PANEL_SECTIONS.map((section) => {
           const active = activeSection === section.id
@@ -294,7 +421,7 @@ export function CustomizePanel() {
         })}
       </nav>
 
-      {/* ── Content ───────────────────────────────────────────────── */}
+      {/* -- Content ------------------------------------------------- */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
         {/* Header bar */}
@@ -316,65 +443,68 @@ export function CustomizePanel() {
               className="px-4 py-5 space-y-6 pb-24"
             >
 
-              {/* ═══════════════ TEMPLATES ═══════════════════════════ */}
+              {/* --------------- TEMPLATES ------------------ */}
               {activeSection === 'templates' && (
-                <div className="grid grid-cols-2 gap-2.5">
+                <div className="grid grid-cols-2 gap-4">
                   {TEMPLATE_IDS.map((id) => {
                     const meta = TEMPLATE_META[id]
                     const active = resume.template === id
+                    
                     return (
-                      <button
-                        key={id}
-                        type="button"
-                        onClick={() => {
-                          if (id === 'custom') return
-                          const overrides = getTemplateSettings(id)
-                          // Complete overwrite: start with DEFAULT_SETTINGS, then apply overrides
-                          setResume({ ...resume, template: id, settings: { ...DEFAULT_SETTINGS, ...overrides } })
-                        }}                        className={cn(
-                          'group relative aspect-[3/4] rounded-xl border-2 overflow-hidden flex flex-col transition-all',
-                          active
-                            ? 'border-foreground shadow-lg ring-2 ring-foreground/10'
-                            : 'border-border hover:border-foreground/40 shadow-sm',
-                          id === 'custom' && !active && 'opacity-50 pointer-events-none grayscale',
-                        )}
-                      >
-                        {/* Accent stripe at top */}
-                        <div
-                          className="h-2 w-full shrink-0"
-                          style={{ backgroundColor: s.accentColor }}
-                        />
-                        {/* Skeleton preview */}
-                        <div className="flex-1 bg-background p-2 space-y-1.5">
-                          <div className="h-1.5 bg-foreground/15 rounded-full w-2/3" />
-                          <div className="h-px bg-foreground/8 rounded-full w-full" />
-                          {[0.9, 0.75, 0.85, 0.6, 0.8].map((w, i) => (
-                            <div key={i} className="h-px rounded-full bg-foreground/8" style={{ width: `${w * 100}%` }} />
-                          ))}
-                          <div className="h-px bg-muted rounded-full w-full mt-0.5" />
-                          {[0.7, 0.55, 0.65].map((w, i) => (
-                            <div key={i} className="h-px rounded-full bg-foreground/8" style={{ width: `${w * 100}%` }} />
-                          ))}
-                        </div>
-                        {/* Label */}
-                        <div className="bg-muted/60 px-2 py-1.5 border-t border-border">
-                          <p className="text-[10px] font-bold text-center tracking-tight">
-                            {meta.label}
-                          </p>
-                        </div>
-                        {/* Active badge */}
-                        {active && (
-                          <div className="absolute top-2 right-2 w-4 h-4 bg-foreground text-background rounded-full flex items-center justify-center">
-                            <Check size={9} strokeWidth={3} />
+                      <Tooltip key={id}>
+                        <TooltipTrigger
+                          type="button"
+                          onClick={() => {
+                            if (id === 'custom') return
+                            const overrides = getTemplateSettings(id)
+                            setResume({ ...resume, template: id, settings: { ...DEFAULT_SETTINGS, ...overrides } })
+                          }}
+                          className={cn(
+                            'group relative aspect-[3/4.5] rounded-2xl border-2 overflow-hidden flex flex-col transition-all cursor-pointer text-left',
+                            active
+                              ? 'border-primary shadow-xl ring-4 ring-primary/5 bg-primary/5'
+                              : 'border-border/60 hover:border-primary/40 shadow-sm hover:shadow-md hover:-translate-y-0.5',
+                          )}
+                        >
+                          {/* Visual Preview */}
+                          <div className="flex-1 min-h-0 relative">
+                            <TemplateVisual id={id} />
+                            {active && (
+                              <div className="absolute top-2.5 right-2.5 w-5 h-5 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-lg animate-in zoom-in duration-200 z-20">
+                                <Check size={11} strokeWidth={3.5} />
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </button>
+
+                          {/* Label & Description */}
+                          <div className={cn(
+                            "px-3 py-2.5 border-t border-border/50 transition-colors h-[58px] flex flex-col justify-center shrink-0",
+                            active ? "bg-primary/5" : "bg-muted/30 group-hover:bg-muted/50"
+                          )}>
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-[10px] font-black tracking-tight uppercase truncate">
+                                {meta.label}
+                              </p>
+                              {id === 'custom' && (
+                                <span className="text-[8px] px-1 bg-primary/10 text-primary rounded font-black shrink-0">MANUAL</span>
+                              )}
+                            </div>
+                            <p className="text-[9px] text-muted-foreground leading-tight line-clamp-1 mt-0.5 opacity-70 italic">
+                              {meta.description}
+                            </p>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="max-w-[200px]">
+                          <p className="font-bold mb-1 text-xs">{meta.label}</p>
+                          <p className="text-[10px] leading-relaxed text-muted-foreground">{meta.description}</p>
+                        </TooltipContent>
+                      </Tooltip>
                     )
                   })}
                 </div>
               )}
 
-              {/* ═══════════════ LAYOUT ══════════════════════════════ */}
+              {/* --------------- LAYOUT ------------------ */}
               {activeSection === 'layout' && (
                 <>
                   <ControlGroup title="Page">
@@ -391,11 +521,20 @@ export function CustomizePanel() {
                       />
                     </div>
 
+                    {s.columnLayout !== 'one' && (
+                      <ToggleRow
+                        id="col-reverse"
+                        label="Sidebar on Left"
+                        checked={s.columnReverse}
+                        onCheckedChange={(v) => upd({ columnReverse: v })}
+                      />
+                    )}
+
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <FieldLabel>Paper Size</FieldLabel>
                         <Select value={s.paperSize} onValueChange={(v) => upd({ paperSize: v as PaperSize })}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="w-full h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="letter">US Letter</SelectItem>
                             <SelectItem value="a4">A4</SelectItem>
@@ -405,7 +544,7 @@ export function CustomizePanel() {
                       <div>
                         <FieldLabel>Date Format</FieldLabel>
                         <Select value={s.dateFormat} onValueChange={(v) => upd({ dateFormat: v as DateFormat })}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="w-full h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="MMM YYYY">Jan 2024</SelectItem>
                             <SelectItem value="MMMM YYYY">January 2024</SelectItem>
@@ -420,7 +559,7 @@ export function CustomizePanel() {
                     <div>
                       <FieldLabel>Language</FieldLabel>
                       <Select value={s.language} onValueChange={(v) => v && upd({ language: v })}>
-                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="w-full h-8 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="en-US">English (US)</SelectItem>
                           <SelectItem value="en-GB">English (UK)</SelectItem>
@@ -443,11 +582,11 @@ export function CustomizePanel() {
                       min={5} max={40} step={1} onChange={(v) => upd({ marginVertical: v })}
                     />
                     <SliderRow
-                      label="Entry Spacing" value={s.entrySpacing} display={`×${s.entrySpacing.toFixed(1)}`}
+                      label="Entry Spacing" value={s.entrySpacing} display={`x${s.entrySpacing.toFixed(1)}`}
                       min={0.5} max={2.0} step={0.1} onChange={(v) => upd({ entrySpacing: v })}
                     />
                     <SliderRow
-                      label="Section Spacing" value={s.sectionSpacing ?? 1.0} display={`×${(s.sectionSpacing ?? 1.0).toFixed(1)}`}
+                      label="Section Spacing" value={s.sectionSpacing ?? 1.0} display={`x${(s.sectionSpacing ?? 1.0).toFixed(1)}`}
                       min={0.5} max={3.0} step={0.1} onChange={(v) => upd({ sectionSpacing: v })}
                     />
                   </ControlGroup>
@@ -489,7 +628,7 @@ export function CustomizePanel() {
                 </>
               )}
 
-              {/* ═══════════════ TYPOGRAPHY ══════════════════════════ */}
+              {/* --------------- TYPOGRAPHY ------------------ */}
               {activeSection === 'typography' && (
                 <>
                   <ControlGroup title="Font Family">
@@ -525,48 +664,158 @@ export function CustomizePanel() {
                       min={1.0} max={2.2} step={0.05} onChange={(v) => upd({ lineHeight: v })}
                     />
                   </ControlGroup>
+                </>
+              )}
+
+              {/* --------------- ENTRY ------------------ */}
+              {activeSection === 'entry' && (
+                <>
+                  <ControlGroup title="Entry Layout">
+                    <div>
+                      <VisualSegmentGroup
+                        columns={2}
+                        showLabel={true}
+                        value={s.entryLayout}
+                        onChange={(v) => upd({ entryLayout: v as EntryLayout })}
+                        options={[
+                          {
+                            value: 'date-location-right',
+                            label: 'Standard',
+                            render: () => (
+                              <div className="flex w-full items-center justify-between px-3 gap-2">
+                                <div className="flex flex-col gap-1 flex-1">
+                                  <div className="h-1 w-full bg-current rounded-full" />
+                                  <div className="h-1 w-2/3 bg-current opacity-30 rounded-full" />
+                                </div>
+                                <div className="flex flex-col gap-1 items-end">
+                                  <div className="h-1 w-8 bg-current opacity-50 rounded-full" />
+                                  <div className="h-1 w-6 bg-current opacity-20 rounded-full" />
+                                </div>
+                              </div>
+                            )
+                          },
+                          {
+                            value: 'date-location-left',
+                            label: 'Left Date',
+                            render: () => (
+                              <div className="flex w-full items-center justify-between px-3 gap-2 flex-row-reverse">
+                                <div className="flex flex-col gap-1 flex-1 items-end">
+                                  <div className="h-1 w-full bg-current rounded-full" />
+                                  <div className="h-1 w-2/3 bg-current opacity-30 rounded-full" />
+                                </div>
+                                <div className="flex flex-col gap-1 items-start">
+                                  <div className="h-1 w-8 bg-current opacity-50 rounded-full" />
+                                  <div className="h-1 w-6 bg-current opacity-20 rounded-full" />
+                                </div>
+                              </div>
+                            )
+                          },
+                          {
+                            value: 'date-content-location',
+                            label: 'Inline',
+                            render: () => (
+                              <div className="flex flex-col gap-1.5 w-full px-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="h-1 w-1/2 bg-current rounded-full" />
+                                  <div className="h-1 w-4 bg-current opacity-40 rounded-full" />
+                                  <div className="h-1 w-6 bg-current opacity-20 rounded-full" />
+                                </div>
+                                <div className="h-1 w-1/3 bg-current opacity-30 rounded-full" />
+                              </div>
+                            )
+                          },
+                          {
+                            value: 'full-width',
+                            label: 'Stacked',
+                            render: () => (
+                              <div className="flex flex-col gap-1 w-full px-3">
+                                <div className="h-1 w-full bg-current rounded-full" />
+                                <div className="h-1 w-2/3 bg-current opacity-30 rounded-full" />
+                                <div className="flex gap-2 mt-0.5">
+                                  <div className="h-1 w-6 bg-current opacity-40 rounded-full" />
+                                  <div className="h-1 w-6 bg-current opacity-20 rounded-full" />
+                                </div>
+                              </div>
+                            )
+                          }
+                        ]}
+                      />
+                    </div>
+
+                    <div className="space-y-4 pt-2">
+                      <div>
+                        <FieldLabel>Column Width</FieldLabel>
+                        <div className="grid grid-cols-2 gap-3">
+                          <VisualSegmentGroup
+                            columns={2}
+                            showLabel={true}
+                            value={s.columnWidthMode}
+                            onChange={(v) => upd({ columnWidthMode: v as ColumnWidthMode })}
+                            options={[
+                              { value: 'auto',   label: 'Auto',   render: () => (
+                                <div className="flex flex-col items-center gap-1">
+                                  <div className="flex gap-0.5 opacity-40">
+                                    <div className="w-1.5 h-1 bg-current rounded-full" />
+                                    <div className="w-3 h-1 bg-current rounded-full" />
+                                    <div className="w-1.5 h-1 bg-current rounded-full" />
+                                  </div>
+                                  <span className="text-[9px] font-bold">Auto</span>
+                                </div>
+                              )},
+                              { value: 'manual', label: 'Manual', render: () => (
+                                <div className="flex flex-col items-center gap-1">
+                                  <div className="flex gap-0.5 items-center">
+                                    <div className="w-1 h-1 bg-current opacity-40 rounded-full" />
+                                    <div className="w-4 h-1 bg-current rounded-full" />
+                                    <div className="w-1 h-1 bg-current opacity-40 rounded-full" />
+                                  </div>
+                                  <span className="text-[9px] font-bold">Manual</span>
+                                </div>
+                              )},
+                            ]}
+                          />
+                        </div>
+                      </div>
+
+                      {s.columnWidthMode === 'manual' && (
+                        <SliderRow
+                          label="Width" value={s.columnWidth} display={`${s.columnWidth}%`}
+                          min={10} max={60} step={1} onChange={(v) => upd({ columnWidth: v })}
+                        />
+                      )}
+                    </div>
+                  </ControlGroup>
 
                   <Separator className="opacity-30" />
 
-                  <ControlGroup title="Entry Layout">
+                  <ControlGroup title="Typography & Style">
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <FieldLabel>Title Size</FieldLabel>
-                        <SegmentGroup
+                        <VisualSegmentGroup
+                          columns={3}
                           value={s.titleSize}
                           onChange={(v) => upd({ titleSize: v as 'S' | 'M' | 'L' })}
                           options={[
-                            { value: 'S', label: 'Small',  render: () => <span className="text-[10px] font-bold leading-none">S</span> },
-                            { value: 'M', label: 'Medium', render: () => <span className="text-xs  font-bold leading-none">M</span> },
-                            { value: 'L', label: 'Large',  render: () => <span className="text-sm  font-bold leading-none">L</span> },
+                            { value: 'S', label: 'Small',  render: () => <div className="flex flex-col items-center gap-0.5"><div className="h-1.5 w-3 bg-current rounded-sm" /><span className="text-[9px] font-bold">S</span></div> },
+                            { value: 'M', label: 'Medium', render: () => <div className="flex flex-col items-center gap-0.5"><div className="h-2 w-4 bg-current rounded-sm" /><span className="text-[9px] font-bold">M</span></div> },
+                            { value: 'L', label: 'Large',  render: () => <div className="flex flex-col items-center gap-0.5"><div className="h-2.5 w-5 bg-current rounded-sm" /><span className="text-[9px] font-bold">L</span></div> },
                           ]}
                         />
                       </div>
                       <div>
                         <FieldLabel>Subtitle Style</FieldLabel>
-                        <SegmentGroup
+                        <VisualSegmentGroup
+                          columns={3}
                           value={s.subtitleStyle}
                           onChange={(v) => upd({ subtitleStyle: v as SubtitleStyle })}
                           options={[
-                            { value: 'normal', label: 'Normal', render: () => <span className="text-xs leading-none">N</span> },
-                            { value: 'bold',   label: 'Bold',   render: () => <span className="text-xs font-bold leading-none">B</span> },
-                            { value: 'italic', label: 'Italic', render: () => <span className="text-xs italic font-serif leading-none">I</span> },
+                            { value: 'normal', label: 'Normal', render: () => <span className="text-xs font-medium">Ab</span> },
+                            { value: 'bold',   label: 'Bold',   render: () => <span className="text-xs font-black">Ab</span> },
+                            { value: 'italic', label: 'Italic', render: () => <span className="text-xs italic font-serif">Ab</span> },
                           ]}
                         />
                       </div>
-                    </div>
-
-                    <div>
-                      <FieldLabel>Bullet Character</FieldLabel>
-                      <SegmentGroup
-                        value={s.listStyle}
-                        onChange={(v) => upd({ listStyle: v as ListStyle })}
-                        options={[
-                          { value: 'bullet', label: 'Bullet', render: () => <span className="leading-none">•  Bullet</span> },
-                          { value: 'dash',   label: 'Dash',   render: () => <span className="leading-none">—  Dash</span> },
-                          { value: 'hyphen', label: 'Hyphen', render: () => <span className="leading-none">-  Hyphen</span> },
-                        ]}
-                      />
                     </div>
 
                     <div>
@@ -581,6 +830,43 @@ export function CustomizePanel() {
                       />
                     </div>
 
+                    <div>
+                      <FieldLabel>List Style</FieldLabel>
+                      <VisualSegmentGroup
+                        columns={2}
+                        value={s.listStyle}
+                        onChange={(v) => upd({ listStyle: v as ListStyle })}
+                        options={[
+                          { 
+                            value: 'bullet', 
+                            label: 'Bullet', 
+                            render: () => (
+                              <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-current" />
+                                <div className="flex flex-col gap-1 w-8">
+                                  <div className="h-0.5 w-full bg-current opacity-40 rounded-full" />
+                                  <div className="h-0.5 w-2/3 bg-current opacity-20 rounded-full" />
+                                </div>
+                              </div>
+                            ) 
+                          },
+                          { 
+                            value: 'hyphen', 
+                            label: 'Hyphen', 
+                            render: () => (
+                              <div className="flex items-center gap-2">
+                                <div className="w-2 h-0.5 bg-current rounded-full" />
+                                <div className="flex flex-col gap-1 w-8">
+                                  <div className="h-0.5 w-full bg-current opacity-40 rounded-full" />
+                                  <div className="h-0.5 w-2/3 bg-current opacity-20 rounded-full" />
+                                </div>
+                              </div>
+                            ) 
+                          },
+                        ]}
+                      />
+                    </div>
+
                     <div className="space-y-0.5">
                       <ToggleRow id="title-bold"  label="Bold entry titles" checked={s.titleBold !== false} onCheckedChange={(v) => upd({ titleBold: v })} />
                       <ToggleRow id="indent-body" label="Indent body text"  checked={s.indentBody}          onCheckedChange={(v) => upd({ indentBody: v })} />
@@ -589,23 +875,92 @@ export function CustomizePanel() {
                 </>
               )}
 
-              {/* ═══════════════ COLORS ══════════════════════════════ */}
+              {/* --------------- COLORS ------------------ */}
               {activeSection === 'colors' && (
                 <>
-                  <ControlGroup title="Mode">
-                    <SegmentGroup
+                  <ControlGroup title="Theme Style">
+                    <VisualSegmentGroup
+                      columns={3}
+                      value={s.themeColorStyle}
+                      onChange={(v) => upd({ themeColorStyle: v as ThemeColorStyle })}
+                      options={[
+                        { 
+                          value: 'basic', 
+                          label: 'Basic', 
+                          render: () => (
+                            <div className="flex items-center justify-center">
+                              <div className="size-8 rounded-full border border-primary bg-primary/20 flex items-center justify-center">
+                                <div className="size-4 rounded-full bg-primary" />
+                              </div>
+                            </div>
+                          ) 
+                        },
+                        { 
+                          value: 'advanced', 
+                          label: 'Advanced', 
+                          render: () => (
+                            <div className="flex items-center justify-center">
+                              <div className="size-8 rounded-full border-2 border-primary overflow-hidden flex">
+                                <div className="w-1/2 h-full bg-primary" />
+                                <div className="w-1/2 h-full bg-transparent" />
+                              </div>
+                            </div>
+                          ) 
+                        },
+                        { 
+                          value: 'border', 
+                          label: 'Border', 
+                          render: () => (
+                            <div className="flex items-center justify-center">
+                              <div className="size-8 rounded-full border-[6px] border-primary" />
+                            </div>
+                          ) 
+                        },
+                      ]}
+                    />
+                  </ControlGroup>
+
+                  <Separator className="opacity-30" />
+
+                  <ControlGroup title="Color Type">
+                    <VisualSegmentGroup
+                      columns={3}
                       value={s.colorMode}
                       onChange={(v) => upd({ colorMode: v as ColorMode })}
                       options={[
-                        { value: 'basic', label: 'Classic',  render: () => <span className="text-[10px] font-semibold leading-none">Classic</span> },
-                        { value: 'multi', label: 'Enhanced', render: () => <span className="text-[10px] font-semibold leading-none">Enhanced</span> },
+                        { 
+                          value: 'basic', 
+                          label: 'Accent', 
+                          render: () => (
+                            <div className="w-12 h-6 bg-primary rounded-md flex items-center justify-center shadow-sm">
+                              <Check size={14} className="text-primary-foreground" />
+                            </div>
+                          ) 
+                        },
+                        { 
+                          value: 'multi', 
+                          label: 'Multi', 
+                          render: () => (
+                            <div className="w-12 h-6 flex rounded-md overflow-hidden border border-border shadow-sm">
+                              <div className="w-1/2 h-full bg-background flex items-center justify-center">
+                                <TypeIcon size={10} className="text-foreground" />
+                              </div>
+                              <div className="w-1/2 h-full bg-primary" />
+                            </div>
+                          ) 
+                        },
+                        { 
+                          value: 'image', 
+                          label: 'Image', 
+                          render: () => (
+                            <div className="w-12 h-6 rounded-md overflow-hidden border border-border shadow-sm relative">
+                              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 opacity-80" />
+                              <ImageIcon size={10} className="absolute inset-0 m-auto text-white" />
+                            </div>
+                          ) 
+                        },
                       ]}
                     />
-                    {s.colorMode === 'basic' && (
-                      <p className="text-[10px] text-muted-foreground/50 leading-relaxed">
-                        One accent color drives the whole palette.
-                      </p>
-                    )}
                   </ControlGroup>
 
                   <Separator className="opacity-30" />
@@ -621,7 +976,7 @@ export function CustomizePanel() {
                           className={cn(
                             'aspect-square rounded-full transition-all hover:scale-110',
                             s.accentColor === color
-                              ? 'ring-2 ring-offset-2 ring-foreground scale-105'
+                              ? 'ring-2 ring-offset-2 ring-primary scale-105'
                               : 'ring-1 ring-border/50',
                           )}
                           style={{ backgroundColor: color }}
@@ -631,9 +986,21 @@ export function CustomizePanel() {
                           )}
                         </button>
                       ))}
+                      <button
+                        type="button"
+                        className="aspect-square rounded-full border border-border bg-gradient-to-br from-violet-500 via-blue-500 to-red-500 transition-all hover:scale-110 relative overflow-hidden"
+                        title="Custom Color"
+                      >
+                        <input
+                          type="color"
+                          value={s.accentColor}
+                          onChange={(e) => upd({ accentColor: e.target.value })}
+                          className="absolute inset-[-4px] w-[calc(100%+8px)] h-[calc(100%+8px)] cursor-pointer opacity-0"
+                        />
+                      </button>
                     </div>
 
-                    <div className="flex gap-2 items-center">
+                    <div className="flex gap-2 items-center mt-2">
                       <div className="relative shrink-0 w-9 h-9 rounded-lg border border-border overflow-hidden">
                         <input
                           type="color"
@@ -652,191 +1019,451 @@ export function CustomizePanel() {
                     </div>
                   </ControlGroup>
 
-                  {s.colorMode === 'multi' && (
-                    <>
-                      <Separator className="opacity-30" />
+                  <Separator className="opacity-30" />
 
-                      <ControlGroup title="Element Colors">
-                        <div className="space-y-2.5">
-                          {[
-                            { label: 'Background',  key: 'backgroundColor', val: s.backgroundColor },
-                            { label: 'Body Text',   key: 'textColor',       val: s.textColor       },
-                            { label: 'Headings',    key: 'headingColor',    val: s.headingColor    },
-                            { label: 'Subtitles',   key: 'subtitleColor',   val: s.subtitleColor   },
-                            { label: 'Dates',       key: 'dateColor',       val: s.dateColor       },
-                          ].map(({ label, key, val }) => (
-                            <div key={key} className="flex items-center justify-between gap-3">
-                              <span className="text-xs font-medium text-muted-foreground shrink-0">{label}</span>
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <span className="text-[9px] font-mono text-muted-foreground/40 uppercase truncate">{val}</span>
-                                <div className="relative w-7 h-7 rounded-lg border border-border overflow-hidden shrink-0">
-                                  <input
-                                    type="color"
-                                    value={val}
-                                    onChange={(e) => upd({ [key]: e.target.value } as never)}
-                                    className="absolute inset-[-4px] w-[calc(100%+8px)] h-[calc(100%+8px)] cursor-pointer"
-                                  />
-                                </div>
-                              </div>
+                  <ControlGroup title="Apply Accent Color">
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-2 pt-1">
+                      <ToggleRow id="acc-name" label="Name" checked={s.applyAccentName} onCheckedChange={(v) => upd({ applyAccentName: v })} />
+                      <ToggleRow id="acc-job"  label="Job title" checked={s.applyAccentJobTitle} onCheckedChange={(v) => upd({ applyAccentJobTitle: v })} />
+                      <ToggleRow id="acc-head" label="Headings" checked={s.applyAccentHeadings} onCheckedChange={(v) => upd({ applyAccentHeadings: v })} />
+                      <ToggleRow id="acc-line" label="Headings Line" checked={s.applyAccentHeadingLine} onCheckedChange={(v) => upd({ applyAccentHeadingLine: v })} />
+                      <ToggleRow id="acc-icon" label="Header icons" checked={s.applyAccentHeaderIcons} onCheckedChange={(v) => upd({ applyAccentHeaderIcons: v })} />
+                      <ToggleRow id="acc-dots" label="Dots/Bars/Bubbles" checked={s.applyAccentDotsBarsBubbles} onCheckedChange={(v) => upd({ applyAccentDotsBarsBubbles: v })} />
+                      <ToggleRow id="acc-date" label="Dates" checked={s.applyAccentDates} onCheckedChange={(v) => upd({ applyAccentDates: v })} />
+                      <ToggleRow id="acc-sub"  label="Entry subtitle" checked={s.applyAccentEntrySubtitle} onCheckedChange={(v) => upd({ applyAccentEntrySubtitle: v })} />
+                      <ToggleRow id="acc-link" label="Link icons" checked={s.applyAccentLinkIcons} onCheckedChange={(v) => upd({ applyAccentLinkIcons: v })} />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground/60 leading-relaxed mt-1">
+                      Elements without an accent will use your <span className="font-semibold text-muted-foreground">Body Text</span> color.
+                    </p>
+                  </ControlGroup>
+
+                  <Separator className="opacity-30" />
+
+                  <ControlGroup 
+                    title="Custom Element Colors"
+                    rightElement={
+                      <button
+                        onClick={() => upd({
+                          textColor: '#1a1a1a',
+                          subtitleColor: '#4a5568',
+                          dateColor: '#4a5568',
+                          backgroundColor: '#ffffff',
+                          headingColor: s.accentColor, // Sync to accent color if resetting in basic mode
+                        })}
+                        className="flex items-center gap-1 text-[9px] font-bold text-muted-foreground/40 hover:text-foreground transition-colors"
+                      >
+                        <RotateCcw size={10} />
+                        RESET
+                      </button>
+                    }
+                  >
+                    <div className="space-y-2.5">
+                      {[
+                        { label: 'Background',  key: 'backgroundColor', val: s.backgroundColor, hide: false },
+                        { label: 'Body Text',   key: 'textColor',       val: s.textColor,       hide: false },
+                        { label: 'Headings',    key: 'headingColor',    val: s.headingColor,    hide: s.colorMode === 'basic' },
+                        { label: 'Subtitles',   key: 'subtitleColor',   val: s.subtitleColor,   hide: false },
+                        { label: 'Dates',       key: 'dateColor',       val: s.dateColor,       hide: false },
+                      ].filter(c => !c.hide).map(({ label, key, val }) => (
+                        <div key={key} className="flex items-center justify-between gap-3">
+                          <span className="text-xs font-medium text-muted-foreground shrink-0">{label}</span>
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="text-[9px] font-mono text-muted-foreground/40 uppercase truncate">{val}</span>
+                            <div className="relative w-7 h-7 rounded-lg border border-border overflow-hidden shrink-0">
+                              <input
+                                type="color"
+                                value={val}
+                                onChange={(e) => upd({ [key]: e.target.value } as never)}
+                                className="absolute inset-[-4px] w-[calc(100%+8px)] h-[calc(100%+8px)] cursor-pointer"
+                              />
                             </div>
-                          ))}
+                          </div>
                         </div>
-                      </ControlGroup>
+                      ))}
+                    </div>
+                  </ControlGroup>
 
-                      <ControlGroup title="Background Presets">
-                        <div className="grid grid-cols-6 gap-2">
-                          {[
-                            { bg: '#ffffff', label: 'White'  },
-                            { bg: '#fdfbf7', label: 'Cream'  },
-                            { bg: '#f8f9fa', label: 'Snow'   },
-                            { bg: '#1a1a2e', label: 'Dark'   },
-                            { bg: '#0f172a', label: 'Slate'  },
-                            { bg: '#1c1917', label: 'Stone'  },
-                          ].map(({ bg, label }) => (
-                            <button
-                              key={bg}
-                              type="button"
-                              title={label}
-                              onClick={() => upd({ backgroundColor: bg })}
-                              className={cn(
-                                'aspect-square rounded-lg border-2 transition-all hover:scale-110',
-                                s.backgroundColor === bg ? 'border-foreground ring-1 ring-foreground/30' : 'border-border/60',
-                              )}
-                              style={{ backgroundColor: bg }}
-                            />
-                          ))}
-                        </div>
-                      </ControlGroup>
-                    </>
-                  )}
+                  <ControlGroup title="Background Presets">
+                    <div className="grid grid-cols-6 gap-2">
+                      {[
+                        { bg: '#ffffff', label: 'White'  },
+                        { bg: '#fdfbf7', label: 'Cream'  },
+                        { bg: '#f8f9fa', label: 'Snow'   },
+                        { bg: '#1a1a2e', label: 'Dark'   },
+                        { bg: '#0f172a', label: 'Slate'  },
+                        { bg: '#1c1917', label: 'Stone'  },
+                      ].map(({ bg, label }) => (
+                        <button
+                          key={bg}
+                          type="button"
+                          title={label}
+                          onClick={() => upd({ backgroundColor: bg })}
+                          className={cn(
+                            'aspect-square rounded-lg border-2 transition-all hover:scale-110',
+                            s.backgroundColor === bg ? 'border-primary ring-1 ring-primary/30' : 'border-border/60',
+                          )}
+                          style={{ backgroundColor: bg }}
+                        />
+                      ))}
+                    </div>
+                  </ControlGroup>
                 </>
               )}
 
-              {/* ═══════════════ HEADER ══════════════════════════════ */}
+              {/* --------------- HEADER ------------------ */}
               {activeSection === 'header' && (
                 <>
-                  <ControlGroup title="Name">
+                  <ControlGroup title="Header Layout">
                     <div>
-                      <FieldLabel>Name Size</FieldLabel>
-                      <SegmentGroup
-                        value={s.nameSize}
-                        onChange={(v) => upd({ nameSize: v as NameSize })}
+                      <FieldLabel>Text Alignment</FieldLabel>
+                      <VisualSegmentGroup
+                        columns={3}
+                        value={s.headerAlignment}
+                        onChange={(v) => {
+                          const align = v as HeaderAlignment
+                          const updates: Partial<ResumeSettings> = { 
+                            headerAlignment: align,
+                            detailsTextAlignment: align // Default text align to match header align
+                          }
+                          // Structural Rules:
+                          if (align === 'center') {
+                            if (s.detailsArrangement === 'grid') updates.detailsArrangement = 'column'
+                            if (s.photoPosition === 'beside') updates.photoPosition = 'top'
+                            updates.detailsPosition = 'below'
+                          } else {
+                            updates.photoPosition = 'beside'
+                          }
+                          upd(updates)
+                        }}
                         options={[
-                          { value: 'XS', label: 'XS', render: () => <span className="text-[9px]  font-bold leading-none">XS</span> },
-                          { value: 'S',  label: 'S',  render: () => <span className="text-[10px] font-bold leading-none">S</span>  },
-                          { value: 'M',  label: 'M',  render: () => <span className="text-[11px] font-bold leading-none">M</span>  },
-                          { value: 'L',  label: 'L',  render: () => <span className="text-[12px] font-bold leading-none">L</span>  },
-                          { value: 'XL', label: 'XL', render: () => <span className="text-[13px] font-bold leading-none">XL</span> },
+                          { 
+                            value: 'left',   
+                            label: 'Left',   
+                            render: () => (
+                              <div className="flex flex-col gap-1.5 w-10">
+                                <div className="h-1.5 w-full bg-current rounded-sm" />
+                                <div className="h-1 w-2/3 bg-current opacity-40 rounded-sm" />
+                              </div>
+                            ) 
+                          },
+                          { 
+                            value: 'center', 
+                            label: 'Center', 
+                            render: () => (
+                              <div className="flex flex-col items-center gap-1.5 w-10">
+                                <div className="h-1.5 w-full bg-current rounded-sm" />
+                                <div className="h-1 w-2/3 bg-current opacity-40 rounded-sm" />
+                              </div>
+                            ) 
+                          },
+                          { 
+                            value: 'right', 
+                            label: 'Right', 
+                            render: () => (
+                              <div className="flex flex-col items-end gap-1.5 w-10">
+                                <div className="h-1.5 w-full bg-current rounded-sm" />
+                                <div className="h-1 w-2/3 bg-current opacity-40 rounded-sm" />
+                              </div>
+                            ) 
+                          },
                         ]}
                       />
                     </div>
-                    <ToggleRow id="name-bold"  label="Bold name"   checked={s.nameBold}      onCheckedChange={(v) => upd({ nameBold: v })} />
-                    <ToggleRow id="show-photo" label="Show photo"  checked={s.photoEnabled}  onCheckedChange={(v) => upd({ photoEnabled: v })}
-                      description="Photo upload available in the content panel"
+
+                    {s.headerAlignment !== 'center' && (
+                      <ToggleRow 
+                        id="details-pos" 
+                        label="Details beside name" 
+                        description="Put contact info next to your name instead of below it"
+                        checked={s.detailsPosition === 'beside'} 
+                        onCheckedChange={(v) => {
+                          const pos = v ? 'beside' : 'below'
+                          const updates: Partial<ResumeSettings> = { detailsPosition: pos }
+                          if (pos === 'beside' && s.detailsArrangement === 'wrap') {
+                            updates.detailsArrangement = 'column'
+                          }
+                          upd(updates)
+                        }}
+                      />
+                    )}
+
+                    <div className="grid grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <FieldLabel>Name Size</FieldLabel>
+                        <Select value={s.nameSize} onValueChange={(v) => upd({ nameSize: v as NameSize })}>
+                          <SelectTrigger className="w-full h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="XS">Executive (XS)</SelectItem>
+                            <SelectItem value="S">Small (S)</SelectItem>
+                            <SelectItem value="M">Medium (M)</SelectItem>
+                            <SelectItem value="L">Large (L)</SelectItem>
+                            <SelectItem value="XL">Extra Large (XL)</SelectItem>
+                            <SelectItem value="XXL">Hero (XXL)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex flex-col justify-end pb-1">
+                        <ToggleRow id="name-bold" label="Bold Name" checked={s.nameBold} onCheckedChange={(v) => upd({ nameBold: v })} />
+                      </div>
+                    </div>
+                  </ControlGroup>
+
+                  <Separator className="opacity-30" />
+
+                  <ControlGroup title="Contact Details">
+                    <div>
+                      <FieldLabel>Details Arrangement</FieldLabel>
+                      <VisualSegmentGroup
+                        columns={s.detailsPosition === 'beside' ? 2 : 3}
+                        value={s.detailsArrangement}
+                        onChange={(v) => upd({ detailsArrangement: v as DetailsArrangement })}
+                        options={[
+                          { 
+                            value: 'column', 
+                            label: 'Stack', 
+                            render: () => (
+                              <div className="flex flex-col gap-1 w-8">
+                                <div className="h-1 w-full bg-current opacity-60 rounded-full" />
+                                <div className="h-1 w-full bg-current opacity-40 rounded-full" />
+                                <div className="h-1 w-full bg-current opacity-20 rounded-full" />
+                              </div>
+                            ) 
+                          },
+                          ...(s.detailsPosition !== 'beside' ? [
+                            { 
+                              value: 'wrap' as DetailsArrangement, 
+                              label: 'Wrap', 
+                              render: () => (
+                                <div className="flex flex-col gap-1 w-10 px-1">
+                                  <div className="flex gap-1">
+                                    <div className="h-1 w-1/2 bg-current opacity-60 rounded-full" />
+                                    <div className="h-1 w-1/2 bg-current opacity-40 rounded-full" />
+                                  </div>
+                                  <div className="h-1 w-1/3 bg-current opacity-20 rounded-full" />
+                                </div>
+                              ) 
+                            }
+                          ] : []),
+                          { 
+                            value: 'grid', 
+                            label: 'Grid', 
+                            render: () => (
+                              <div className="grid grid-cols-2 gap-x-2 gap-y-1 w-10 px-1">
+                                <div className="h-1 w-full bg-current opacity-60 rounded-full" />
+                                <div className="h-1 w-full bg-current opacity-40 rounded-full" />
+                                <div className="h-1 w-full bg-current opacity-30 rounded-full" />
+                                <div className="h-1 w-full bg-current opacity-20 rounded-full" />
+                              </div>
+                            ) 
+                          },
+                        ]}
+                      />
+                    </div>
+
+                    <div>
+                      <FieldLabel>Details Text Alignment</FieldLabel>
+                      <SegmentGroup
+                        value={s.detailsTextAlignment}
+                        onChange={(v) => upd({ detailsTextAlignment: v as DetailsTextAlignment })}
+                        options={[
+                          { value: 'left',   label: 'Left',   render: () => <AlignLeft   size={14} /> },
+                          { value: 'center', label: 'Center', render: () => <AlignCenter size={14} /> },
+                          { value: 'right',  label: 'Right',  render: () => <AlignRight  size={14} /> },
+                        ]}
+                      />
+                    </div>
+
+                    <div>
+                      <FieldLabel>Delimiter</FieldLabel>
+                      <VisualSegmentGroup
+                        columns={4}
+                        value={s.headerArrangement}
+                        onChange={(v) => {
+                          const arr = v as HeaderArrangement
+                          const updates: Partial<ResumeSettings> = { headerArrangement: arr }
+                          if (arr === 'icon') updates.contactIcons = true
+                          upd(updates)
+                        }}
+                        options={[
+                          { 
+                            value: 'icon', 
+                            label: 'Icon', 
+                            render: () => (
+                              <div className="flex flex-col items-center gap-0.5">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-4 opacity-70"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5s.67 1.5 1.5 1.5zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"></path></svg>
+                                <span className="text-[9px] font-bold">Icon</span>
+                              </div>
+                            ) 
+                          },
+                          { 
+                            value: 'bullet', 
+                            label: 'Bullet', 
+                            render: () => (
+                              <div className="flex flex-col items-center gap-0.5">
+                                <div className="size-1.5 rounded-full bg-current opacity-70" />
+                                <span className="text-[9px] font-bold">Bullet</span>
+                              </div>
+                            ) 
+                          },
+                          { 
+                            value: 'verticalBar', 
+                            label: 'Bar', 
+                            render: () => (
+                              <div className="flex flex-col items-center gap-0.5">
+                                <span className="text-sm font-bold opacity-70">|</span>
+                                <span className="text-[9px] font-bold">Bar</span>
+                              </div>
+                            ) 
+                          },
+                          { 
+                            value: 'none', 
+                            label: 'None', 
+                            render: () => (
+                              <div className="flex flex-col items-center gap-0.5">
+                                <span className="text-xs font-bold opacity-30">Off</span>
+                                <span className="text-[9px] font-bold">None</span>
+                              </div>
+                            ) 
+                          },
+                        ]}
+                        showLabel={false}
+                      />
+                    </div>
+
+                    <div className="space-y-3 pt-2">
+                      <ToggleRow
+                        id="contact-icons"
+                        label="Show Icons"
+                        checked={s.contactIcons}
+                        onCheckedChange={(v) => upd({ contactIcons: v })}
+                      />
+
+                      {s.contactIcons && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                        >
+                          <FieldLabel>Icon Style</FieldLabel>
+                          <div className="grid grid-cols-4 gap-2">
+                            {[
+                              { id: 'none',             label: 'None' },
+                              { id: 'circle-filled',    label: 'Circle', frame: 'circle' },
+                              { id: 'rounded-filled',   label: 'Round',  frame: 'rounded' },
+                              { id: 'square-filled',    label: 'Square', frame: 'square' },
+                              { id: 'circle-outline',   label: 'C-Out',  frame: 'circle', outline: true },
+                              { id: 'rounded-outline',  label: 'R-Out',  frame: 'rounded', outline: true },
+                              { id: 'square-outline',   label: 'S-Out',  frame: 'square', outline: true },
+                            ].map((style) => {
+                              const active = s.contactIconStyle === style.id
+                              const baseIcon = (
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-3">
+                                  <path d="M11.767 3.166a6.411 6.411 0 019.067 9.067l-.001.001-1.716 1.717a1.558 1.558 0 11-2.204-2.204l1.717-1.717a3.295 3.295 0 10-4.659-4.66l-.002.002-1.716 1.716a1.558 1.558 0 01-2.204-2.204l1.717-1.717z" />
+                                </svg>
+                              )
+
+                              return (
+                                <button
+                                  key={style.id}
+                                  type="button"
+                                  onClick={() => upd({ contactIconStyle: style.id as ContactIconStyle })}
+                                  className="group flex flex-col items-center gap-1 cursor-pointer outline-none"
+                                >
+                                  <div className={cn(
+                                    "w-full h-10 flex items-center justify-center rounded-xl border transition-all duration-200 relative overflow-hidden",
+                                    active 
+                                      ? "bg-primary/10 border-primary text-primary shadow-[0_0_0_1px_inset_rgba(var(--primary),0.1)]" 
+                                      : "bg-muted/20 border-border/50 text-muted-foreground/60 hover:border-border hover:bg-muted/40"
+                                  )}>
+                                    {style.id === 'none' ? (
+                                      baseIcon
+                                    ) : (
+                                      <div className={cn(
+                                        "size-5 flex items-center justify-center",
+                                        style.frame === 'circle' && "rounded-full",
+                                        style.frame === 'rounded' && "rounded-[3px]",
+                                        style.frame === 'square' && "rounded-none",
+                                        style.outline 
+                                          ? "border border-current bg-transparent" 
+                                          : "bg-current"
+                                      )}>
+                                        <div className={cn("scale-75", !style.outline && (active ? "text-primary-foreground" : "text-background"))}>
+                                          {baseIcon}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <span className={cn(
+                                    "text-[9px] font-bold uppercase tracking-tight transition-colors",
+                                    active ? "text-primary" : "text-muted-foreground/40"
+                                  )}>
+                                    {style.label}
+                                  </span>
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </motion.div>
+                      )}
+                    </div>
+                  </ControlGroup>
+
+                  <Separator className="opacity-30" />
+
+                  <ControlGroup title="Photo">
+                    <ToggleRow 
+                      id="show-photo" 
+                      label="Show Photo" 
+                      checked={s.photoEnabled} 
+                      onCheckedChange={(v) => upd({ photoEnabled: v })}
                     />
 
                     {s.photoEnabled && (
-                      <>
-                        <div>
-                          <FieldLabel>Photo Size</FieldLabel>
-                          <SegmentGroup
-                            value={s.photoSize}
-                            onChange={(v) => upd({ photoSize: v as PhotoSize })}
-                            options={[
-                              { value: 'S',  label: 'Small',  render: () => <span className="text-[10px] font-bold leading-none">S</span> },
-                              { value: 'M',  label: 'Medium', render: () => <span className="text-[11px] font-bold leading-none">M</span> },
-                              { value: 'L',  label: 'Large',  render: () => <span className="text-[12px] font-bold leading-none">L</span> },
-                              { value: 'XL', label: 'XL',     render: () => <span className="text-[13px] font-bold leading-none">XL</span> },
-                            ]}
-                          />
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        className="space-y-4 pt-2"
+                      >
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <FieldLabel>Size</FieldLabel>
+                            <SegmentGroup
+                              value={s.photoSize}
+                              onChange={(v) => upd({ photoSize: v as PhotoSize })}
+                              options={[
+                                { value: 'S', label: 'Small',  render: () => <span className="text-[10px] font-bold">S</span> },
+                                { value: 'M', label: 'Medium', render: () => <span className="text-[10px] font-bold">M</span> },
+                              ]}
+                            />
+                          </div>
+                          <div>
+                            <FieldLabel>Shape</FieldLabel>
+                            <SegmentGroup
+                              value={s.photoShape}
+                              onChange={(v) => upd({ photoShape: v as PhotoShape })}
+                              options={[
+                                { value: 'circle',  label: 'Circle',  render: () => <div className="w-3 h-3 rounded-full bg-current opacity-40" /> },
+                                { value: 'rounded', label: 'Rounded', render: () => <div className="w-3 h-3 rounded-sm bg-current opacity-40" /> },
+                              ]}
+                            />
+                          </div>
                         </div>
 
-                        <div>
-                          <FieldLabel>Photo Shape</FieldLabel>
-                          <SegmentGroup
-                            value={s.photoShape}
-                            onChange={(v) => upd({ photoShape: v as PhotoShape })}
-                            options={[
-                              { value: 'circle',  label: 'Circle',  render: () => <div className="w-3.5 h-3.5 rounded-full bg-current opacity-40" /> },
-                              { value: 'rounded', label: 'Rounded', render: () => <div className="w-3.5 h-3.5 rounded-md bg-current opacity-40" /> },
-                              { value: 'square',  label: 'Square',  render: () => <div className="w-3.5 h-3.5 bg-current opacity-40" /> },
-                            ]}
-                          />
-                        </div>
-                      </>
+                        {s.headerAlignment === 'center' && (
+                          <div>
+                            <FieldLabel>Position</FieldLabel>
+                            <SegmentGroup
+                              value={s.photoPosition === 'beside' ? 'top' : s.photoPosition}
+                              onChange={(v) => upd({ photoPosition: v as PhotoPosition })}
+                              options={[
+                                { value: 'top',    label: 'Above', render: () => <span className="text-[10px] font-bold">Above</span> },
+                                { value: 'bottom', label: 'Below', render: () => <span className="text-[10px] font-bold">Below</span> },
+                              ]}
+                            />
+                          </div>
+                        )}
+                      </motion.div>
                     )}
-                  </ControlGroup>
-
-                  <Separator className="opacity-30" />
-
-                  <ControlGroup title="Alignment">
-                    <SegmentGroup
-                      value={s.headerAlignment}
-                      onChange={(v) => upd({ headerAlignment: v as HeaderAlignment })}
-                      options={[
-                        { value: 'left',   label: 'Left',   render: () => <AlignLeft   size={14} /> },
-                        { value: 'center', label: 'Center', render: () => <AlignCenter size={14} /> },
-                        { value: 'right',  label: 'Right',  render: () => <AlignRight  size={14} /> },
-                      ]}
-                    />
-                  </ControlGroup>
-
-                  {s.photoEnabled && (
-                    <>
-                      <Separator className="opacity-30" />
-                      <ControlGroup title="Photo Placement">
-                        <div>
-                          <FieldLabel>Position</FieldLabel>
-                          <Select value={s.photoPosition} onValueChange={(v) => upd({ photoPosition: v as PhotoPosition })}>
-                            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="beside-name">Beside Name</SelectItem>
-                              <SelectItem value="top-center">Top Center</SelectItem>
-                              <SelectItem value="top-left">Top Left</SelectItem>
-                              <SelectItem value="top-right">Top Right</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </ControlGroup>
-                    </>
-                  )}
-
-                  <Separator className="opacity-30" />
-
-                  <ControlGroup title="Contact Info">
-                    <div>
-                      <FieldLabel>Separator</FieldLabel>
-                      <Select value={s.headerArrangement} onValueChange={(v) => upd({ headerArrangement: v as HeaderArrangement })}>
-                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pipe">Pipes  ( | )</SelectItem>
-                          <SelectItem value="bullet">Bullets ( • )</SelectItem>
-                          <SelectItem value="bar">Bar  ( / )</SelectItem>
-                          <SelectItem value="icon">Icons only</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <FieldLabel>Layout</FieldLabel>
-                      <SegmentGroup
-                        value={s.contactLayout}
-                        onChange={(v) => upd({ contactLayout: v as ContactLayout })}
-                        options={[
-                          { value: 'inline',    label: 'Inline',  render: () => <span className="text-[10px] font-semibold leading-none">Wrap</span> },
-                          { value: 'columns-2', label: '2 Cols',  render: () => <Grid2X2 size={13} /> },
-                          { value: 'columns-3', label: '3 Cols',  render: () => <Grid3X3 size={13} /> },
-                        ]}
-                      />
-                    </div>
-
-                    <ToggleRow
-                      id="contact-icons"
-                      label="Show icons"
-                      description="Display an icon next to each contact item"
-                      checked={s.contactIcons}
-                      onCheckedChange={(v) => upd({ contactIcons: v })}
-                    />
                   </ControlGroup>
 
                   <Separator className="opacity-30" />
@@ -851,7 +1478,7 @@ export function CustomizePanel() {
                 </>
               )}
 
-              {/* ═══════════════ SECTIONS ════════════════════════════ */}
+              {/* --------------- SECTIONS ------------------ */}
               {activeSection === 'sections' && (
                 <>
                   <ControlGroup title="Section Headings">
@@ -866,7 +1493,7 @@ export function CustomizePanel() {
                       <div>
                         <FieldLabel>Size</FieldLabel>
                         <Select value={s.sectionHeadingSize} onValueChange={(v) => upd({ sectionHeadingSize: v as SectionHeadingSize })}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="w-full h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="S">Small</SelectItem>
                             <SelectItem value="M">Medium</SelectItem>
@@ -878,7 +1505,7 @@ export function CustomizePanel() {
                       <div>
                         <FieldLabel>Capitalization</FieldLabel>
                         <Select value={s.sectionHeadingCapitalization} onValueChange={(v) => upd({ sectionHeadingCapitalization: v as SectionHeadingCapitalization })}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="w-full h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="uppercase">Uppercase</SelectItem>
                             <SelectItem value="capitalize">Capitalize</SelectItem>
@@ -931,7 +1558,7 @@ export function CustomizePanel() {
                       <SliderRow
                         label="Icon Size"
                         value={s.sectionHeadingIconSize || 1.0}
-                        display={`×${(s.sectionHeadingIconSize || 1.0).toFixed(1)}`}
+                        display={`x${(s.sectionHeadingIconSize || 1.0).toFixed(1)}`}
                         min={0.6} max={1.8} step={0.1}
                         onChange={(v) => upd({ sectionHeadingIconSize: v })}
                       />
@@ -944,7 +1571,7 @@ export function CustomizePanel() {
                     <div>
                       <FieldLabel>Display Style</FieldLabel>
                       <Select value={s.skillDisplay} onValueChange={(v) => upd({ skillDisplay: v as SkillDisplayOption })}>
-                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="w-full h-8 text-xs"><SelectValue /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="compact">Compact (inline list)</SelectItem>
                           <SelectItem value="grid">Grid (columns)</SelectItem>
@@ -977,7 +1604,7 @@ export function CustomizePanel() {
                       <div>
                         <FieldLabel>Experience</FieldLabel>
                         <Select value={s.experienceOrder} onValueChange={(v) => upd({ experienceOrder: v as ExperienceOrder })}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="w-full h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="title-employer">Title first</SelectItem>
                             <SelectItem value="employer-title">Company first</SelectItem>
@@ -987,7 +1614,7 @@ export function CustomizePanel() {
                       <div>
                         <FieldLabel>Education</FieldLabel>
                         <Select value={s.educationOrder} onValueChange={(v) => upd({ educationOrder: v as EducationOrder })}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectTrigger className="w-full h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="degree-school">Degree first</SelectItem>
                             <SelectItem value="school-degree">School first</SelectItem>

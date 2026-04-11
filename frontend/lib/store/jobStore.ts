@@ -3,8 +3,6 @@ import { immer } from 'zustand/middleware/immer'
 import type { JobApplication, JobStore, JobStatus, JobContact, JobEvent } from '@/lib/store/jobTypes'
 import {
   JOB_STATUS_LABELS,
-  loadAllJobs,
-  saveAllJobs,
 } from '@/lib/store/jobTypes'
 import { loadAllJobs as dbLoadAllJobs, saveAllJobs as dbSaveAllJobs } from '@/lib/db/jobDatabase'
 import { generateId } from '@/lib/utils/ids'
