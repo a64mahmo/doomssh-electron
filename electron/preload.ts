@@ -30,6 +30,8 @@ contextBridge.exposeInMainWorld('electron', {
     read:    (id: string): Promise<unknown | null> => ipcRenderer.invoke('resume:read', id),
     write:   (resume: unknown): Promise<void>      => ipcRenderer.invoke('resume:write', resume),
     delete:  (id: string): Promise<void>           => ipcRenderer.invoke('resume:delete', id),
+    readJobs:  (): Promise<unknown | null>         => ipcRenderer.invoke('jobs:read'),
+    writeJobs: (data: unknown): Promise<void>      => ipcRenderer.invoke('jobs:write', data),
   },
 
   // ── AI streaming ───────────────────────────────────────────────────────────

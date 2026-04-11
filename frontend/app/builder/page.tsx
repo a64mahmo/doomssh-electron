@@ -192,10 +192,10 @@ export default function BuilderDashboard() {
             label="Cover Letter" 
             comingSoon 
           />
-          <NavItem 
-            icon={<Briefcase size={18} />} 
-            label="Job Tracker" 
-            comingSoon 
+          <NavItem
+            icon={<Briefcase size={18} />}
+            label="Job Tracker"
+            onClick={() => router.push('/builder/jobs')}
           />
           <NavItem 
             icon={<MessageSquare size={18} />} 
