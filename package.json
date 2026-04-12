@@ -1,26 +1,8 @@
 {
   "name": "doomssh",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": true,
   "main": "electron/dist/main.js",
-  "scripts": {
-    "dev": "concurrently --kill-others-on-fail \"npm run electron:watch\" \"npm run electron:dev\"",
-    "frontend:dev": "cd frontend && npm run dev",
-    "frontend:install": "cd frontend && npm install",
-    "install-all": "npm install && npm run frontend:install",
-    "electron:build": "tsc -p electron/tsconfig.json",
-    "electron:watch": "tsc -p electron/tsconfig.json --watch",
-    "electron:dev": "wait-on electron/dist/main.js && NODE_ENV=development electron electron/dist/main.js",
-    "electron:preview": "npm run build && npm run electron:build && NODE_ENV=production electron electron/dist/main.js",
-    "electron:dist": "npm run build && npm run electron:build && electron-builder",
-    "dev:all": "npm run dev",
-    "test:e2e": "playwright test tests/e2e",
-    "test:visual": "playwright test tests/visual",
-    "test:performance": "playwright test tests/performance",
-    "test:regression": "playwright test tests/regression",
-    "test:integration": "playwright test tests/integration",
-    "test:all": "npm run test --prefix frontend && npm run test:e2e && npm run test:visual && npm run test:performance && npm run test:regression && npm run test:integration"
-  },
   "build": {
     "appId": "com.doomssh.app",
     "productName": "DoomSSH",
@@ -88,5 +70,24 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "wait-on": "^8.0.5"
+  },
+  "scripts": {
+    "dev": "concurrently --kill-others-on-fail \"npm run electron:watch\" \"npm run electron:dev\"",
+    "frontend:dev": "cd frontend && npm run dev",
+    "frontend:install": "cd frontend && npm install",
+    "install-all": "npm install && npm run frontend:install",
+    "build": "cd frontend && npm run build",
+    "electron:build": "tsc -p electron/tsconfig.json",
+    "electron:watch": "tsc -p electron/tsconfig.json --watch",
+    "electron:dev": "wait-on electron/dist/main.js && NODE_ENV=development electron electron/dist/main.js",
+    "electron:preview": "npm run build && npm run electron:build && NODE_ENV=production electron electron/dist/main.js",
+    "electron:dist": "npm run build && npm run electron:build && electron-builder",
+    "dev:all": "npm run dev",
+    "test:e2e": "playwright test tests/e2e",
+    "test:visual": "playwright test tests/visual",
+    "test:performance": "playwright test tests/performance",
+    "test:regression": "playwright test tests/regression",
+    "test:integration": "playwright test tests/integration",
+    "test:all": "npm run test --prefix frontend && npm run test:e2e && npm run test:visual && npm run test:performance && npm run test:regression && npm run test:integration"
   }
 }
