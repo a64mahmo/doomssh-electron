@@ -1,7 +1,7 @@
 "use client";
 import { useRef } from "react";
 import { toast } from "sonner";
-import { useSection } from "@/hooks/useResume";
+import { useSection, useResume } from "@/hooks/useResume";
 import { Input } from "@/components/ui/input";
 import {
   User,
@@ -114,6 +114,7 @@ const SOCIAL_PROFILES = [
 
 export function HeaderSection({ sectionId }: Props) {
   const { section, updateItems } = useSection(sectionId);
+  const { updateSettings } = useResume();
   const item = (section?.items as HeaderData) || {};
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -149,7 +150,10 @@ export function HeaderSection({ sectionId }: Props) {
     }
 
     const reader = new FileReader();
-    reader.onload = () => update("photo", reader.result as string);
+    reader.onload = () => {
+      update("photo", reader.result as string);
+      updateSettings({ photoEnabled: true });
+    };
     reader.readAsDataURL(file);
   };
 

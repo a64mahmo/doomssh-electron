@@ -5,7 +5,7 @@ import { useTheme } from 'next-themes'
 import { 
   Plus, MoreHorizontal, Copy, Trash2, Pencil, FileText, 
   Mail, Briefcase, MessageSquare, Settings as SettingsIcon,
-  Sun, Moon, LayoutGrid, Database, Key
+  Sun, Moon, LayoutGrid, Database, Key, Bug
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getAllResumes, deleteResume, duplicateResume, createNewResume, saveResume } from '@/lib/db/database'
@@ -13,6 +13,7 @@ import { generateId } from '@/lib/utils/ids'
 import type { Resume } from '@/lib/store/types'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { useUIStore } from '@/lib/store/uiStore'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -27,6 +28,8 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Separator } from '@/components/ui/separator'
 
 const TEMPLATE_GRADIENT: Record<string, string> = {
   modern:  'from-violet-500 to-indigo-600',
@@ -80,6 +83,8 @@ export default function BuilderDashboard() {
   const [vaultReady, setVaultReady] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [apiKey, setApiKey] = useState('')
+  const globalDebugMode = useUIStore(s => s.globalDebugMode)
+  const setGlobalDebugMode = useUIStore(s => s.setGlobalDebugMode)
 
   const [isMac, setIsMac] = useState(false)
 
@@ -101,9 +106,12 @@ export default function BuilderDashboard() {
   useEffect(() => {
     if (window.electron) {
       window.electron.getApiKey().then(key => setApiKey(key || ''))
+      if (typeof window.electron.getDebugMode === 'function') {
+        window.electron.getDebugMode().then(enabled => setGlobalDebugMode(enabled))
+      }
       setIsMac(window.electron.platform === 'darwin')
     }
-  }, [])
+  }, [setGlobalDebugMode])
 
   useEffect(() => {
     if (!vaultReady) return
@@ -143,6 +151,9 @@ export default function BuilderDashboard() {
   async function saveSettings() {
     if (window.electron) {
       await window.electron.setApiKey(apiKey)
+      if (typeof window.electron.setDebugMode === 'function') {
+        await window.electron.setDebugMode(globalDebugMode)
+      }
     }
     setSettingsOpen(false)
   }
@@ -389,6 +400,25 @@ export default function BuilderDashboard() {
               <p className="text-[10px] text-muted-foreground">
                 Required for AI features like bullet improvement and summary generation.
               </p>
+            </div>
+
+            <Separator className="my-2" />
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="bug-mode" className="flex items-center gap-2">
+                  <Bug size={14} />
+                  Bug Mode
+                </Label>
+                <p className="text-[10px] text-muted-foreground">
+                  Enable persistent error notifications for debugging.
+                </p>
+              </div>
+              <Switch
+                id="bug-mode"
+                checked={globalDebugMode}
+                onCheckedChange={setGlobalDebugMode}
+              />
             </div>
           </div>
           <DialogFooter>

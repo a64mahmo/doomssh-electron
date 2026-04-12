@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { useResumeStore } from './resumeStore'
 import { saveResume } from '@/lib/db/database'
 import { DEFAULT_SETTINGS } from './types'
+import { useUIStore } from './uiStore'
 
 // Mock dependencies
 vi.mock('@/lib/db/database', () => ({
@@ -11,8 +12,8 @@ vi.mock('@/lib/db/database', () => ({
 const baseResume = {
   id: 'pers-123',
   name: 'Persistence Test',
-  createdAt: Date.now(),
-  updatedAt: Date.now(),
+  createdAt: 1000,
+  updatedAt: 1000,
   template: 'classic' as const,
   settings: { ...DEFAULT_SETTINGS },
   sections: [],
@@ -22,6 +23,7 @@ describe('resumeStore Persistence logic', () => {
   beforeEach(() => {
     vi.useFakeTimers()
     useResumeStore.setState({ resume: { ...baseResume }, isDirty: false })
+    useUIStore.getState().clearErrors()
     vi.clearAllMocks()
   })
 
@@ -56,6 +58,37 @@ describe('resumeStore Persistence logic', () => {
     
     vi.advanceTimersByTime(500)
     expect(saveResume).toHaveBeenCalled()
+  })
+
+  it('adds an error to uiStore when save fails', async () => {
+    vi.mocked(saveResume).mockRejectedValueOnce(new Error('Disk Full'))
+    
+    useResumeStore.getState().updateResumeName('Failed Save')
+    expect(useResumeStore.getState().isDirty).toBe(true)
+    
+    vi.advanceTimersByTime(500)
+    
+    // Wait for the async timeout callback to finish
+    await vi.runAllTimersAsync()
+    
+    expect(saveResume).toHaveBeenCalled()
+    const errors = useUIStore.getState().errors
+    expect(errors).toContain('Persistence Error: Disk Full')
+    // Should still be dirty if save failed
+    expect(useResumeStore.getState().isDirty).toBe(true)
+  })
+
+  it('clears isDirty flag after successful save', async () => {
+    vi.mocked(saveResume).mockResolvedValueOnce(undefined)
+    
+    useResumeStore.getState().updateResumeName('Success Save')
+    expect(useResumeStore.getState().isDirty).toBe(true)
+    
+    vi.advanceTimersByTime(500)
+    await vi.runAllTimersAsync()
+    
+    expect(saveResume).toHaveBeenCalled()
+    expect(useResumeStore.getState().isDirty).toBe(false)
   })
 
   it('keeps headingColor in sync with accentColor in basic mode', () => {

@@ -46,6 +46,7 @@ export async function mockElectronBridge(page: Page) {
             detailsPosition: 'below',
             detailsArrangement: 'wrap',
             sectionHeadingStyle: 'underline',
+            debugMode: false,
           },
           sections: [
             { id: 'sec-1', type: 'header', title: 'Personal Details', visible: true, items: { fullName: 'John Doe' } },

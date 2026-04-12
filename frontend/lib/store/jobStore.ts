@@ -7,12 +7,20 @@ import {
 import { loadAllJobs as dbLoadAllJobs, saveAllJobs as dbSaveAllJobs } from '@/lib/db/jobDatabase'
 import { generateId } from '@/lib/utils/ids'
 
+import { useUIStore } from '@/lib/store/uiStore'
+
 let saveTimeout: ReturnType<typeof setTimeout> | null = null
 
-function scheduleSave(getState: () => { jobs: JobApplication[] }) {
+function scheduleSave(getState: () => { jobs: JobApplication[]; markSaved: () => void }) {
   if (saveTimeout) clearTimeout(saveTimeout)
-  saveTimeout = setTimeout(() => {
-    dbSaveAllJobs(getState().jobs)
+  saveTimeout = setTimeout(async () => {
+    try {
+      await dbSaveAllJobs(getState().jobs)
+      getState().markSaved()
+    } catch (err) {
+      console.error('Failed to save jobs:', err)
+      useUIStore.getState().addError(`Job Persistence Error: ${err instanceof Error ? err.message : String(err)}`)
+    }
   }, 500)
 }
 

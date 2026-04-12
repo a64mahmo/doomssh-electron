@@ -41,6 +41,11 @@ describe('resumeStore', () => {
     expect(useResumeStore.getState().isDirty).toBe(true)
   })
 
+  it('updates debugMode setting', () => {
+    useResumeStore.getState().updateSettings({ debugMode: true })
+    expect(useResumeStore.getState().resume?.settings.debugMode).toBe(true)
+  })
+
   it('adds a section', () => {
     useResumeStore.getState().addSection('experience')
     const sections = useResumeStore.getState().resume?.sections

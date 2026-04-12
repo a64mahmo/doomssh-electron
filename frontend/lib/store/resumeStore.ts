@@ -11,6 +11,7 @@ import type {
 import { SECTION_LABELS } from '@/lib/store/types'
 import { generateId } from '@/lib/utils/ids'
 import { saveResume } from '@/lib/db/database'
+import { useUIStore } from '@/lib/store/uiStore'
 
 // Default items factory — one place that defines empty state per section type
 function createDefaultItems(type: SectionType): AnySectionItems {
@@ -41,11 +42,19 @@ let saveTimeout: ReturnType<typeof setTimeout> | null = null
 // immer produces a Proxy during the set() callback — that Proxy is revoked
 // once the mutation is done. We must NOT close over the draft directly.
 // Instead we schedule a re-read from the store's finalized state.
-function scheduleSave(getState: () => { resume: Resume | null }) {
+function scheduleSave(getState: () => { resume: Resume | null; markSaved: () => void }) {
   if (saveTimeout) clearTimeout(saveTimeout)
-  saveTimeout = setTimeout(() => {
+  saveTimeout = setTimeout(async () => {
     const resume = getState().resume
-    if (resume) saveResume(resume)
+    if (resume) {
+      try {
+        await saveResume(resume)
+        getState().markSaved()
+      } catch (err) {
+        console.error('Failed to save resume:', err)
+        useUIStore.getState().addError(`Persistence Error: ${err instanceof Error ? err.message : String(err)}`)
+      }
+    }
   }, 500)
 }
 

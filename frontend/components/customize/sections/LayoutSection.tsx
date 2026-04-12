@@ -119,6 +119,13 @@ export function LayoutSection({
             </SelectContent>
           </Select>
         </div>
+
+        <ToggleRow
+          id="debug-mode"
+          label="Debug Mode (Show Errors)"
+          checked={s.debugMode}
+          onCheckedChange={(v) => upd({ debugMode: v })}
+        />
       </ControlGroup>
 
       <Separator className="opacity-30" />

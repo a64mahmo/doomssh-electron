@@ -1,6 +1,7 @@
 'use client'
 import { useState, useCallback } from 'react'
 import { bulletPrompt, improvePrompt, summaryPrompt } from '@/lib/ai/prompts'
+import { useUIStore } from '@/lib/store/uiStore'
 
 // Detect Electron renderer — window.electron is injected by preload.ts
 function getElectron() {
@@ -101,6 +102,7 @@ export function useAI({ onChunk }: UseAIOptions = {}) {
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Unknown error'
         setError(msg)
+        useUIStore.getState().addError(`AI Error: ${msg}`)
         throw err
       } finally {
         setLoading(false)

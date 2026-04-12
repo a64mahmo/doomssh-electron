@@ -3,6 +3,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { ThemeProvider } from '@/components/theme-provider'
 import { ElectronProvider } from '@/components/ElectronProvider'
+import { DebugToast } from '@/components/DebugToast'
 import { cn } from '@/lib/utils'
 import { Geist } from 'next/font/google'
 import './globals.css'
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           <TooltipProvider>
             <ElectronProvider />
+            <DebugToast />
             {children}
           </TooltipProvider>
           <Toaster />

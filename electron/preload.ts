@@ -6,6 +6,10 @@ contextBridge.exposeInMainWorld('electron', {
   setApiKey: (key: string): Promise<void> => ipcRenderer.invoke('set-api-key', key),
   getApiKey: (): Promise<string | null> => ipcRenderer.invoke('get-api-key'),
 
+  // ── Debug ──────────────────────────────────────────────────────────────────
+  setDebugMode: (enabled: boolean): Promise<void> => ipcRenderer.invoke('set-debug-mode', enabled),
+  getDebugMode: (): Promise<boolean> => ipcRenderer.invoke('get-debug-mode'),
+
   savePdf: (args: { bytes: number[]; fileName: string }): Promise<{ success: boolean; path?: string; error?: string; cancelled?: boolean }> =>
     ipcRenderer.invoke('save-pdf', args),
 

@@ -279,6 +279,33 @@ describe('jobStore', () => {
       expect(saveAllJobs).toHaveBeenCalledTimes(1)
     })
 
+    it('adds error to uiStore when save fails', async () => {
+      const { saveAllJobs } = await import('@/lib/db/jobDatabase')
+      const { useUIStore } = await import('./uiStore')
+      useUIStore.getState().clearErrors()
+      vi.mocked(saveAllJobs).mockRejectedValueOnce(new Error('Write Error'))
+      
+      useJobStore.getState().addJob({ company: 'Fail' })
+      vi.advanceTimersByTime(500)
+      await vi.runAllTimersAsync()
+      
+      expect(useUIStore.getState().errors).toContain('Job Persistence Error: Write Error')
+      expect(useJobStore.getState().isDirty).toBe(true)
+    })
+
+    it('clears isDirty flag after successful save', async () => {
+      const { saveAllJobs } = await import('@/lib/db/jobDatabase')
+      vi.mocked(saveAllJobs).mockResolvedValueOnce(undefined)
+      
+      useJobStore.getState().addJob({ company: 'Success' })
+      expect(useJobStore.getState().isDirty).toBe(true)
+      
+      vi.advanceTimersByTime(500)
+      await vi.runAllTimersAsync()
+      
+      expect(useJobStore.getState().isDirty).toBe(false)
+    })
+
     it('loads jobs from vault', async () => {
       const { loadAllJobs } = await import('@/lib/db/jobDatabase')
       const mockJobs = [makeJob({ id: 'loaded-1' })]

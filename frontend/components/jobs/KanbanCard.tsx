@@ -5,7 +5,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { GripVertical, Building2 } from 'lucide-react'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
+import { cn, formatSalary } from '@/lib/utils'
 import type { JobApplication } from '@/lib/store/jobTypes'
 import { JOB_SOURCE_LABELS } from '@/lib/store/jobTypes'
 import dayjs from 'dayjs'
@@ -88,15 +88,15 @@ export function KanbanCard({ job, onClick }: KanbanCardProps) {
               </Badge>
             )}
           </div>
-          {(job.salaryMin || job.salaryMax || daysAgo) && (
+          {(job.salaryMin !== null || job.salaryMax !== null || daysAgo) && (
             <div className="flex items-center justify-between mt-2 text-[10px] text-muted-foreground">
-              {(job.salaryMin || job.salaryMax) && (
+              {(job.salaryMin !== null || job.salaryMax !== null) && (
                 <span>
-                  {job.salaryMin && job.salaryMax
-                    ? `${(job.salaryMin / 1000).toFixed(0)}k–${(job.salaryMax / 1000).toFixed(0)}k`
-                    : job.salaryMin
-                    ? `${(job.salaryMin / 1000).toFixed(0)}k+`
-                    : `up to ${(job.salaryMax! / 1000).toFixed(0)}k`}
+                  {job.salaryMin !== null && job.salaryMax !== null
+                    ? `${formatSalary(job.salaryMin)}–${formatSalary(job.salaryMax)}`
+                    : job.salaryMin !== null
+                    ? `${formatSalary(job.salaryMin)}+`
+                    : `up to ${formatSalary(job.salaryMax)}`}
                 </span>
               )}
               {daysAgo && <span>{daysAgo}</span>}

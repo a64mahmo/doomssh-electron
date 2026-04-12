@@ -138,10 +138,15 @@ async function createWindow(): Promise<void> {
     minWidth: 1024,
     minHeight: 700,
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
+    titleBarOverlay: process.platform === 'win32' ? {
+      color: '#00000000',
+      symbolColor: '#94a3b8',
+      height: 32
+    } : false,
     vibrancy: 'under-window', // macOS
     visualEffectState: 'active', // macOS
     backgroundMaterial: 'acrylic', // Windows 11
-    transparent: true,
+    transparent: process.platform !== 'win32',
     icon: path.join(projectRoot(), isDev ? 'frontend/public/file.svg' : 'frontend/out/file.svg'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -293,15 +298,29 @@ ipcMain.handle('resume:list', async () => {
 ipcMain.handle('resume:read', async (_event, id: string) => {
   const dir = await readVaultDir()
   if (!dir) return null
-  try { return JSON.parse(await fsp.readFile(vaultFile(dir, id), 'utf8')) }
-  catch { return null }
+  try { 
+    const filePath = vaultFile(dir, id)
+    const content = await fsp.readFile(filePath, 'utf8')
+    return JSON.parse(content)
+  } catch (err) { 
+    console.error(`[electron] failed to read resume ${id}:`, err)
+    return null 
+  }
 })
 
 ipcMain.handle('resume:write', async (_event, resume: { id: string; [key: string]: unknown }) => {
   const dir = await readVaultDir()
   if (!dir) throw new Error('No vault set')
-  await fsp.mkdir(dir, { recursive: true })
-  await fsp.writeFile(vaultFile(dir, resume.id), JSON.stringify(resume, null, 2), 'utf8')
+  const filePath = vaultFile(dir, resume.id)
+  try {
+    await fsp.mkdir(dir, { recursive: true })
+    const content = JSON.stringify(resume)
+    await fsp.writeFile(filePath, content, 'utf8')
+    console.log(`[electron] wrote resume ${resume.id} (${content.length} bytes)`)
+  } catch (err) {
+    console.error(`[electron] failed to write resume ${resume.id}:`, err)
+    throw err
+  }
 })
 
 ipcMain.handle('resume:delete', async (_event, id: string) => {
@@ -325,20 +344,54 @@ ipcMain.handle('resume:delete', async (_event, id: string) => {
 ipcMain.handle('jobs:read', async () => {
   const dir = await readVaultDir()
   if (!dir) return null
-  try { return JSON.parse(await fsp.readFile(path.join(dir, '_jobs.json'), 'utf8')) }
-  catch { return null }
+  try { 
+    const filePath = path.join(dir, '_jobs.json')
+    if (!fs.existsSync(filePath)) return null
+    return JSON.parse(await fsp.readFile(filePath, 'utf8')) 
+  } catch (err) { 
+    console.error('[electron] failed to read jobs:', err)
+    return null 
+  }
 })
 
 ipcMain.handle('jobs:write', async (_event, data: { version: number; jobs: unknown[] }) => {
   const dir = await readVaultDir()
   if (!dir) throw new Error('No vault set')
-  await fsp.mkdir(dir, { recursive: true })
-  await fsp.writeFile(path.join(dir, '_jobs.json'), JSON.stringify(data, null, 2), 'utf8')
+  const filePath = path.join(dir, '_jobs.json')
+  try {
+    await fsp.mkdir(dir, { recursive: true })
+    const content = JSON.stringify(data)
+    await fsp.writeFile(filePath, content, 'utf8')
+    console.log(`[electron] wrote jobs file (${content.length} bytes)`)
+  } catch (err) {
+    console.error('[electron] failed to write jobs file:', err)
+    throw err
+  }
 })
 
 // ── IPC: API key management ───────────────────────────────────────────────────
 ipcMain.handle('set-api-key', (_event, key: string) => storeApiKey(key))
 ipcMain.handle('get-api-key', () => getStoredApiKey())
+
+ipcMain.handle('set-debug-mode', (_event, enabled: boolean) => {
+  const path = require('path')
+  const fs = require('fs')
+  const debugPath = path.join(app.getPath('userData'), 'debug.json')
+  fs.writeFileSync(debugPath, JSON.stringify({ enabled }), 'utf8')
+})
+
+ipcMain.handle('get-debug-mode', () => {
+  const path = require('path')
+  const fs = require('fs')
+  const debugPath = path.join(app.getPath('userData'), 'debug.json')
+  if (!fs.existsSync(debugPath)) return false
+  try {
+    const data = JSON.parse(fs.readFileSync(debugPath, 'utf8'))
+    return !!data.enabled
+  } catch {
+    return false
+  }
+})
 
 ipcMain.handle('restart-and-install', () => {
   autoUpdater.quitAndInstall()

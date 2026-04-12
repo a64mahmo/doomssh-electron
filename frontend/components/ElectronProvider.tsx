@@ -8,6 +8,7 @@ export function ElectronProvider() {
     if (typeof window === 'undefined' || !window.electron) return
 
     document.documentElement.classList.add('electron')
+    document.documentElement.classList.add(`electron-${window.electron.platform}`)
 
     const unsubAvailable = window.electron.onUpdateAvailable((info) => {
       toast.info(`Update available: v${info.version} is downloading…`, {

@@ -356,6 +356,9 @@ export interface ResumeSettings {
 
   // Section Column Mapping (sectionId -> 'main' | 'sidebar')
   sectionColumns: Record<string, 'main' | 'sidebar'>
+
+  // Debug
+  debugMode: boolean
 }
 
 // ─── Resume ───────────────────────────────────────────────────────────────────
@@ -393,11 +396,16 @@ export interface UIStore {
   previewZoom: number
   isExporting: boolean
   selectedText: string
+  errors: string[]
+  globalDebugMode: boolean
   setActiveSection: (id: string | null) => void
   setShowAIPanel: (show: boolean) => void
   setPreviewZoom: (zoom: number) => void
   setIsExporting: (exporting: boolean) => void
   setSelectedText: (text: string) => void
+  addError: (error: string) => void
+  clearErrors: () => void
+  setGlobalDebugMode: (enabled: boolean) => void
 }
 
 // ─── Default Values ───────────────────────────────────────────────────────────
@@ -494,6 +502,9 @@ export const DEFAULT_SETTINGS: ResumeSettings = {
   sectionSpacing: 1.0,
 
   sectionColumns: {},
+
+  // Debug
+  debugMode: false,
 }
 
 export const DEFAULT_HEADER: HeaderData = {

@@ -6,6 +6,10 @@ interface ElectronAPI {
   setApiKey: (key: string) => Promise<void>
   getApiKey: () => Promise<string | null>
 
+  // Debug
+  setDebugMode: (enabled: boolean) => Promise<void>
+  getDebugMode: () => Promise<boolean>
+
   // PDF export — generates PDF in-renderer via @react-pdf, saves via native dialog
   savePdf: (args: { bytes: number[]; fileName: string }) => Promise<{
     success: boolean

@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { cn } from '@/lib/utils'
+import { cn, formatSalary } from '@/lib/utils'
 import { useJobStore } from '@/lib/store/jobStore'
 import {
   JOB_STATUS_CONFIG,
@@ -223,8 +223,8 @@ export function JobTable({ onSelectJob }: JobTableProps) {
                       {job.appliedDate ? dayjs(job.appliedDate).format('MMM D, YYYY') : '—'}
                     </td>
                     <td className="py-2 px-2 text-muted-foreground">
-                      {job.salaryMin || job.salaryMax
-                        ? `${job.salaryMin ? `${(job.salaryMin / 1000).toFixed(0)}k` : '?'}–${job.salaryMax ? `${(job.salaryMax / 1000).toFixed(0)}k` : '?'}`
+                      {job.salaryMin !== null || job.salaryMax !== null
+                        ? `${formatSalary(job.salaryMin)}–${formatSalary(job.salaryMax)}`
                         : '—'}
                     </td>
                     <td className="py-2 px-2 text-muted-foreground">{JOB_SOURCE_LABELS[job.source]}</td>

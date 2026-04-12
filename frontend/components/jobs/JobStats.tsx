@@ -64,9 +64,9 @@ export function JobStats() {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard icon={<BarChart3 size={14} />} label="Total Applications" value={stats.total} />
-        <StatCard icon={<TrendingUp size={14} />} label="Response Rate" value={`${stats.responseRate.toFixed(0)}%`} />
-        <StatCard icon={<Target size={14} />} label="Interview Rate" value={`${stats.interviewRate.toFixed(0)}%`} />
-        <StatCard icon={<Trophy size={14} />} label="Offer Rate" value={`${stats.offerRate.toFixed(0)}%`} />
+        <StatCard icon={<TrendingUp size={14} />} label="Response Rate" value={`${stats.responseRate.toFixed(1)}%`} />
+        <StatCard icon={<Target size={14} />} label="Interview Rate" value={`${stats.interviewRate.toFixed(1)}%`} />
+        <StatCard icon={<Trophy size={14} />} label="Offer Rate" value={`${stats.offerRate.toFixed(1)}%`} />
       </div>
 
       {/* Pipeline Funnel */}
