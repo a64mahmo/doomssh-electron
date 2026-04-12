@@ -5,7 +5,7 @@ import { useTheme } from 'next-themes'
 import { 
   Plus, MoreHorizontal, Copy, Trash2, Pencil, FileText, 
   Mail, Briefcase, MessageSquare, Settings as SettingsIcon,
-  Sun, Moon, LayoutGrid, Database, Key, Bug
+  Sun, Moon, LayoutGrid, Database, Key, Bug, RefreshCw, Download, ArrowUpCircle
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getAllResumes, deleteResume, duplicateResume, createNewResume, saveResume } from '@/lib/db/database'
@@ -83,8 +83,12 @@ export default function BuilderDashboard() {
   const [vaultReady, setVaultReady] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [apiKey, setApiKey] = useState('')
+  const [appVersion, setAppVersion] = useState('')
   const globalDebugMode = useUIStore(s => s.globalDebugMode)
   const setGlobalDebugMode = useUIStore(s => s.setGlobalDebugMode)
+  const updateStatus = useUIStore(s => s.updateStatus)
+  const updateProgress = useUIStore(s => s.updateProgress)
+  const updateVersion = useUIStore(s => s.updateVersion)
 
   const [isMac, setIsMac] = useState(false)
 
@@ -108,6 +112,9 @@ export default function BuilderDashboard() {
       window.electron.getApiKey().then(key => setApiKey(key || ''))
       if (typeof window.electron.getDebugMode === 'function') {
         window.electron.getDebugMode().then(enabled => setGlobalDebugMode(enabled))
+      }
+      if (typeof window.electron.getAppVersion === 'function') {
+        window.electron.getAppVersion().then(v => setAppVersion(v))
       }
       setIsMac(window.electron.platform === 'darwin')
     }
@@ -156,6 +163,22 @@ export default function BuilderDashboard() {
       }
     }
     setSettingsOpen(false)
+  }
+
+  async function handleCheckUpdates() {
+    if (window.electron && typeof window.electron.checkForUpdates === 'function') {
+      try {
+        await window.electron.checkForUpdates()
+      } catch (err) {
+        toast.error('Failed to check for updates')
+      }
+    }
+  }
+
+  async function handleRestartAndInstall() {
+    if (window.electron && typeof window.electron.restartAndInstall === 'function') {
+      await window.electron.restartAndInstall()
+    }
   }
 
   if (!vaultReady) {
@@ -385,6 +408,79 @@ export default function BuilderDashboard() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            {/* Updates Section */}
+            <div className="space-y-3 p-3 rounded-xl bg-accent/30 border border-border/50">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                    <ArrowUpCircle size={12} />
+                    Software Update
+                  </p>
+                  <p className="text-[10px] text-muted-foreground font-medium">
+                    Current Version: v{appVersion || '0.0.0'}
+                  </p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-7 text-[10px] font-bold uppercase tracking-widest gap-1.5"
+                  onClick={handleCheckUpdates}
+                  disabled={updateStatus === 'checking' || updateStatus === 'downloading'}
+                >
+                  <RefreshCw size={12} className={cn(updateStatus === 'checking' && "animate-spin")} />
+                  {updateStatus === 'checking' ? 'Checking...' : 'Check for Updates'}
+                </Button>
+              </div>
+
+              {updateStatus === 'available' && (
+                <div className="flex items-center gap-2 text-[10px] text-primary font-bold animate-pulse">
+                  <Download size={12} />
+                  New update v{updateVersion} is available and downloading...
+                </div>
+              )}
+
+              {updateStatus === 'downloading' && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest">
+                    <span className="text-muted-foreground flex items-center gap-1.5">
+                      <Download size={12} />
+                      Downloading Update
+                    </span>
+                    <span>{Math.round(updateProgress)}%</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-primary transition-all duration-300" 
+                      style={{ width: `${updateProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {updateStatus === 'downloaded' && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-[10px] text-green-600 dark:text-green-400 font-bold">
+                    <ArrowUpCircle size={12} />
+                    Update v{updateVersion} is ready to install!
+                  </div>
+                  <Button 
+                    className="w-full h-8 text-[10px] font-bold uppercase tracking-widest bg-green-600 hover:bg-green-700 text-white border-0"
+                    onClick={handleRestartAndInstall}
+                  >
+                    Restart & Install Now
+                  </Button>
+                </div>
+              )}
+
+              {updateStatus === 'not-available' && (
+                <p className="text-[10px] text-muted-foreground font-medium flex items-center gap-1.5">
+                  Your software is up to date.
+                </p>
+              )}
+            </div>
+
+            <Separator className="my-1" />
+
             <div className="space-y-2">
               <Label htmlFor="apiKey" className="flex items-center gap-2">
                 <Key size={14} />

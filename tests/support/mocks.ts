@@ -4,8 +4,12 @@ export async function mockElectronBridge(page: Page) {
   await page.addInitScript(() => {
     (window as any).electron = {
       platform: 'darwin',
+      getAppVersion: () => Promise.resolve('1.0.0'),
+      getDebugMode: () => Promise.resolve(false),
+      setDebugMode: () => Promise.resolve(),
       vault: {
         getPath: () => Promise.resolve('/mock/path'),
+        setPath: () => Promise.resolve('/mock/path'),
         list: () => Promise.resolve([]),
         read: (id: string) => Promise.resolve({
           id,
@@ -57,11 +61,21 @@ export async function mockElectronBridge(page: Page) {
           console.log('Mock Vault Write:', resume);
           return Promise.resolve();
         },
+        delete: () => Promise.resolve(),
+        readJobs: () => Promise.resolve({ version: 1, jobs: [] }),
+        writeJobs: () => Promise.resolve(),
       },
+      onUpdateChecking: () => () => {},
       onUpdateAvailable: () => () => {},
+      onUpdateNotAvailable: () => () => {},
+      onUpdateProgress: () => () => {},
       onUpdateDownloaded: () => () => {},
+      onUpdateError: () => () => {},
+      checkForUpdates: () => Promise.resolve(),
+      restartAndInstall: () => Promise.resolve(),
       getApiKey: () => Promise.resolve(''),
       setApiKey: () => Promise.resolve(),
+      savePdf: () => Promise.resolve({ success: true, path: '/mock/resume.pdf' }),
     };
   });
 }

@@ -1,6 +1,7 @@
 // Global type for the Electron preload bridge (window.electron)
 interface ElectronAPI {
   platform: string
+  getAppVersion: () => Promise<string>
 
   // API key
   setApiKey: (key: string) => Promise<void>
@@ -31,8 +32,13 @@ interface ElectronAPI {
   }
 
   // Updates
+  onUpdateChecking: (callback: () => void) => () => void
   onUpdateAvailable: (callback: (info: any) => void) => () => void
+  onUpdateNotAvailable: (callback: (info: any) => void) => () => void
+  onUpdateProgress: (callback: (progress: any) => void) => () => void
   onUpdateDownloaded: (callback: (info: any) => void) => () => void
+  onUpdateError: (callback: (error: string) => void) => () => void
+  checkForUpdates: () => Promise<any>
   restartAndInstall: () => Promise<void>
 
   // AI streaming

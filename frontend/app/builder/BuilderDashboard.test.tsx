@@ -48,9 +48,15 @@ describe('BuilderDashboard', () => {
         setPath: vi.fn().mockResolvedValue('/mock/vault'),
       },
       getApiKey: vi.fn().mockResolvedValue(''),
+      getDebugMode: vi.fn().mockResolvedValue(false),
+      getAppVersion: vi.fn().mockResolvedValue('1.0.0'),
       platform: 'darwin',
+      onUpdateChecking: vi.fn(() => () => {}),
       onUpdateAvailable: vi.fn(() => () => {}),
+      onUpdateNotAvailable: vi.fn(() => () => {}),
+      onUpdateProgress: vi.fn(() => () => {}),
       onUpdateDownloaded: vi.fn(() => () => {}),
+      onUpdateError: vi.fn(() => () => {}),
     } as any
   })
 

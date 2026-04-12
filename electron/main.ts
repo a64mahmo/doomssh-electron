@@ -481,9 +481,24 @@ app.on('will-quit', () => {
 })
 
 // ── Auto Update Events ───────────────────────────────────────────────────────
+autoUpdater.on('checking-for-update', () => {
+  console.log('[updater] checking for update...')
+  mainWindow?.webContents.send('app:update-checking')
+})
+
 autoUpdater.on('update-available', (info: UpdateInfo) => {
   console.log('[updater] update available:', info.version)
   mainWindow?.webContents.send('app:update-available', info)
+})
+
+autoUpdater.on('update-not-available', (info: UpdateInfo) => {
+  console.log('[updater] update not available:', info.version)
+  mainWindow?.webContents.send('app:update-not-available', info)
+})
+
+autoUpdater.on('download-progress', (progressObj) => {
+  console.log('[updater] download progress:', progressObj.percent)
+  mainWindow?.webContents.send('app:update-progress', progressObj)
 })
 
 autoUpdater.on('update-downloaded', (info: UpdateInfo) => {
@@ -493,4 +508,18 @@ autoUpdater.on('update-downloaded', (info: UpdateInfo) => {
 
 autoUpdater.on('error', (err: Error) => {
   console.error('[updater] error:', err)
+  mainWindow?.webContents.send('app:update-error', err.message)
+})
+
+ipcMain.handle('get-app-version', () => app.getVersion())
+
+ipcMain.handle('check-for-updates', async () => {
+  if (isDev) return { message: 'In development mode', status: 'dev' }
+  try {
+    const result = await autoUpdater.checkForUpdates()
+    return result
+  } catch (err) {
+    console.error('[updater] manual check error:', err)
+    throw err
+  }
 })

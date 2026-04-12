@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 
 contextBridge.exposeInMainWorld('electron', {
   platform: process.platform,
+  getAppVersion: (): Promise<string> => ipcRenderer.invoke('get-app-version'),
   // ── API key ────────────────────────────────────────────────────────────────
   setApiKey: (key: string): Promise<void> => ipcRenderer.invoke('set-api-key', key),
   getApiKey: (): Promise<string | null> => ipcRenderer.invoke('get-api-key'),
@@ -14,16 +15,37 @@ contextBridge.exposeInMainWorld('electron', {
     ipcRenderer.invoke('save-pdf', args),
 
   // ── Updates ────────────────────────────────────────────────────────────────
+  onUpdateChecking: (callback: () => void) => {
+    const handler = () => callback()
+    ipcRenderer.on('app:update-checking', handler)
+    return () => ipcRenderer.off('app:update-checking', handler)
+  },
   onUpdateAvailable: (callback: (info: any) => void) => {
     const handler = (_: any, info: any) => callback(info)
     ipcRenderer.on('app:update-available', handler)
     return () => ipcRenderer.off('app:update-available', handler)
+  },
+  onUpdateNotAvailable: (callback: (info: any) => void) => {
+    const handler = (_: any, info: any) => callback(info)
+    ipcRenderer.on('app:update-not-available', handler)
+    return () => ipcRenderer.off('app:update-not-available', handler)
+  },
+  onUpdateProgress: (callback: (progress: any) => void) => {
+    const handler = (_: any, progress: any) => callback(progress)
+    ipcRenderer.on('app:update-progress', handler)
+    return () => ipcRenderer.off('app:update-progress', handler)
   },
   onUpdateDownloaded: (callback: (info: any) => void) => {
     const handler = (_: any, info: any) => callback(info)
     ipcRenderer.on('app:update-downloaded', handler)
     return () => ipcRenderer.off('app:update-downloaded', handler)
   },
+  onUpdateError: (callback: (error: string) => void) => {
+    const handler = (_: any, error: string) => callback(error)
+    ipcRenderer.on('app:update-error', handler)
+    return () => ipcRenderer.off('app:update-error', handler)
+  },
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
   restartAndInstall: () => ipcRenderer.invoke('restart-and-install'),
 
   // ── Vault / resume file storage ───────────────────────────────────────────

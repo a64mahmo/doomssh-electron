@@ -19,7 +19,10 @@ Most modern resume builders lock your data behind a subscription or a cloud acco
 - **Local-First:** Your resumes are stored as plain JSON files in a Vault of your choice. No cloud, no tracking, no data harvesting.
 - **AI-Native:** Powered by Anthropic Claude. Generate high-impact bullet points and summaries directly within the app, with keys stored securely in your OS keychain.
 - **Dual-Renderer Sync:** Experience a what-you-see-is-what-you-get workflow. Our custom engine synchronizes a high-performance HTML preview with a pixel-perfect react-pdf generator.
-- **Job Application Tracker:** Manage your entire career pipeline with a built-in tracker featuring staged creation, contact management, and automated activity timelines.
+- **Job Application Tracker:** Manage your entire career pipeline with a built-in tracker featuring staged creation, contact management, precision salary tracking, and automated activity timelines.
+- **Native Cross-Platform Experience:** Optimized for both macOS and Windows, including native window controls and deep OS integration.
+- **Transparent Updates:** Built-in software update system with real-time download progress and manual check controls.
+- **Bug Mode & Diagnostics:** Built-in diagnostic system ("Bug Mode") to capture and display system errors for easier troubleshooting.
 - **Infinite Customization:** Dozens of professionally designed templates with deep control over typography, colors, layout mathematics, and section arrangements.
 
 ---

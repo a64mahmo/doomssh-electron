@@ -63,6 +63,29 @@ DoomSSH uses **Next.js 16**, which contains significant breaking changes compare
 
 ---
 
+## Recent Updates (v0.3.0)
+
+-   **Bug Mode & Global Diagnostics:**
+    -   Implemented a system-wide diagnostic mode ("Bug Mode") available in the main dashboard settings.
+    -   Added a `DebugToast` component that captures and displays detailed error logs for AI and persistence failures.
+    -   Integrated diagnostic reporting into the auto-save engine and AI streaming hooks.
+-   **Enhanced Auto-Update UI:**
+    -   Added a manual "Check for Updates" control in the application settings.
+    -   Implemented a real-time download progress bar for transparent background updates.
+    -   Added a "Restart & Install" persistent action for downloaded updates.
+    -   Exposed current application version in the UI for better user awareness.
+-   **Windows UX & Persistence Optimization:**
+    -   Enabled native-style window controls (Close, Maximize, Minimize) on Windows using `titleBarOverlay`.
+    -   Optimized Electron IPC payloads with compact JSON serialization to resolve persistence lock-ups on Windows.
+    -   Implemented strict `isDirty` state synchronization to prevent data loss during file system operations.
+-   **Precision Job Tracker:**
+    -   Enhanced salary tracking to support exact values for roles under $1K (no more "0k" rounding).
+    -   Added decimal precision for larger salary ranges (e.g., "85.5k").
+    -   Improved Job Stats dashboard with one-decimal-place precision for Response, Interview, and Offer rates.
+-   **Workflow Improvements:**
+    -   Automated "Photo Enabled" toggle when a user uploads a profile picture in the header editor.
+    -   Expanded the test suite to include 70+ unit and integration tests covering diagnostic flows and cross-platform persistence.
+
 ## Recent Updates (v0.2.5)
 
 -   **Windows Architecture Refinement:** Fixed critical routing issues on Windows/Linux by transitioning from dynamic path segments to query-based navigation (`?id=...`). This ensures full compatibility with Next.js static exports in Electron environments.

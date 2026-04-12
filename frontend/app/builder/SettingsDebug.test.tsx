@@ -38,9 +38,16 @@ describe('BuilderDashboard Settings & Bug Mode', () => {
     getDebugMode: vi.fn().mockResolvedValue(true),
     setDebugMode: vi.fn().mockResolvedValue(undefined),
     setApiKey: vi.fn().mockResolvedValue(undefined),
+    getAppVersion: vi.fn().mockResolvedValue('1.0.0'),
+    checkForUpdates: vi.fn().mockResolvedValue(undefined),
+    restartAndInstall: vi.fn().mockResolvedValue(undefined),
     platform: 'darwin',
+    onUpdateChecking: vi.fn(() => () => {}),
     onUpdateAvailable: vi.fn(() => () => {}),
+    onUpdateNotAvailable: vi.fn(() => () => {}),
+    onUpdateProgress: vi.fn(() => () => {}),
     onUpdateDownloaded: vi.fn(() => () => {}),
+    onUpdateError: vi.fn(() => () => {}),
   }
 
   beforeEach(() => {

@@ -390,6 +390,8 @@ export interface ResumeStore {
   markSaved: () => void
 }
 
+export type UpdateStatus = 'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'
+
 export interface UIStore {
   activeSection: string | null
   showAIPanel: boolean
@@ -398,6 +400,9 @@ export interface UIStore {
   selectedText: string
   errors: string[]
   globalDebugMode: boolean
+  updateStatus: UpdateStatus
+  updateProgress: number
+  updateVersion: string | null
   setActiveSection: (id: string | null) => void
   setShowAIPanel: (show: boolean) => void
   setPreviewZoom: (zoom: number) => void
@@ -406,6 +411,9 @@ export interface UIStore {
   addError: (error: string) => void
   clearErrors: () => void
   setGlobalDebugMode: (enabled: boolean) => void
+  setUpdateStatus: (status: UpdateStatus) => void
+  setUpdateProgress: (progress: number) => void
+  setUpdateVersion: (version: string | null) => void
 }
 
 // ─── Default Values ───────────────────────────────────────────────────────────
