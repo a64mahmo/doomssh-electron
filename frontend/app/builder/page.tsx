@@ -8,7 +8,7 @@ import {
   Sun, Moon, LayoutGrid, Database, Key
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { getAllResumes, deleteResume, duplicateResume, createNewResume, createSampleResumes, saveResume } from '@/lib/db/database'
+import { getAllResumes, deleteResume, duplicateResume, createNewResume, saveResume } from '@/lib/db/database'
 import { generateId } from '@/lib/utils/ids'
 import type { Resume } from '@/lib/store/types'
 import { cn } from '@/lib/utils'
@@ -108,13 +108,7 @@ export default function BuilderDashboard() {
     if (!vaultReady) return
 
     getAllResumes().then(async (existing) => {
-      if (existing.length === 0) {
-        const samples = createSampleResumes()
-        await Promise.all(samples.map(saveResume))
-        setResumes(samples)
-      } else {
-        setResumes(existing)
-      }
+      setResumes(existing)
       setLoading(false)
     })
   }, [vaultReady])
@@ -124,12 +118,13 @@ export default function BuilderDashboard() {
     const resume = createNewResume('Untitled Resume')
     resume.id = id
     await saveResume(resume)
-    router.push(`/builder/${id}`)
+    router.push(`/builder/new?id=${id}`)
   }
 
   async function handleDuplicate(id: string) {
-    await duplicateResume(id)
+    const copy = await duplicateResume(id)
     setResumes(await getAllResumes())
+    router.push(`/builder/new?id=${copy.id}`)
   }
 
   async function handleDelete(id: string) {
@@ -300,7 +295,7 @@ export default function BuilderDashboard() {
                     transition={{ delay: i * 0.04 }}
                     whileHover={{ scale: 1.02 }}
                     className="group relative aspect-[3/4] rounded-xl overflow-hidden cursor-pointer"
-                    onClick={() => router.push(`/builder/${resume.id}`)}
+                    onClick={() => router.push(`/builder/new?id=${resume.id}`)}
                   >
                     {/* Gradient bg */}
                     <div className={`absolute inset-0 bg-gradient-to-br ${TEMPLATE_GRADIENT[resume.template] ?? 'from-slate-500 to-slate-700'} opacity-80`} />
@@ -336,7 +331,7 @@ export default function BuilderDashboard() {
                             <MoreHorizontal size={13} />
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-44">
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); router.push(`/builder/${resume.id}`) }}>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); router.push(`/builder/new?id=${resume.id}`) }}>
                               <Pencil size={13} className="mr-2" /> Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDuplicate(resume.id) }}>

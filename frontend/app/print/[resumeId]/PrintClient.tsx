@@ -1,11 +1,14 @@
 'use client'
 import { useEffect, useState, use } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { getResume } from '@/lib/db/database'
 import { MasterTemplate } from '@/components/web'
 import type { Resume } from '@/lib/store/types'
 
 export function PrintClient({ params }: { params: Promise<{ resumeId: string }> }) {
-  const { resumeId } = use(params)
+  const resolvedParams = use(params)
+  const searchParams = useSearchParams()
+  const resumeId = searchParams.get('id') || resolvedParams.resumeId
   const [resume, setResume] = useState<Resume | null>(null)
 
   useEffect(() => {

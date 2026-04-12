@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Download, ArrowLeft, Pencil, FileText } from 'lucide-react'
@@ -21,8 +21,11 @@ const DEFAULT_W = 360
 
 export function BuilderClient() {
   const params = useParams()
+  const searchParams = useSearchParams()
   const router = useRouter()
-  const resumeId = params.resumeId as string
+  
+  // Try ID from query param first, then from path
+  const resumeId = searchParams.get('id') || (params.resumeId as string)
   const { resume, setResume, updateResumeName, isDirty } = useResumeStore()
   const [editingName, setEditingName] = useState(false)
   const [panel, setPanel] = useState<Panel>('content')
@@ -51,7 +54,7 @@ export function BuilderClient() {
     }
     load()
     return () => { cancelled = true }
-  }, [resumeId, setResume, router])
+  }, [resumeId]) // Only depend on resumeId
 
   // ── Resize drag ──────────────────────────────────────────────────
   const onMouseMove = useCallback((e: MouseEvent) => {

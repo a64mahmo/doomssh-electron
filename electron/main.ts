@@ -25,9 +25,7 @@ let nextProc: ChildProcess | null = null
 
 // ── Resolve paths ─────────────────────────────────────────────────────────────
 function projectRoot(): string {
-  // In dev, __dirname is projetRoot/electron/dist
-  // In prod, __dirname is proyectRoot/electron/dist (if using electron-builder default structure)
-  return isDev ? path.join(__dirname, '..', '..') : path.join(process.resourcesPath, 'app.asar')
+  return app.getAppPath()
 }
 
 // ── Spawn Next.js ─────────────────────────────────────────────────────────────
@@ -138,7 +136,7 @@ async function createWindow(): Promise<void> {
     height: 900,
     minWidth: 1024,
     minHeight: 700,
-    titleBarStyle: 'hiddenInset',
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'hidden',
     vibrancy: 'under-window', // macOS
     visualEffectState: 'active', // macOS
     backgroundMaterial: 'acrylic', // Windows 11
