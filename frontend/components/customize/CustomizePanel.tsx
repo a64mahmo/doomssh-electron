@@ -115,13 +115,6 @@ export function CustomizePanel() {
               )}
             >
               <Icon size={18} strokeWidth={active ? 2.5 : 2} />
-              {active && (
-                <motion.div
-                  layoutId="active-indicator"
-                  className="absolute left-0 w-0.5 h-4 bg-primary rounded-full -translate-x-full"
-                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                />
-              )}
             </button>
           )
         })}

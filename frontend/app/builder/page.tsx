@@ -12,6 +12,7 @@ import { getAllResumes, deleteResume, duplicateResume, createNewResume, saveResu
 import { generateId } from '@/lib/utils/ids'
 import type { Resume } from '@/lib/store/types'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -128,8 +129,15 @@ export default function BuilderDashboard() {
   }
 
   async function handleDelete(id: string) {
-    await deleteResume(id)
-    setResumes(await getAllResumes())
+    try {
+      await deleteResume(id)
+      const updated = await getAllResumes()
+      setResumes(updated)
+      toast.success('Resume deleted')
+    } catch (err) {
+      console.error('Delete error:', err)
+      toast.error('Failed to delete resume')
+    }
   }
 
   async function saveSettings() {

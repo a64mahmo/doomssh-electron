@@ -25,7 +25,8 @@ let nextProc: ChildProcess | null = null
 
 // ── Resolve paths ─────────────────────────────────────────────────────────────
 function projectRoot(): string {
-  return app.getAppPath()
+  // In dev, __dirname is projetRoot/electron/dist
+  return isDev ? path.join(__dirname, '..', '..') : app.getAppPath()
 }
 
 // ── Spawn Next.js ─────────────────────────────────────────────────────────────
@@ -35,10 +36,10 @@ function startNextJs(): Promise<void> {
   return new Promise((resolve) => {
     const root = projectRoot()
     const frontendRoot = path.join(root, 'frontend')
-    const cmd = process.argv[0] // Use the same node/electron binary that started this process
+    const cmd = 'node'
     const args = [
       path.join(frontendRoot, 'node_modules', 'next', 'dist', 'bin', 'next'),
-      isDev ? 'dev' : 'start',
+      'dev',
       '--port', String(NEXT_PORT),
       '--hostname', '127.0.0.1',
     ]
@@ -141,6 +142,7 @@ async function createWindow(): Promise<void> {
     visualEffectState: 'active', // macOS
     backgroundMaterial: 'acrylic', // Windows 11
     transparent: true,
+    icon: path.join(projectRoot(), isDev ? 'frontend/public/file.svg' : 'frontend/out/file.svg'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -257,17 +259,35 @@ ipcMain.handle('resume:list', async () => {
   const dir = await readVaultDir()
   if (!dir) return []
   try {
-    const files = (await fsp.readdir(dir)).filter(f => f.endsWith('.json'))
+    // Only look for .json files that don't start with an underscore (system files)
+    const files = (await fsp.readdir(dir)).filter(f => f.endsWith('.json') && !f.startsWith('_'))
+    
     const resumes = await Promise.all(
       files.map(async f => {
-        try { return JSON.parse(await fsp.readFile(path.join(dir, f), 'utf8')) }
-        catch { return null }
+        try { 
+          const content = await fsp.readFile(path.join(dir, f), 'utf8')
+          const parsed = JSON.parse(content)
+          // Validation: must look like a resume (have id and name)
+          if (parsed && typeof parsed === 'object' && parsed.id && parsed.name) {
+            return parsed
+          }
+          return null
+        } catch (err) { 
+          console.error(`[electron] failed to read/parse ${f}:`, err)
+          return null 
+        }
       })
     )
-    return resumes
-      .filter(Boolean)
+    
+    const result = resumes
+      .filter((r): r is any => r !== null)
       .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
-  } catch { return [] }
+    
+    return result
+  } catch (err) { 
+    console.error('[electron] readdir error:', err)
+    return [] 
+  }
 })
 
 ipcMain.handle('resume:read', async (_event, id: string) => {
@@ -285,9 +305,20 @@ ipcMain.handle('resume:write', async (_event, resume: { id: string; [key: string
 })
 
 ipcMain.handle('resume:delete', async (_event, id: string) => {
+  console.log('[electron] deleting resume:', id)
   const dir = await readVaultDir()
   if (!dir) return
-  try { await fsp.unlink(vaultFile(dir, id)) } catch { /* already gone */ }
+  const filePath = vaultFile(dir, id)
+  try { 
+    if (fs.existsSync(filePath)) {
+      await fsp.unlink(filePath) 
+      console.log('[electron] deleted file:', filePath)
+    } else {
+      console.warn('[electron] file not found for deletion:', filePath)
+    }
+  } catch (err) { 
+    console.error('[electron] unlink error:', err)
+  }
 })
 
 // ── IPC: Jobs ────────────────────────────────────────────────────────────────

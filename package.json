@@ -1,6 +1,6 @@
 {
   "name": "doomssh",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "private": true,
   "main": "electron/dist/main.js",
   "build": {
@@ -16,6 +16,7 @@
     "directories": {
       "output": "dist-electron"
     },
+    "icon": "frontend/public/file.svg",
     "files": [
       "frontend/out/**/*",
       "electron/dist/**/*",
