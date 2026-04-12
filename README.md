@@ -12,18 +12,19 @@
 
 ---
 
-## 🌟 Why DoomSSH?
+## Why DoomSSH?
 
-Most modern resume builders lock your data behind a subscription or a cloud account. **DoomSSH** flips the script. It is a professional-grade desktop application designed for engineers and creatives who value privacy, performance, and data ownership.
+Most modern resume builders lock your data behind a subscription or a cloud account. DoomSSH flips the script. It is a professional-grade desktop application designed for engineers and creatives who value privacy, performance, and data ownership.
 
-- **🔒 Local-First:** Your resumes are stored as plain JSON files in a "Vault" of your choice (Obsidian-style). No cloud, no tracking, no data harvesting.
-- **🤖 AI-Native:** Powered by Anthropic's Claude 3.5. Generate high-impact bullet points and summaries directly within the app, with keys stored securely in your OS keychain.
-- **🪞 Dual-Renderer Sync:** Experience a "what you see is what you get" workflow. Our custom engine synchronizes a high-performance HTML preview with a pixel-perfect `@react-pdf` generator.
-- **🎨 Infinite Customization:** Dozens of professionally designed templates with deep control over typography, colors, layout mathematics, and section arrangements.
+- **Local-First:** Your resumes are stored as plain JSON files in a Vault of your choice. No cloud, no tracking, no data harvesting.
+- **AI-Native:** Powered by Anthropic Claude. Generate high-impact bullet points and summaries directly within the app, with keys stored securely in your OS keychain.
+- **Dual-Renderer Sync:** Experience a what-you-see-is-what-you-get workflow. Our custom engine synchronizes a high-performance HTML preview with a pixel-perfect react-pdf generator.
+- **Job Application Tracker:** Manage your entire career pipeline with a built-in tracker featuring staged creation, contact management, and automated activity timelines.
+- **Infinite Customization:** Dozens of professionally designed templates with deep control over typography, colors, layout mathematics, and section arrangements.
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 | :--- | :--- |
@@ -37,10 +38,10 @@ Most modern resume builders lock your data behind a subscription or a cloud acco
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ### The Vault System
-DoomSSH treats your resumes as first-class citizens of your file system. When you start the app, you select a directory to act as your "Vault." This allows you to:
+DoomSSH treats your resumes as first-class citizens of your file system. When you start the app, you select a directory to act as your Vault. This allows you to:
 - **Version Control:** Track changes to your resume using Git.
 - **Interoperability:** Open and edit your resume JSON in any text editor.
 - **Backup:** Sync your Vault folder via iCloud, Dropbox, or Syncthing.
@@ -52,28 +53,33 @@ API keys and sensitive operations never touch the untrusted frontend.
 3. **Secure Streaming:** AI responses are streamed over secure IPC channels to the renderer.
 
 ### The Mirror-World Rule
-We maintain two identical rendering trees. Any visual change made in the editor's DOM preview is instantly mirrored in the PDF engine, ensuring that your exported `.pdf` looks exactly like the screen.
+We maintain two identical rendering trees. Any visual change made in the editor's DOM preview is instantly mirrored in the PDF engine, ensuring that your exported .pdf looks exactly like the screen.
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```text
 .
 ├── electron/           # Main process: IPC, Window management, Keychain
 ├── frontend/           # Next.js 15 Workspace
 │   ├── app/            # App Router (Builder, Print, AI routes)
-│   ├── components/     # UI, Editor, Preview, and PDF mirror templates
+│   ├── components/     
+│   │   ├── web/        # HTML/Web-based renderers (Mirror path 1)
+│   │   ├── pdf/        # PDF-based renderers (Mirror path 2)
+│   │   ├── customize/  # Modular styling & design panel
+│   │   └── editor/     # Data entry components
 │   ├── hooks/          # useResume (State), useAI (Streaming)
 │   └── lib/
 │       ├── store/      # Zustand store (Single Source of Truth)
 │       └── db/         # Local file-system CRUD via Electron IPC
+├── tests/              # Comprehensive CI/CD Test Suite
 └── docs/               # Technical deep-dives
 ```
 
 ---
 
-## 🧑‍💻 Getting Started
+## Getting Started
 
 ### Prerequisites
 - Node.js (Latest LTS)
@@ -97,23 +103,28 @@ npm run build
 npm run electron:dist
 ```
 
-## 🧪 Testing & Quality
+## Testing & Quality
 
-DoomSSH is built with a focus on reliability across its dual-renderer architecture.
+DoomSSH employs a rigorous testing architecture to ensure stability across its dual-renderer system.
 
-- **E2E Testing:** Playwright is used for end-to-end testing of the Electron app.
+- **Automated Test Suite:** Run all tests across Chromium, Firefox, and Webkit.
   ```bash
-  npm run test:e2e
+  npm run test:all
   ```
-- **Unit Testing:** Vitest is used for testing core logic in the frontend and Electron main process.
+- **Categories:**
+  - `npm run test:e2e`: Main user flows and navigation.
+  - `npm run test:regression`: Logic synchronization and state integrity.
+  - `npm run test:integration`: Modular UI component coordination.
+  - `npm run test:performance`: Render speed benchmarks and load testing.
+  - `npm run test:visual`: Visual regression snapshots (Pixel-perfect parity).
+- **Unit Testing:** Powered by Vitest for core frontend logic.
   ```bash
   npm run test --prefix frontend
   ```
-- **Validation:** Every change is validated against the "Mirror-World Rule" to ensure PDF/DOM parity.
 
-## 📚 Documentation
+## Documentation
 
-For deeper technical insights, check out the `/docs` directory:
+For deeper technical insights, check out the /docs directory:
 - [Architecture Overview](docs/architecture.md)
 - [Frontend Deep-Dive](docs/frontend.md)
 - [Electron & IPC Protocol](docs/electron.md)
@@ -121,12 +132,12 @@ For deeper technical insights, check out the `/docs` directory:
 
 ---
 
-## 📄 License
+## License
 
 DoomSSH is open-source software licensed under the [MIT License](LICENSE).
 
 ---
 
 <div align="center">
-  Built with ❤️ by <strong>Abdallh Mahmood</strong>
+  Built by <strong>Abdallh Mahmood</strong>
 </div>

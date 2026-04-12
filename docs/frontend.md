@@ -11,6 +11,17 @@ The DoomSSH frontend is a sophisticated Next.js application designed for real-ti
 -   **@dnd-kit:** Powerful drag-and-drop functionality for reordering resume sections and list items.
 -   **Dexie.js:** IndexedDB wrapper for local-first persistence.
 
+## Modular Component Architecture
+
+The frontend is organized into highly modularized directories to manage the complexity of dual rendering and deep customization.
+
+### Customization Panel
+The design and styling logic is decoupled into `frontend/components/customize/sections/`. Each customization category (e.g., Typography, Colors, Layout) is an isolated component, coordinated by a main `CustomizePanel` shell. Common UI patterns are abstracted into `CustomizePrimitives.tsx`.
+
+### Dual-Renderer Paths
+-   **Web Path:** `frontend/components/web/`. Contains the `MasterTemplate.tsx` and modular section renderers in `sections/`. This path is optimized for real-time reactivity and Tailwind-based styling.
+-   **PDF Path:** `frontend/components/pdf/`. Mirrors the structure of the web path but uses `@react-pdf/renderer` primitives for high-precision vector output.
+
 ## State Management
 
 The `resumeStore` is the heart of the frontend. It maintains the `Resume` object, which includes:
@@ -45,3 +56,21 @@ DoomSSH supports multiple templates, each defined in `frontend/components/templa
 ### Visual Standards
 -   **Unified Headings:** Section headings (font size, margins, and spacing) are unified across both main and sidebar columns to ensure a balanced, professional layout.
 -   **Icon Rendering:** Section icons maintain their stroke (outline) definition across all modes. In "Filled" mode, the system uses a "reverse fill" or **etched** look, where the icon is solid-filled with the primary color but highlights its internal details using the background color.
+
+## Job Tracker Design
+
+The Job Tracker is a specialized module for managing the application lifecycle. It follows the same high-fidelity design standards as the resume builder but introduces specific patterns for data safety and audit logging.
+
+### Staged Creation Flow
+To prevent clutter and accidental data entry, the Job Tracker implements a staged creation mechanism:
+-   **Draft State:** New job applications are initialized in a local draft state. Changes are held in memory and are not persisted to the database until the user explicitly saves the application.
+-   **Editing Sandbox:** For existing jobs, the system uses a deep-cloned draft state. This allows users to modify multiple fields, manage contacts, and add timeline notes in a sandbox environment, with the option to discard all changes via a Cancel action.
+
+### Automated Timeline Events
+The system maintains a non-deletable audit trail of critical application milestones:
+-   **Status Tracking:** Automatically records an event when an application moves between pipeline stages (e.g., from Phone Screen to Technical Interview).
+-   **Deadline Monitoring:** 
+    -   **Detection:** Scans applications on load and update to identify passed deadlines.
+    -   **Automatic Logging:** Records a "Deadline Passed" event if an application's window has closed.
+    -   **Change History:** Logs "Deadline Updated" events when dates are modified, capturing both the old and new values.
+-   **Persistence:** All automated events are finalized during the save operation, ensuring the timeline perfectly matches the user's intent.

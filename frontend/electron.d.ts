@@ -22,6 +22,8 @@ interface ElectronAPI {
     read:    (id: string) => Promise<unknown | null>
     write:   (resume: unknown) => Promise<void>
     delete:  (id: string) => Promise<void>
+    readJobs:  () => Promise<unknown | null>
+    writeJobs: (data: unknown) => Promise<void>
   }
 
   // Updates

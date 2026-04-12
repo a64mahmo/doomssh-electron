@@ -25,8 +25,25 @@ The application employs a local-first storage strategy to ensure responsiveness 
 -   **Frontend to AI:** All AI interactions (Claude Opus 4.6) are routed through the Electron Main Process via IPC. This allows for secure storage of API keys and bypasses browser CORS restrictions.
 -   **Frontend to PDF:** Client-side PDF generation using `@react-pdf/renderer` primitives ensures that private data never leaves the user's machine for the purpose of rendering.
 
-## Desktop Integration (Electron)
+## Modular Dual-Renderer Architecture
 
-DoomSSH uses Electron to wrap the Next.js frontend into a single executable.
--   **Main Process:** Orchestrates window management, native menus, and lifecycle events. It also acts as a secure proxy for the Anthropic SDK.
--   **Preload Scripts:** Provide a secure bridge between the renderer (Next.js) and the main process, allowing access to file system operations and the AI IPC bridge.
+DoomSSH implements a unique "Mirror-World" rendering strategy where the HTML preview and the PDF export are driven by identical, modular logic trees.
+
+### Rendering Paths
+1.  **Web Renderer (DOM):** Located in `frontend/components/web/sections/`. Uses Tailwind CSS for high-performance interactive previews.
+2.  **PDF Renderer (Vector):** Located in `frontend/components/pdf/sections/`. Uses `@react-pdf/renderer` for high-fidelity vector generation.
+
+### Structural Parity
+Every section type (Experience, Education, Skills, etc.) has a dedicated pair of renderer files. This modularity ensures that:
+-   **Maintainability:** Changes to a specific section's layout are isolated.
+-   **Fidelity:** Visual parity is maintained by updating both renderers simultaneously.
+-   **Testing:** Each section can be independently verified for regression and visual consistency.
+
+## Testing Strategy
+
+The project employs a multi-tiered testing architecture managed in the `tests/` directory:
+
+-   **Integration Tests:** Verify the coordination between modular UI components (e.g., the `CustomizePanel`) and the global state.
+-   **Regression Tests:** Ensure that state mutations correctly propagate through the dual-renderer pipeline.
+-   **Performance Benchmarks:** Measure and enforce strict render-time and page-load thresholds.
+-   **Visual Regression:** Automated snapshot comparisons to detect subtle layout shifts across different browser engines.

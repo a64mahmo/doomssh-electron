@@ -52,12 +52,10 @@ const SOURCES: Record<FontOption, FontSrc> = {
     bold:    `${CDN}/@fontsource/ibm-plex-serif/files/ibm-plex-serif-latin-700-normal.woff`,
     italic:  `${CDN}/@fontsource/ibm-plex-serif/files/ibm-plex-serif-latin-400-italic.woff`,
   },
-  // IBM Plex Mono .woff from fontsource causes getInt16 out-of-bounds in
-  // react-pdf's fontkit. Use .ttf from Google Fonts which parses reliably.
   'IBM Plex Mono': {
-    regular: 'https://fonts.gstatic.com/s/ibmplexmono/v20/-F63fjptAgt5VM-kVkqdyU8n5ig.ttf',
-    bold:    'https://fonts.gstatic.com/s/ibmplexmono/v20/-F6qfjptAgt5VM-kVkqdyU8n3pQP8lc.ttf',
-    italic:  'https://fonts.gstatic.com/s/ibmplexmono/v20/-F6pfjptAgt5VM-kVkqdyU8n1ioq0g.ttf',
+    regular: `${CDN}/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff`,
+    bold:    `${CDN}/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-700-normal.woff`,
+    italic:  `${CDN}/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-italic.woff`,
   },
 }
 

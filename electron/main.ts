@@ -208,7 +208,9 @@ function registerAppProtocol() {
       let fullPath = path.join(outDir, relativePath)
 
       if (!fs.existsSync(fullPath)) {
-        if (relativePath.startsWith('builder/')) {
+        if (relativePath.startsWith('builder/jobs')) {
+          fullPath = path.join(outDir, 'builder', 'jobs', 'index.html')
+        } else if (relativePath.startsWith('builder/')) {
           fullPath = path.join(outDir, 'builder', 'new', 'index.html')
         } else if (relativePath.startsWith('print/')) {
           fullPath = path.join(outDir, 'print', 'new', 'index.html')
@@ -288,6 +290,21 @@ ipcMain.handle('resume:delete', async (_event, id: string) => {
   const dir = await readVaultDir()
   if (!dir) return
   try { await fsp.unlink(vaultFile(dir, id)) } catch { /* already gone */ }
+})
+
+// ── IPC: Jobs ────────────────────────────────────────────────────────────────
+ipcMain.handle('jobs:read', async () => {
+  const dir = await readVaultDir()
+  if (!dir) return null
+  try { return JSON.parse(await fsp.readFile(path.join(dir, '_jobs.json'), 'utf8')) }
+  catch { return null }
+})
+
+ipcMain.handle('jobs:write', async (_event, data: { version: number; jobs: unknown[] }) => {
+  const dir = await readVaultDir()
+  if (!dir) throw new Error('No vault set')
+  await fsp.mkdir(dir, { recursive: true })
+  await fsp.writeFile(path.join(dir, '_jobs.json'), JSON.stringify(data, null, 2), 'utf8')
 })
 
 // ── IPC: API key management ───────────────────────────────────────────────────

@@ -1,82 +1,11 @@
 import React from 'react'
-import { Document, Page, View, Text, Image, Svg, Path, Circle, Rect, Line, G } from '@react-pdf/renderer'
+import { Document, Page, View, Text, Image, Svg, Path, Circle, Rect, Line, G, Polyline } from '@react-pdf/renderer'
 import type { Style } from '@react-pdf/types'
-import type { Resume, SectionType, ResumeSection, SectionHeadingIcon } from '@/lib/store/types'
+import type { Resume, SectionType, ResumeSection, SectionHeadingIcon, HeaderData } from '@/lib/store/types'
 import { buildCtx } from '@/lib/pdf/templateCtx'
 import { registerFont } from './fonts'
-import { SectionRendererPDF, ContactLinePDF, hexA, type HeaderData } from './SectionsPDF'
-
-// ─── Lucide icon SVG data (matches UI editor icons) ─────────────────────────
-
-type SvgElement = { tag: string; [key: string]: string }
-
-const SECTION_ICON_DATA: Record<SectionType, SvgElement[]> = {
-  header: [
-    { tag: 'path', d: 'M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2' },
-    { tag: 'circle', cx: '12', cy: '7', r: '4' },
-  ],
-  summary: [
-    { tag: 'path', d: 'M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z' },
-    { tag: 'path', d: 'M14 2v5a1 1 0 0 0 1 1h5' },
-    { tag: 'path', d: 'M10 9H8' },
-    { tag: 'path', d: 'M16 13H8' },
-    { tag: 'path', d: 'M16 17H8' },
-  ],
-  experience: [
-    { tag: 'path', d: 'M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16' },
-    { tag: 'rect', width: '20', height: '14', x: '2', y: '6', rx: '2' },
-  ],
-  education: [
-    { tag: 'path', d: 'M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z' },
-    { tag: 'path', d: 'M22 10v6' },
-    { tag: 'path', d: 'M6 12.5V16a6 3 0 0 0 12 0v-3.5' },
-  ],
-  skills: [
-    { tag: 'path', d: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z' },
-  ],
-  projects: [
-    { tag: 'path', d: 'M10 10.5 8 13l2 2.5' },
-    { tag: 'path', d: 'm14 10.5 2 2.5-2 2.5' },
-    { tag: 'path', d: 'M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z' },
-  ],
-  certifications: [
-    { tag: 'path', d: 'm15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526' },
-    { tag: 'circle', cx: '12', cy: '8', r: '6' },
-  ],
-  languages: [
-    { tag: 'path', d: 'm5 8 6 6' },
-    { tag: 'path', d: 'm4 14 6-6 2-3' },
-    { tag: 'path', d: 'M2 5h12' },
-    { tag: 'path', d: 'M7 2h1' },
-    { tag: 'path', d: 'm22 22-5-10-5 10' },
-    { tag: 'path', d: 'M14 18h6' },
-  ],
-  awards: [
-    { tag: 'path', d: 'M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978' },
-    { tag: 'path', d: 'M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978' },
-    { tag: 'path', d: 'M18 9h1.5a1 1 0 0 0 0-5H18' },
-    { tag: 'path', d: 'M4 22h16' },
-    { tag: 'path', d: 'M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z' },
-    { tag: 'path', d: 'M6 9H4.5a1 1 0 0 1 0-5H6' },
-  ],
-  volunteering: [
-    { tag: 'path', d: 'M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5' },
-  ],
-  publications: [
-    { tag: 'path', d: 'M12 7v14' },
-    { tag: 'path', d: 'M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z' },
-  ],
-  references: [
-    { tag: 'path', d: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2' },
-    { tag: 'path', d: 'M16 3.128a4 4 0 0 1 0 7.744' },
-    { tag: 'path', d: 'M22 21v-2a4 4 0 0 0-3-3.87' },
-    { tag: 'circle', cx: '9', cy: '7', r: '4' },
-  ],
-  custom: [
-    { tag: 'path', d: 'M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915' },
-    { tag: 'circle', cx: '12', cy: '12', r: '3' },
-  ],
-}
+import { SectionRendererPDF, ContactLinePDF, hexA } from './sections'
+import { SECTION_ICONS, type SvgElement } from "@/lib/icons/sectionIcons";
 
 function SectionIcon({ 
   type, 
@@ -91,7 +20,7 @@ function SectionIcon({
   mode: SectionHeadingIcon; 
   background: string 
 }) {
-  const elements = SECTION_ICON_DATA[type] || []
+  const elements = SECTION_ICONS[type].pdf
   return (
     <Svg viewBox="0 0 24 24" width={size} height={size}>
       {elements.map((el, i) => {
@@ -104,10 +33,11 @@ function SectionIcon({
           strokeLinecap: 'round' as const,
           strokeLinejoin: 'round' as const,
         }
-        if (tag === 'path') return <Path key={i} {...common} d={attrs.d} />
-        if (tag === 'circle') return <Circle key={i} {...common} cx={attrs.cx} cy={attrs.cy} r={attrs.r} />
-        if (tag === 'rect') return <Rect key={i} {...common} x={attrs.x} y={attrs.y} width={attrs.width} height={attrs.height} rx={attrs.rx} />
-        if (tag === 'line') return <Line key={i} {...common} x1={attrs.x1} y1={attrs.y1} x2={attrs.x2} y2={attrs.y2} />
+        if (tag === 'path') return <Path key={i} {...common} d={attrs.d as string} />
+        if (tag === 'circle') return <Circle key={i} {...common} cx={attrs.cx as number} cy={attrs.cy as number} r={attrs.r as number} />
+        if (tag === 'rect') return <Rect key={i} {...common} x={attrs.x as number} y={attrs.y as number} width={attrs.width as number} height={attrs.height as number} rx={attrs.rx as number} />
+        if (tag === 'line') return <Line key={i} {...common} x1={attrs.x1 as number} y1={attrs.y1 as number} x2={attrs.x2 as number} y2={attrs.y2 as number} />
+        if (tag === 'polyline') return <Polyline key={i} {...common} points={attrs.points as string} />
         return null
       })}
     </Svg>
@@ -116,22 +46,35 @@ function SectionIcon({
 
 // ─── Section heading ──────────────────────────────────────────────────────────
 
-function SectionHeading({ title, type, ctx, isSidebar = false }: {
-  title: string
-  type: SectionType
-  ctx: ReturnType<typeof buildCtx>
-  isSidebar?: boolean
+function SectionHeading({
+  title,
+  type,
+  ctx,
+  isSidebar = false,
+  isFirst = false,
+}: {
+  title: string;
+  type: SectionType;
+  ctx: ReturnType<typeof buildCtx>;
+  isSidebar?: boolean;
+  isFirst?: boolean;
 }) {
-  const { colors, s, pt, hSize, hCap, gap } = ctx
-  if (!s.showSectionLabels) return <View style={{ marginTop: Number(gap.replace('pt', '')) }} />
+  const { colors, s, pt, hSize, hCap, gap } = ctx;
+  if (!s.showSectionLabels)
+    return (
+      <View
+        style={{ marginTop: isFirst ? 0 : Number(gap.replace("pt", "")) }}
+      />
+    );
 
-  const style = s.sectionHeadingStyle || 'underline'
-  const thick = s.sectionHeadingLineThickness || 1.5
-  const fontSize = pt(hSize)
-  const baseGap = Number(gap.replace('pt', ''))
-  const sectionGap = baseGap * (s.sectionSpacing ?? 1.0)
-  const marginTop = sectionGap
-  const headingColor = colors.heading
+  const style = s.sectionHeadingStyle || "underline";
+  const thick = s.sectionHeadingLineThickness || 1.5;
+  const fontSize = pt(hSize);
+  const baseGap = Number(gap.replace("pt", ""));
+  const sectionGap = baseGap * (s.sectionSpacing ?? 1.0);
+  const marginTop = isFirst ? 0 : sectionGap;
+  const headingColor = s.applyAccentHeadings ? colors.accent : (s.colorMode === 'basic' ? colors.text : colors.heading);
+  const lineColor = s.applyAccentHeadingLine ? colors.accent : (s.colorMode === 'basic' ? colors.text : colors.heading);
 
   const showIcon = s.sectionHeadingIcon !== 'none'
   const iconSize = Number(pt(hSize * 1.1 * (s.sectionHeadingIconSize || 1.0)).replace('pt', ''))
@@ -147,7 +90,6 @@ function SectionHeading({ title, type, ctx, isSidebar = false }: {
   }
 
   // Decoration overrides
-  const lineColor = headingColor
   const pad = 4  // consistent vertical padding for all decorated styles
 
   if (style === 'underline') {
@@ -179,7 +121,7 @@ function SectionHeading({ title, type, ctx, isSidebar = false }: {
     base.paddingRight = 8
     base.borderRadius = 2
   } else if (style === 'background') {
-    base.backgroundColor = hexA(headingColor, 0.12)
+    base.backgroundColor = hexA(lineColor, 0.12)
     base.paddingTop = pad
     base.paddingBottom = pad
     base.paddingLeft = 8
@@ -187,7 +129,7 @@ function SectionHeading({ title, type, ctx, isSidebar = false }: {
     base.borderRadius = 2
   } else if (style === 'left-bar') {
     base.borderLeftWidth = 3
-    base.borderLeftColor = headingColor
+    base.borderLeftColor = lineColor
     base.borderLeftStyle = 'solid'
     base.paddingLeft = 8
     base.paddingTop = 1
@@ -220,10 +162,12 @@ function SectionHeading({ title, type, ctx, isSidebar = false }: {
             height: isKnockout ? iconSize * 1.4 : iconSize,
             marginRight: 6,
             flexShrink: 0,
-            borderRadius: isKnockout ? 3 : 0,
-            backgroundColor: isKnockout ? headingColor : 'transparent',
             alignItems: 'center',
             justifyContent: 'center',
+            borderRadius: isKnockout ? 4 : 0,
+            backgroundColor: isKnockout ? headingColor : 'transparent',
+            color: isKnockout ? colors.background : headingColor,
+            border: 'none',
           }}>
             <SectionIcon
               type={type}
@@ -293,12 +237,15 @@ export function ResumePDF({ resume }: { resume: Resume }) {
     fontFamily: s.fontFamily,
     fontSize: pt(base),
     lineHeight: lh,
-    backgroundColor: colors.background,
+    backgroundColor: (s.themeColorStyle === 'advanced' && s.backgroundColor === '#ffffff') ? hexA(colors.accent, 0.02) : colors.background,
     color: colors.text,
     paddingLeft: `${s.marginHorizontal}mm`,
     paddingRight: `${s.marginHorizontal}mm`,
     paddingTop: `${s.marginVertical}mm`,
     paddingBottom: `${s.marginVertical}mm`,
+    borderWidth: s.themeColorStyle === 'border' ? 12 : 0,
+    borderColor: colors.accent,
+    borderStyle: 'solid',
   }
 
   return (
@@ -306,120 +253,256 @@ export function ResumePDF({ resume }: { resume: Resume }) {
       <Page size={s.paperSize === 'a4' ? 'A4' : 'LETTER'} style={pageStyle}>
 
         {/* ── Header ───────────────────────────────────────────────── */}
-        {(() => {
-          const photoPos = s.photoPosition || 'beside-name'
-          const contactLay = s.contactLayout || 'inline'
-          const showPhoto = s.photoEnabled && h?.photo
-          const photoIsTop = photoPos === 'top-center' || photoPos === 'top-left' || photoPos === 'top-right'
-          const align = s.headerAlignment
-          const cols = contactLay === 'columns-2' ? 2 : contactLay === 'columns-3' ? 3 : undefined
+        <View style={{
+          backgroundColor: s.themeColorStyle === 'advanced' ? colors.accent : 'transparent',
+          color: s.themeColorStyle === 'advanced' ? colors.background : colors.text,
+          marginLeft: s.themeColorStyle === 'advanced' ? `-${s.marginHorizontal}mm` : 0,
+          marginRight: s.themeColorStyle === 'advanced' ? `-${s.marginHorizontal}mm` : 0,
+          marginTop: s.themeColorStyle === 'advanced' ? `-${s.marginVertical}mm` : 0,
+          paddingLeft: s.themeColorStyle === 'advanced' ? `${s.marginHorizontal}mm` : 0,
+          paddingRight: s.themeColorStyle === 'advanced' ? `${s.marginHorizontal}mm` : 0,
+          paddingTop: s.themeColorStyle === 'advanced' ? `${s.marginVertical}mm` : 0,
+          paddingBottom: s.themeColorStyle === 'advanced' ? 15 : 0,
+          marginBottom: s.themeColorStyle === 'advanced' ? 15 : 0,
+        }}>
+          {(() => {
+            const showPhoto = s.photoEnabled && h?.photo
+            const align = s.headerAlignment
+            const photoPos = s.photoPosition
+            const headerTextColor = s.themeColorStyle === 'advanced' ? colors.background : (s.applyAccentName ? colors.accent : colors.text);
 
-          const nameText = (textAlign: 'left' | 'center' | 'right') => (
-            <View>
-              <Text style={{ fontSize: pt(nameSize), fontWeight: s.nameBold ? 'bold' : 'normal', color: colors.accent, lineHeight: 1.1, letterSpacing: -0.02 * nameSize, textAlign }}>
-                {h?.fullName || 'Your Name'}
-              </Text>
-              {h?.jobTitle && (
-                <Text style={{ fontSize: pt(base * 1.15), color: colors.subtitle, marginTop: 3, textAlign }}>
-                  {h.jobTitle}
-                </Text>
-              )}
-            </View>
-          )
-
-          return (
-            <View style={{ marginBottom: 14, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: colors.accent, borderBottomStyle: 'solid' }}>
-              {/* Top-positioned photo */}
-              {showPhoto && photoIsTop && (
-                <View style={{
-                  alignItems: photoPos === 'top-center' ? 'center' : photoPos === 'top-right' ? 'flex-end' : 'flex-start',
-                  marginBottom: 8,
+            const nameText = (textAlign: 'left' | 'center' | 'right') => (
+              <View style={{ alignItems: textAlign === 'center' ? 'center' : (textAlign === 'right' ? 'flex-end' : 'flex-start') }}>
+                <Text style={{ 
+                  fontSize: pt(nameSize), 
+                  fontWeight: 'bold', 
+                  color: s.themeColorStyle === 'advanced' ? colors.background : (s.applyAccentName ? colors.accent : colors.text), 
+                  lineHeight: 1.1, 
+                  letterSpacing: -0.5, 
+                  textAlign 
                 }}>
-                  <Image src={h.photo!} style={photoStyle} />
-                </View>
-              )}
+                  {h?.fullName || 'Your Name'}
+                </Text>
+                {h?.jobTitle && (
+                  <Text style={{ 
+                    fontSize: pt(base * 1.1), 
+                    color: s.themeColorStyle === 'advanced' ? colors.background : (s.applyAccentJobTitle ? hexA(colors.accent, 0.7) : hexA(colors.text, 0.7)), 
+                    marginTop: 4, 
+                    textAlign,
+                    textTransform: 'uppercase',
+                    letterSpacing: 2.5,
+                  }}>
+                    {h.jobTitle}
+                  </Text>
+                )}
+              </View>
+            )
 
-              {align === 'center' ? (
-                <View style={{ alignItems: 'center' }}>
-                  {showPhoto && !photoIsTop && <Image src={h.photo!} style={{ ...photoStyle, marginBottom: 6 }} />}
-                  {nameText('center')}
-                  {h && (
-                    <View style={{ marginTop: 6, width: '100%' }}>
-                      <ContactLinePDF h={h} ctx={ctx} display={cols ? 'block' : 'inline'} align="center" columns={cols} />
+            const photoEl = showPhoto ? <Image src={h.photo!} style={photoStyle} /> : null
+
+            // Center Alignment
+            if (align === "center") {
+              const sizeMap = { S: 36, M: 48, L: 64 };
+              const photoPx = sizeMap[s.photoSize as "S" | "M" | "L"] || 48;
+
+              return (
+                <View
+                  style={{
+                    width: "100%",
+                    marginBottom: 4,
+                    paddingBottom: 4,
+                    alignItems: "center",
+                    position: "relative",
+                  }}
+                >
+                  {/* Photo on the side - absolutely positioned so it doesn't push the center */}
+                  {photoPos === "beside" && photoEl && (
+                    <View
+                      style={{
+                        position: "absolute",
+                        left: 0,
+                        top: "50%",
+                        marginTop: -(photoPx / 2),
+                      }}
+                    >
+                      {photoEl}
                     </View>
                   )}
-                </View>
-              ) : align === 'right' ? (
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  {h && (
-                    <View style={{ flex: 1, paddingRight: 16 }}>
-                      <ContactLinePDF h={h} ctx={ctx} display={cols ? 'block' : 'block'} align="left" columns={cols} />
-                    </View>
-                  )}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    {nameText('right')}
-                    {showPhoto && !photoIsTop && <Image src={h.photo!} style={photoStyle} />}
+
+                  <View style={{ alignItems: "center" }}>
+                    {photoPos === "top" && photoEl && (
+                      <View style={{ marginBottom: 6 }}>{photoEl}</View>
+                    )}
+                    {nameText("center")}
+                    {photoPos === "bottom" && photoEl && (
+                      <View style={{ marginTop: 6 }}>{photoEl}</View>
+                    )}
+                  </View>
+
+                  <View style={{ marginTop: 8, width: "100%" }}>
+                    <ContactLinePDF h={h!} ctx={ctx} textColorOverride={headerTextColor} />
                   </View>
                 </View>
-              ) : (
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, paddingRight: 16 }}>
-                    {showPhoto && !photoIsTop && <Image src={h.photo!} style={photoStyle} />}
-                    {nameText('left')}
+              );
+            }
+
+            // Left / Right Alignment
+            const isRight = align === "right";
+            const isBeside = s.detailsPosition === "beside";
+
+            if (isBeside) {
+              return (
+                <View
+                  style={{
+                    marginBottom: 4,
+                    paddingBottom: 4,
+                    flexDirection: isRight ? "row-reverse" : "row",
+                    alignItems: "center",
+                    width: "100%",
+                  }}
+                >
+                  {/* Side A: Identity */}
+                  <View
+                    style={{
+                      flexDirection: isRight ? "row-reverse" : "row",
+                      alignItems: "center",
+                      flex: 1,
+                    }}
+                  >
+                    {photoEl && (
+                      <View
+                        style={{ [isRight ? "marginLeft" : "marginRight"]: 12 }}
+                      >
+                        {photoEl}
+                      </View>
+                    )}
+                    {nameText(isRight ? "right" : "left")}
                   </View>
-                  {h && (
-                    <View>
-                      <ContactLinePDF h={h} ctx={ctx} display={cols ? 'block' : 'block'} align="right" columns={cols} />
-                    </View>
-                  )}
+
+                  {/* Side B: Contacts */}
+                  <View
+                    style={{
+                      flex: 1,
+                      alignItems:
+                        s.detailsTextAlignment === "left"
+                          ? "flex-start"
+                          : s.detailsTextAlignment === "right"
+                            ? "flex-end"
+                            : "center",
+                    }}
+                  >
+                    {h && <ContactLinePDF h={h} ctx={ctx} textColorOverride={headerTextColor} />}
+                  </View>
                 </View>
-              )}
-            </View>
-          )
-        })()}
+              );
+            }
+
+            // Below arrangement
+            return (
+              <View
+                style={{
+                  width: "100%",
+                  marginBottom: 4,
+                  paddingBottom: 4,
+                  flexDirection: isRight ? "row-reverse" : "row",
+                  alignItems: "flex-start",
+                }}
+              >
+                {/* Photo Side */}
+                {photoEl && (
+                  <View style={{ [isRight ? "marginLeft" : "marginRight"]: 16 }}>
+                    {photoEl}
+                  </View>
+                )}
+
+                {/* Text Side (Identity + Contacts Stack) */}
+                <View
+                  style={{
+                    flex: 1,
+                    flexDirection: "column",
+                    alignItems: isRight ? "flex-end" : "flex-start",
+                  }}
+                >
+                  <View style={{ marginBottom: 8 }}>{nameText(align)}</View>
+                  <View
+                    style={{
+                      width: "100%",
+                      alignItems:
+                        s.detailsTextAlignment === "left"
+                          ? "flex-start"
+                          : s.detailsTextAlignment === "right"
+                            ? "flex-end"
+                            : "center",
+                    }}
+                  >
+                    {h && <ContactLinePDF h={h} ctx={ctx} textColorOverride={headerTextColor} />}
+                  </View>
+                </View>
+              </View>
+            );
+          })()}
+        </View>
 
         {/* ── Body ─────────────────────────────────────────────────── */}
-        <View style={{ flexDirection: 'row', flex: 1 }}>
+        <View style={{ flexDirection: s.columnReverse ? 'row-reverse' : 'row', flex: 1 }}>
+          {(() => {
+            const sidebarWidth = s.columnWidthMode === "manual" ? s.columnWidth : 32;
+            const mainWidth = 100 - sidebarWidth;
+            
+            const dividerColor = s.applyAccentDotsBarsBubbles ? colors.accent : (s.colorMode === 'basic' ? colors.text : colors.heading);
+            const sidebarTint = s.applyAccentDotsBarsBubbles ? colors.accent : "transparent";
+            const sidebarBg = hexA(sidebarTint, 0.02); // very light tint
 
-          {/* Main column */}
-          <View style={{
-            width: hasSidebar ? '68%' : '100%',
-            paddingRight: hasSidebar ? 20 : 0,
-            borderRightWidth: hasSidebar ? 0.5 : 0,
-            borderRightColor: colors.accent,
-            borderRightStyle: 'solid',
-          }}>
-            {mainSections.map(section => (
-              <SectionRendererPDF
-                key={section.id}
-                section={section}
-                ctx={ctx}
-                renderHeading={(title) => (
-                  <SectionHeading title={title} type={section.type} ctx={ctx} />
+            return (
+              <>
+                {/* Main column */}
+                <View style={{
+                  width: hasSidebar ? `${mainWidth}%` : '100%',
+                  paddingRight: !s.columnReverse && hasSidebar ? 20 : 0,
+                  paddingLeft: s.columnReverse && hasSidebar ? 20 : 0,
+                  borderRightWidth: !s.columnReverse && hasSidebar ? 0.5 : 0,
+                  borderRightColor: dividerColor,
+                  borderRightStyle: 'solid',
+                  borderLeftWidth: s.columnReverse && hasSidebar ? 0.5 : 0,
+                  borderLeftColor: dividerColor,
+                  borderLeftStyle: 'solid',
+                }}>
+                  {mainSections.map((section, i) => (
+                    <SectionRendererPDF
+                      key={section.id}
+                      section={section}
+                      ctx={ctx}
+                      renderHeading={(title) => (
+                        <SectionHeading title={title} type={section.type} ctx={ctx} isFirst={i === 0} />
+                      )}
+                    />
+                  ))}
+                </View>
+
+                {/* Sidebar column */}
+                {hasSidebar && (
+                  <View style={{
+                    width: `${sidebarWidth}%`,
+                    paddingLeft: !s.columnReverse ? 20 : 0,
+                    paddingRight: s.columnReverse ? 20 : 0,
+                    backgroundColor: sidebarBg,
+                  }}>
+                    {sidebarSections.map((section, i) => (
+                      <SectionRendererPDF
+                        key={section.id}
+                        section={section}
+                        ctx={ctx}
+                        renderHeading={(title) => (
+                          <SectionHeading title={title} type={section.type} ctx={ctx} isSidebar isFirst={i === 0} />
+                        )}
+                        isSidebar
+                      />
+                    ))}
+                  </View>
                 )}
-              />
-            ))}
-          </View>
-
-          {/* Sidebar column */}
-          {hasSidebar && (
-            <View style={{
-              width: '32%',
-              paddingLeft: 20,
-            }}>
-              {sidebarSections.map(section => (
-                <SectionRendererPDF
-                  key={section.id}
-                  section={section}
-                  ctx={ctx}
-                  renderHeading={(title) => (
-                    <SectionHeading title={title} type={section.type} ctx={ctx} isSidebar />
-                  )}
-                  isSidebar
-                />
-              ))}
-            </View>
-          )}
+              </>
+            );
+          })()}
         </View>
 
         {/* ── Footer (fixed on every page) ─────────────────────────── */}
@@ -431,7 +514,7 @@ export function ResumePDF({ resume }: { resume: Resume }) {
             right: `${s.marginHorizontal}mm`,
             paddingTop: 10,
             borderTopWidth: 0.5,
-            borderTopColor: colors.accent,
+            borderTopColor: s.applyAccentDotsBarsBubbles ? colors.accent : (s.colorMode === 'basic' ? colors.text : colors.heading),
             borderTopStyle: 'solid',
             flexDirection: 'row',
             justifyContent: 'space-between',

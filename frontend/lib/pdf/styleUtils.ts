@@ -1,0 +1,102 @@
+// Shared template utilities — pure functions, no framework dependency
+import type { ResumeSettings, FontOption, NameSize, SectionHeadingSize, ListStyle } from '@/lib/store/types'
+
+export const A4 = { width: 595.28, height: 841.89 }
+export const LETTER = { width: 612, height: 792 }
+
+// ── Settings → PDF values ─────────────────────────────────────────────────────
+
+/** 1 mm = 2.83465 pt */
+export function mmToPt(mm: number): number {
+  return mm * 2.83465
+}
+
+const SERIF_FONTS: FontOption[] = ['Merriweather', 'Playfair Display', 'IBM Plex Serif']
+
+export function pdfFont(fontFamily: FontOption): string {
+  return SERIF_FONTS.includes(fontFamily) ? 'Times-Roman' : 'Helvetica'
+}
+export function pdfFontBold(fontFamily: FontOption): string {
+  return SERIF_FONTS.includes(fontFamily) ? 'Times-Bold' : 'Helvetica-Bold'
+}
+export function pdfFontItalic(fontFamily: FontOption): string {
+  return SERIF_FONTS.includes(fontFamily) ? 'Times-Italic' : 'Helvetica-Oblique'
+}
+
+const NAME_PT: Record<NameSize, number> = { XS: 16, S: 18, M: 20, L: 22, XL: 26, XXL: 32 }
+export function nameFontSize(size: NameSize): number {
+  return NAME_PT[size] ?? 20
+}
+
+const HEADING_PT: Record<SectionHeadingSize, number> = { S: 7.5, M: 8.5, L: 10, XL: 12 }
+export function headingFontSize(size: SectionHeadingSize): number {
+  return HEADING_PT[size] ?? 8.5
+}
+
+const BULLET_CHAR: Record<ListStyle, string> = { bullet: '•', dash: '—', hyphen: '-' }
+export function bulletChar(style: ListStyle): string {
+  return BULLET_CHAR[style] ?? '•'
+}
+
+export interface ResolvedColors {
+  text: string
+  heading: string
+  subtitle: string
+  date: string
+  background: string
+  accent: string
+}
+
+export function resolveColors(s: ResumeSettings): ResolvedColors {
+  if (s.colorMode === 'multi' || s.colorMode === 'image') {
+    return {
+      text: s.textColor,
+      heading: s.headingColor,
+      subtitle: s.subtitleColor,
+      date: s.dateColor,
+      background: s.backgroundColor,
+      accent: s.accentColor,
+    }
+  }
+  // basic mode
+  return {
+    text: s.textColor,
+    heading: s.accentColor,
+    subtitle: s.subtitleColor,
+    date: s.dateColor,
+    background: s.backgroundColor,
+    accent: s.accentColor,
+  }
+}
+
+/** Parse hex (#rgb or #rrggbb) → [r, g, b] 0-255 */
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '')
+  if (h.length === 3) {
+    return [parseInt(h[0]+h[0], 16), parseInt(h[1]+h[1], 16), parseInt(h[2]+h[2], 16)]
+  }
+  return [parseInt(h.slice(0,2), 16), parseInt(h.slice(2,4), 16), parseInt(h.slice(4,6), 16)]
+}
+
+/** Relative luminance per WCAG 2.0 */
+function relativeLuminance(hex: string): number {
+  const [r, g, b] = hexToRgb(hex).map(c => {
+    const s = c / 255
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
+  })
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+/** Returns true if the color is perceptually light (better with dark text on top) */
+export function isLight(hex: string): boolean {
+  return relativeLuminance(hex) > 0.179
+}
+
+/** Returns coordinated text colors for a given background */
+export function textColorsForBg(bg: string): { textColor: string; subtitleColor: string; dateColor: string } {
+  if (isLight(bg)) {
+    return { textColor: '#1a1a1a', subtitleColor: '#4a5568', dateColor: '#4a5568' }
+  }
+  return { textColor: '#e2e8f0', subtitleColor: '#94a3b8', dateColor: '#94a3b8' }
+}
+

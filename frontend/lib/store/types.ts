@@ -27,6 +27,9 @@ export type TemplateId =
   | 'elite'
   | 'mono'
   | 'blocks'
+  | 'dublin'
+  | 'london'
+  | 'berlin'
   | 'custom'
 
 export type FontOption =
@@ -53,21 +56,35 @@ export type SectionHeadingIcon = 'none' | 'simple' | 'filled' | 'knockout'
 export type SectionHeadingStyle = 'none' | 'underline' | 'overline' | 'top-bottom' | 'box' | 'background' | 'left-bar'
 export type SectionHeadingIconStyle = 'lucide' | 'nerd'
 export type HeaderAlignment = 'left' | 'center' | 'right'
-export type HeaderArrangement = 'icon' | 'bullet' | 'pipe' | 'bar'
-export type NameSize = 'XS' | 'S' | 'M' | 'L' | 'XL'
+export type HeaderArrangement = 'icon' | 'bullet' | 'verticalBar' | 'none'
+export type NameSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL'
 export type ColorMode = 'basic' | 'multi' | 'image'
+export type ThemeColorStyle = 'basic' | 'advanced' | 'border'
 export type FontStyle = 'serif' | 'sans' | 'mono'
 export type SkillDisplayOption = 'grid' | 'level' | 'compact' | 'bubble'
+export type EntryLayout = 'date-location-right' | 'date-location-left' | 'date-content-location' | 'full-width'
+export type ColumnWidthMode = 'auto' | 'manual'
 export type EducationOrder = 'degree-school' | 'school-degree'
 export type ExperienceOrder = 'title-employer' | 'employer-title'
-export type PhotoSize = 'S' | 'M' | 'L' | 'XL'
-export type PhotoShape = 'circle' | 'rounded' | 'square'
-export type PhotoPosition = 'beside-name' | 'top-center' | 'top-left' | 'top-right'
-export type ContactLayout = 'inline' | 'columns-2' | 'columns-3'
+export type PhotoSize = 'S' | 'M'
+export type PhotoShape = 'circle' | 'rounded'
+export type PhotoPosition = 'beside' | 'top' | 'bottom'
+export type DetailsArrangement = 'column' | 'wrap' | 'grid'
+export type DetailsPosition = 'beside' | 'below'
+export type DetailsTextAlignment = 'left' | 'right' | 'center'
+export type DetailsSpacing = 'compact' | 'comfortable'
+export type ContactIconStyle =
+  | 'none'
+  | 'circle-filled'
+  | 'rounded-filled'
+  | 'square-filled'
+  | 'circle-outline'
+  | 'rounded-outline'
+  | 'square-outline'
 
 // ─── Section Item Types ───────────────────────────────────────────────────────
 
-export interface HeaderItem {
+export interface HeaderData {
   fullName: string
   jobTitle: string
   email: string
@@ -220,7 +237,7 @@ export interface CustomItem {
 // ─── Section Item Union ───────────────────────────────────────────────────────
 
 export type AnySectionItems =
-  | HeaderItem
+  | HeaderData
   | SummaryItem
   | ExperienceItem[]
   | EducationItem[]
@@ -261,10 +278,14 @@ export interface ResumeSettings {
 
   // Layout & Spacing
   columnLayout: ColumnLayout
+  columnReverse: boolean
   lineHeight: number        // e.g. 1.5
   marginHorizontal: number  // mm, e.g. 20
   marginVertical: number    // mm, e.g. 10
   entrySpacing: number      // multiplier 0.8-1.4
+  entryLayout: EntryLayout
+  columnWidthMode: ColumnWidthMode
+  columnWidth: number       // percentage for manual mode
   titleSize: 'S' | 'M' | 'L'
   subtitleStyle: SubtitleStyle
   subtitlePlacement: SubtitlePlacement
@@ -273,11 +294,23 @@ export interface ResumeSettings {
 
   // Design — colors
   colorMode: ColorMode
+  themeColorStyle: ThemeColorStyle
   textColor: string
   backgroundColor: string
   headingColor: string
   dateColor: string
   subtitleColor: string
+
+  // Design — accent application
+  applyAccentName: boolean
+  applyAccentJobTitle: boolean
+  applyAccentHeadings: boolean
+  applyAccentHeadingLine: boolean
+  applyAccentHeaderIcons: boolean
+  applyAccentDotsBarsBubbles: boolean
+  applyAccentDates: boolean
+  applyAccentEntrySubtitle: boolean
+  applyAccentLinkIcons: boolean
 
   // Design — section headings
   sectionHeadingSize: SectionHeadingSize
@@ -296,8 +329,12 @@ export interface ResumeSettings {
   nameSize: NameSize
   nameBold: boolean
   photoPosition: PhotoPosition
-  contactLayout: ContactLayout
+  detailsArrangement: DetailsArrangement
+  detailsPosition: DetailsPosition
+  detailsTextAlignment: DetailsTextAlignment
+  detailsSpacing: DetailsSpacing
   contactIcons: boolean
+  contactIconStyle: ContactIconStyle
 
   // Footer
   footerPageNumbers: boolean
@@ -380,10 +417,14 @@ export const DEFAULT_SETTINGS: ResumeSettings = {
 
   // Layout & Spacing
   columnLayout: 'one',
+  columnReverse: false,
   lineHeight: 1.5,
   marginHorizontal: 20,
   marginVertical: 10,
   entrySpacing: 1,
+  entryLayout: 'date-location-right',
+  columnWidthMode: 'auto',
+  columnWidth: 30,
   titleSize: 'M',
   subtitleStyle: 'normal',
   subtitlePlacement: 'next-line',
@@ -392,11 +433,23 @@ export const DEFAULT_SETTINGS: ResumeSettings = {
 
   // Design — colors
   colorMode: 'basic',
+  themeColorStyle: 'basic',
   textColor: '#1a1a1a',
   backgroundColor: '#ffffff',
   headingColor: '#1a2744',
   dateColor: '#4a5568',
   subtitleColor: '#4a5568',
+
+  // Design — accent application
+  applyAccentName: true,
+  applyAccentJobTitle: true,
+  applyAccentHeadings: true,
+  applyAccentHeadingLine: true,
+  applyAccentHeaderIcons: false,
+  applyAccentDotsBarsBubbles: false,
+  applyAccentDates: false,
+  applyAccentEntrySubtitle: false,
+  applyAccentLinkIcons: false,
 
   // Design — section headings
   sectionHeadingSize: 'M',
@@ -411,12 +464,16 @@ export const DEFAULT_SETTINGS: ResumeSettings = {
 
   // Header
   headerAlignment: 'center',
-  headerArrangement: 'pipe',
+  headerArrangement: 'verticalBar',
   nameSize: 'L',
   nameBold: true,
-  photoPosition: 'beside-name',
-  contactLayout: 'inline',
+  photoPosition: 'beside',
+  detailsArrangement: 'wrap',
+  detailsPosition: 'below',
+  detailsTextAlignment: 'center',
+  detailsSpacing: 'comfortable',
   contactIcons: false,
+  contactIconStyle: 'none',
 
   // Footer
   footerPageNumbers: false,
@@ -439,7 +496,7 @@ export const DEFAULT_SETTINGS: ResumeSettings = {
   sectionColumns: {},
 }
 
-export const DEFAULT_HEADER: HeaderItem = {
+export const DEFAULT_HEADER: HeaderData = {
   fullName: 'Your Name',
   jobTitle: 'Your Job Title',
   email: 'email@example.com',
