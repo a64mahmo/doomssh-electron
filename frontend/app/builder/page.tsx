@@ -84,13 +84,16 @@ export default function BuilderDashboard() {
 
   // ── Vault gate ──────────────────────────────────────────────────────────────
   useEffect(() => {
-    window.electron!.vault.getPath().then(p => {
-      if (p) setVaultReady(true)
-    })
+    if (window.electron) {
+      window.electron.vault.getPath().then(p => {
+        if (p) setVaultReady(true)
+      })
+    }
   }, [])
 
   async function handlePickVault() {
-    const p = await window.electron!.vault.setPath()
+    if (!window.electron) return
+    const p = await window.electron.vault.setPath()
     if (p) setVaultReady(true)
   }
 

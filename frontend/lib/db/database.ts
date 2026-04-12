@@ -6,19 +6,23 @@ import { DEFAULT_SETTINGS, DEFAULT_HEADER, SECTION_LABELS } from '@/lib/store/ty
 // ─── CRUD Operations ──────────────────────────────────────────────────────────
 
 export async function getAllResumes(): Promise<Resume[]> {
-  return (await window.electron!.vault.list()) as Resume[]
+  if (!window.electron) return []
+  return (await window.electron.vault.list()) as Resume[]
 }
 
 export async function getResume(id: string): Promise<Resume | undefined> {
-  return (await window.electron!.vault.read(id)) as Resume | undefined
+  if (!window.electron) return undefined
+  return (await window.electron.vault.read(id)) as Resume | undefined
 }
 
 export async function saveResume(resume: Resume): Promise<void> {
-  await window.electron!.vault.write({ ...resume, updatedAt: Date.now() })
+  if (!window.electron) return
+  await window.electron.vault.write({ ...resume, updatedAt: Date.now() })
 }
 
 export async function deleteResume(id: string): Promise<void> {
-  await window.electron!.vault.delete(id)
+  if (!window.electron) return
+  await window.electron.vault.delete(id)
 }
 
 export async function duplicateResume(id: string): Promise<Resume> {
