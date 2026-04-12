@@ -63,6 +63,23 @@ DoomSSH uses **Next.js 16**, which contains significant breaking changes compare
 
 ---
 
+## Recent Updates (v0.2.5)
+
+-   **Windows Architecture Refinement:** Fixed critical routing issues on Windows/Linux by transitioning from dynamic path segments to query-based navigation (`?id=...`). This ensures full compatibility with Next.js static exports in Electron environments.
+-   **Strict Vault Validation:** Enhanced the `resume:list` IPC handler with strict object validation. The application now automatically ignores system files (e.g., `_jobs.json`) and invalid data, ensuring only valid resumes are displayed on the dashboard.
+-   **Cross-Platform Fidelity:**
+    -   Implemented `pathToFileURL` in the Electron protocol handler to correctly resolve Windows file paths (fixing blank screen issues).
+    -   Added platform-aware `titleBarStyle` for native window controls on all operating systems.
+    -   Updated the application icon to `file.svg` across all platforms.
+-   **Developer Experience & CI/CD:**
+    -   Fixed a critical `electron-builder` execution error on macOS runners by implementing a cache clearing step and enforcing native-only builds (`--mac` / `--win` flags).
+    -   Wrapped core client components in `<Suspense>` boundaries to resolve Next.js 16 build de-optimization errors.
+    -   Integrated permanent unit tests for the `BuilderDashboard` and resume deletion flows.
+    -   Improved Electron process management during development with more robust `projectRoot` resolution and `node` binary spawning.
+-   **UI/UX Polishing:**
+    -   Resolved a visual bug by removing the vertical active indicator from the style panel's navigation sidebar.
+    -   Integrated real-time user feedback with `sonner` toast notifications for resume CRUD operations.
+
 ## Recent Updates (v0.2.0)
 
 -   **Modular Rendering Architecture:** Reorganized the rendering logic into category-specific files. The `templates` directory has been renamed to `web`, and both `web` and `pdf` paths now use a shared, modular section structure.

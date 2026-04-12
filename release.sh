@@ -36,6 +36,13 @@ if [ -z "$COMMIT_MSG" ]; then
     exit 1
 fi
 
+npm run test:all
+
+if [ $? -ne 0 ]; then
+    echo -e "${RED}Error: Tests failed. Aborting release.${NC}"
+    exit 1
+fi
+
 # Step 1: Add everything
 echo -e "\n${BLUE}Step 1: Staging all changes...${NC}"
 git add .

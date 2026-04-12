@@ -31,8 +31,17 @@ jobs:
           cd frontend
           npm install
 
+      - name: Clear electron-builder cache (macOS)
+        if: runner.os == 'macOS'
+        run: rm -rf ~/Library/Caches/electron-builder
+
       - name: Build and Publish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         run: |
-          npm run electron:dist -- --publish always
+          if [ "${{ runner.os }}" == "macOS" ]; then
+            npm run electron:dist -- --publish always --mac
+          else
+            npm run electron:dist -- --publish always --win
+          fi
