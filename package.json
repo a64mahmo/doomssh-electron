@@ -1,6 +1,6 @@
 {
   "name": "doomssh",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "private": true,
   "main": "electron/dist/main.js",
   "build": {
@@ -16,13 +16,13 @@
     "directories": {
       "output": "dist-electron"
     },
-    "icon": "frontend/public/file.svg",
     "files": [
       "frontend/out/**/*",
       "electron/dist/**/*",
       "package.json"
     ],
     "mac": {
+      "icon": "frontend/app/favicon.ico",
       "category": "public.app-category.productivity",
       "target": [
         {
@@ -35,6 +35,7 @@
       ]
     },
     "win": {
+      "icon": "frontend/app/favicon.ico",
       "target": [
         {
           "target": "nsis",

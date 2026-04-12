@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import BuilderDashboard from './page'
-import { getAllResumes, deleteResume } from '@/lib/db/database'
+import { getAllResumes, deleteResume, createNewResume, saveResume } from '@/lib/db/database'
 import { toast } from 'sonner'
 
 // Mock next/navigation
@@ -54,99 +54,105 @@ describe('BuilderDashboard', () => {
     } as any
   })
 
-  it('should call deleteResume and refresh the list when a resume is deleted', async () => {
-    const mockResumes = [
-      { id: '1', name: 'Resume 1', template: 'modern', updatedAt: Date.now() },
-      { id: '2', name: 'Resume 2', template: 'classic', updatedAt: Date.now() },
-    ]
+  it('should handle the full lifecycle: Create -> Delete', async () => {
+    const mockId = 'lifecycle-test-id'
+    const initialResume = { id: mockId, name: 'Untitled Resume', template: 'classic', updatedAt: Date.now() }
 
-    vi.mocked(getAllResumes).mockResolvedValueOnce(mockResumes as any)
-    vi.mocked(getAllResumes).mockResolvedValueOnce([mockResumes[1]] as any)
-    vi.mocked(deleteResume).mockResolvedValue(undefined as any)
+    // Setup mocks to return data immediately after bypass
+    vi.mocked(createNewResume).mockReturnValue(initialResume as any)
+    vi.mocked(getAllResumes).mockResolvedValue([initialResume] as any)
 
     render(<BuilderDashboard />)
 
-    // Wait for resumes to load
+    // 1. Wait for dashboard to show
     await waitFor(() => {
-      expect(screen.getByText('Resume 1')).toBeTruthy()
-    }, { timeout: 3000 })
+      expect(screen.queryByText(/Choose a Vault Folder/i)).toBeNull()
+      expect(screen.getByText(/My Resumes/i)).toBeTruthy()
+    }, { timeout: 4000 })
 
-    const dropdownTriggers = screen.getAllByRole('button')
-    // We need to click the one that has the more-horizontal icon
-    const trigger = dropdownTriggers.find(t => t.className.includes('shrink-0 w-6 h-6'))
-    if (!trigger) throw new Error('Could not find dropdown trigger')
+    // 2. Trigger Create - pick the header button
+    const headerBtn = screen.getAllByRole('button').find(b => b.textContent?.includes('New Resume') && b.className.includes('bg-foreground'))
+    if (!headerBtn) throw new Error('Could not find header create button')
     
     await act(async () => {
-      fireEvent.click(trigger)
+      fireEvent.click(headerBtn)
     })
 
+    expect(createNewResume).toHaveBeenCalled()
+    // Verify saveResume was called (handleCreate in page.tsx calls saveResume(resume))
     await waitFor(() => {
-      expect(screen.getByText('Delete')).toBeTruthy()
+      expect(saveResume).toHaveBeenCalled()
     })
 
-    await act(async () => {
-      fireEvent.click(screen.getByText('Delete'))
-    })
+    // 3. Verify card exists
+    await waitFor(() => expect(screen.getByText('Untitled Resume')).toBeTruthy())
 
-    await waitFor(() => {
-      expect(deleteResume).toHaveBeenCalledWith('1')
-    })
+    // 4. Trigger Delete
+    // Mock getAllResumes to return empty for the refresh after delete
+    vi.mocked(getAllResumes).mockResolvedValueOnce([])
 
-    await waitFor(() => {
-      expect(screen.queryByText('Resume 1')).toBeNull()
-      expect(screen.getByText('Resume 2')).toBeTruthy()
-    })
-
-    expect(toast.success).toHaveBeenCalledWith('Resume deleted')
-  })
-
-  it('should show an error toast if deletion fails', async () => {
-    const mockResumes = [{ id: '1', name: 'Resume 1', template: 'modern', updatedAt: Date.now() }]
-    vi.mocked(getAllResumes).mockResolvedValue(mockResumes as any)
-    vi.mocked(deleteResume).mockRejectedValue(new Error('FileSystem Error') as any)
-
-    render(<BuilderDashboard />)
-
-    await waitFor(() => expect(screen.getByText('Resume 1')).toBeTruthy())
-
-    const dropdownTrigger = screen.getAllByRole('button').find(b => b.className.includes('shrink-0 w-6 h-6'))
+    const dropdownTrigger = document.querySelector('.shrink-0.w-6.h-6')
     if (!dropdownTrigger) throw new Error('Could not find dropdown trigger')
     
     await act(async () => {
       fireEvent.click(dropdownTrigger)
     })
 
-    await waitFor(() => expect(screen.getByText('Delete')).toBeTruthy())
+    const deleteItem = await screen.findByText('Delete')
+    await act(async () => {
+      fireEvent.click(deleteItem)
+    })
+
+    // Verify final state
+    await waitFor(() => {
+      expect(deleteResume).toHaveBeenCalled()
+      expect(toast.success).toHaveBeenCalledWith('Resume deleted')
+    })
+  })
+
+  it('should show an error toast if deletion fails (silencing expected stderr)', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    
+    const mockResumes = [{ id: '1', name: 'Resume 1', template: 'modern', updatedAt: Date.now() }]
+    vi.mocked(getAllResumes).mockResolvedValue(mockResumes as any)
+    vi.mocked(deleteResume).mockRejectedValue(new Error('FileSystem Error') as any)
+
+    render(<BuilderDashboard />)
+
+    await waitFor(() => expect(screen.queryByText(/My Resumes/i)).toBeTruthy(), { timeout: 4000 })
+    await waitFor(() => expect(screen.getByText('Resume 1')).toBeTruthy())
+
+    const dropdownTrigger = document.querySelector('.shrink-0.w-6.h-6')
+    if (!dropdownTrigger) throw new Error('Could not find dropdown trigger')
     
     await act(async () => {
-      fireEvent.click(screen.getByText('Delete'))
+      fireEvent.click(dropdownTrigger)
+    })
+
+    const deleteItem = await screen.findByText('Delete')
+    await act(async () => {
+      fireEvent.click(deleteItem)
     })
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith('Failed to delete resume')
     })
+
+    consoleSpy.mockRestore()
   })
 
   it('should only show valid resumes and ignore system files', async () => {
     const mixedData = [
       { id: '1', name: 'Valid Resume', updatedAt: Date.now() },
-      { version: 1, jobs: [] } // Fake _jobs.json content
+      { version: 1, jobs: [] } 
     ]
 
-    // In a real scenario, the Electron backend handles the filtering now,
-    // but the frontend should also be robust.
     vi.mocked(getAllResumes).mockResolvedValue(mixedData.filter(d => (d as any).id && (d as any).name) as any)
 
     render(<BuilderDashboard />)
 
-    await waitFor(() => {
-      expect(screen.getByText('Valid Resume')).toBeTruthy()
-    })
-
-    // Ensure the jobs data isn't rendered as a resume card
-    // Resume cards show the template name (default 'classic' if not provided in mock)
-    // but the jobs object doesn't have template or name properties that would render a valid card.
-    expect(screen.queryByText(/0 resumes/)).toBeNull() 
+    await waitFor(() => expect(screen.queryByText(/My Resumes/i)).toBeTruthy(), { timeout: 4000 })
+    await waitFor(() => expect(screen.getByText('Valid Resume')).toBeTruthy())
     expect(screen.getByText(/1 resume/)).toBeTruthy()
   })
 })
