@@ -1,6 +1,6 @@
 {
   "name": "doomssh",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "main": "electron/dist/main.js",
   "scripts": {
@@ -14,8 +14,12 @@
     "electron:preview": "npm run build && npm run electron:build && NODE_ENV=production electron electron/dist/main.js",
     "electron:dist": "npm run build && npm run electron:build && electron-builder",
     "dev:all": "npm run dev",
-    "test:e2e": "playwright test",
-    "test:all": "npm run test --prefix frontend && npm run test:e2e"
+    "test:e2e": "playwright test tests/e2e",
+    "test:visual": "playwright test tests/visual",
+    "test:performance": "playwright test tests/performance",
+    "test:regression": "playwright test tests/regression",
+    "test:integration": "playwright test tests/integration",
+    "test:all": "npm run test --prefix frontend && npm run test:e2e && npm run test:visual && npm run test:performance && npm run test:regression && npm run test:integration"
   },
   "build": {
     "appId": "com.doomssh.app",

@@ -64,11 +64,16 @@ We maintain two identical rendering trees. Any visual change made in the editor'
 ├── electron/           # Main process: IPC, Window management, Keychain
 ├── frontend/           # Next.js 15 Workspace
 │   ├── app/            # App Router (Builder, Print, AI routes)
-│   ├── components/     # UI, Editor, Preview, and PDF mirror templates
+│   ├── components/     
+│   │   ├── web/        # HTML/Web-based renderers (Mirror path 1)
+│   │   ├── pdf/        # PDF-based renderers (Mirror path 2)
+│   │   ├── customize/  # Modular styling & design panel
+│   │   └── editor/     # Data entry components
 │   ├── hooks/          # useResume (State), useAI (Streaming)
 │   └── lib/
 │       ├── store/      # Zustand store (Single Source of Truth)
 │       └── db/         # Local file-system CRUD via Electron IPC
+├── tests/              # Comprehensive CI/CD Test Suite
 └── docs/               # Technical deep-dives
 ```
 
@@ -100,17 +105,22 @@ npm run electron:dist
 
 ## Testing & Quality
 
-DoomSSH is built with a focus on reliability across its dual-renderer architecture.
+DoomSSH employs a rigorous testing architecture to ensure stability across its dual-renderer system.
 
-- **E2E Testing:** Playwright is used for end-to-end testing of the Electron app.
+- **Automated Test Suite:** Run all tests across Chromium, Firefox, and Webkit.
   ```bash
-  npm run test:e2e
+  npm run test:all
   ```
-- **Unit Testing:** Vitest is used for testing core logic in the frontend and Electron main process.
+- **Categories:**
+  - `npm run test:e2e`: Main user flows and navigation.
+  - `npm run test:regression`: Logic synchronization and state integrity.
+  - `npm run test:integration`: Modular UI component coordination.
+  - `npm run test:performance`: Render speed benchmarks and load testing.
+  - `npm run test:visual`: Visual regression snapshots (Pixel-perfect parity).
+- **Unit Testing:** Powered by Vitest for core frontend logic.
   ```bash
   npm run test --prefix frontend
   ```
-- **Validation:** Every change is validated against the Mirror-World Rule to ensure PDF/DOM parity.
 
 ## Documentation
 

@@ -69,3 +69,34 @@ export function resolveColors(s: ResumeSettings): ResolvedColors {
   }
 }
 
+/** Parse hex (#rgb or #rrggbb) → [r, g, b] 0-255 */
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '')
+  if (h.length === 3) {
+    return [parseInt(h[0]+h[0], 16), parseInt(h[1]+h[1], 16), parseInt(h[2]+h[2], 16)]
+  }
+  return [parseInt(h.slice(0,2), 16), parseInt(h.slice(2,4), 16), parseInt(h.slice(4,6), 16)]
+}
+
+/** Relative luminance per WCAG 2.0 */
+function relativeLuminance(hex: string): number {
+  const [r, g, b] = hexToRgb(hex).map(c => {
+    const s = c / 255
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
+  })
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+/** Returns true if the color is perceptually light (better with dark text on top) */
+export function isLight(hex: string): boolean {
+  return relativeLuminance(hex) > 0.179
+}
+
+/** Returns coordinated text colors for a given background */
+export function textColorsForBg(bg: string): { textColor: string; subtitleColor: string; dateColor: string } {
+  if (isLight(bg)) {
+    return { textColor: '#1a1a1a', subtitleColor: '#4a5568', dateColor: '#4a5568' }
+  }
+  return { textColor: '#e2e8f0', subtitleColor: '#94a3b8', dateColor: '#94a3b8' }
+}
+

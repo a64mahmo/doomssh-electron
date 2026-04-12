@@ -63,6 +63,13 @@ DoomSSH uses **Next.js 16**, which contains significant breaking changes compare
 
 ---
 
+## Recent Updates (v0.2.0)
+
+-   **Modular Rendering Architecture:** Reorganized the rendering logic into category-specific files. The `templates` directory has been renamed to `web`, and both `web` and `pdf` paths now use a shared, modular section structure.
+-   **Customize Panel Refactor:** Modularized the 1,600+ line `CustomizePanel` into isolated, domain-specific components (Typography, Colors, Layout, etc.), improving maintainability and performance.
+-   **Comprehensive CI/CD Test Suite:** Introduced a new testing architecture in `/tests` covering E2E, Regression, Performance, and Visual regression using Playwright.
+-   **Enhanced Resilience:** Implemented null-safe fallbacks for resume settings across both rendering engines to ensure stable behavior with incomplete or legacy data.
+
 ## Recent Updates (v0.1.1)
 
 -   **Enhanced Navigation:** Added interactive tooltips to the builder sidebar for all resume sections and customization panels.

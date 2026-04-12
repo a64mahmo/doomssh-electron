@@ -11,6 +11,17 @@ The DoomSSH frontend is a sophisticated Next.js application designed for real-ti
 -   **@dnd-kit:** Powerful drag-and-drop functionality for reordering resume sections and list items.
 -   **Dexie.js:** IndexedDB wrapper for local-first persistence.
 
+## Modular Component Architecture
+
+The frontend is organized into highly modularized directories to manage the complexity of dual rendering and deep customization.
+
+### Customization Panel
+The design and styling logic is decoupled into `frontend/components/customize/sections/`. Each customization category (e.g., Typography, Colors, Layout) is an isolated component, coordinated by a main `CustomizePanel` shell. Common UI patterns are abstracted into `CustomizePrimitives.tsx`.
+
+### Dual-Renderer Paths
+-   **Web Path:** `frontend/components/web/`. Contains the `MasterTemplate.tsx` and modular section renderers in `sections/`. This path is optimized for real-time reactivity and Tailwind-based styling.
+-   **PDF Path:** `frontend/components/pdf/`. Mirrors the structure of the web path but uses `@react-pdf/renderer` primitives for high-precision vector output.
+
 ## State Management
 
 The `resumeStore` is the heart of the frontend. It maintains the `Resume` object, which includes:

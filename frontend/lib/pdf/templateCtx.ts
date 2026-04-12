@@ -23,7 +23,7 @@ export function buildCtx(s: ResumeSettings): TemplateCtx {
     colors:   resolveColors(s),
     base:     s.fontSize,
     lh:       s.lineHeight,
-    gap:      pt(s.fontSize * s.entrySpacing * 1.2),
+    gap:      pt(s.fontSize * (s.entrySpacing ?? 1.0) * 1.2),
     bullet:   bulletChar(s.listStyle),
     hSize:    headingFontSize(s.sectionHeadingSize),
     hCap:     s.sectionHeadingCapitalization !== 'none' ? s.sectionHeadingCapitalization : undefined,

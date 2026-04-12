@@ -4,7 +4,7 @@ import type { Style } from '@react-pdf/types'
 import type { Resume, SectionType, ResumeSection, SectionHeadingIcon, HeaderData } from '@/lib/store/types'
 import { buildCtx } from '@/lib/pdf/templateCtx'
 import { registerFont } from './fonts'
-import { SectionRendererPDF, ContactLinePDF, hexA } from './SectionsPDF'
+import { SectionRendererPDF, ContactLinePDF, hexA } from './sections'
 import { SECTION_ICONS, type SvgElement } from "@/lib/icons/sectionIcons";
 
 function SectionIcon({ 

@@ -1,9 +1,10 @@
 import React from "react";
 import type { Resume, ResumeSection, SectionType, HeaderData } from "@/lib/store/types";
 import { buildCtx } from "@/lib/pdf/templateCtx";
-import { SectionRenderer, ContactLine } from "./SectionRenderers";
+import { SectionRenderer, ContactLine } from "./sections";
 import { SECTION_ICONS } from "@/lib/icons/sectionIcons";
 import { cn } from "@/lib/utils";
+import { isLight } from "@/lib/pdf/styleUtils";
 
 // Abstract geometric symbols for a minimalist look
 const ABSTRACT_ICONS: Record<SectionType, React.ReactNode> = {
@@ -424,7 +425,7 @@ export function MasterTemplate({
         <div
           style={{
             backgroundColor: s.themeColorStyle === 'advanced' ? colors.accent : 'transparent',
-            color: s.themeColorStyle === 'advanced' ? colors.background : 'inherit',
+            color: s.themeColorStyle === 'advanced' ? (isLight(colors.accent) ? '#1a1a1a' : '#ffffff') : 'inherit',
             marginLeft: s.themeColorStyle === 'advanced' ? `-${padH}` : 0,
             marginRight: s.themeColorStyle === 'advanced' ? `-${padH}` : 0,
             marginTop: s.themeColorStyle === 'advanced' ? `-${padV}` : 0,
