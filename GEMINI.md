@@ -17,8 +17,8 @@ We use **Zustand + Immer**. This requires a specific mental model for async oper
 
 ## 3. The Dual-Renderer Synchronization (The "Mirror" Rule)
 DoomSSH has two "realities":
-1.  **The DOM Reality:** (`MasterTemplate.tsx`, `SectionRenderers.tsx`)
-2.  **The PDF Reality:** (`ResumePDF.tsx`, `SectionsPDF.tsx`)
+1.  **The DOM Reality:** (`MasterTemplate.tsx`, `web/sections/` directory)
+2.  **The PDF Reality:** (`ResumePDF.tsx`, `sections/` directory)
 
 **Mandates for AI Agents:**
 - When you modify a margin, padding, font size, or structural divider in the DOM, you **must** immediately find its counterpart in the PDF files and apply the equivalent `@react-pdf` style.

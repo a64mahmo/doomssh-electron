@@ -82,8 +82,18 @@ describe('resumeStore', () => {
 
   it('updates section items', () => {
     useResumeStore.getState().addSection('header')
-    const newItems = { fullName: 'Updated Name', jobTitle: 'Developer' }
-    useResumeStore.getState().updateSectionItems('test-id', newItems)
+    const newItems = { 
+      fullName: 'Updated Name', 
+      jobTitle: 'Developer',
+      email: '',
+      phone: '',
+      location: '',
+      website: '',
+      linkedin: '',
+      github: '',
+    }
+    const sectionId = useResumeStore.getState().resume?.sections[0].id || 'id'
+    useResumeStore.getState().updateSectionItems(sectionId, newItems)
     
     const section = useResumeStore.getState().resume?.sections[0]
     expect(section?.items).toEqual(newItems)

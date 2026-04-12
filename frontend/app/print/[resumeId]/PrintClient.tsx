@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState, use } from 'react'
 import { getResume } from '@/lib/db/database'
-import { MasterTemplate } from '@/components/templates'
+import { MasterTemplate } from '@/components/web'
 import type { Resume } from '@/lib/store/types'
 
 export function PrintClient({ params }: { params: Promise<{ resumeId: string }> }) {

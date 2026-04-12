@@ -29,7 +29,7 @@ import {
   Scale,
   type LucideIcon,
 } from "lucide-react";
-import type { HeaderItem } from "@/lib/store/types";
+import type { HeaderData } from "@/lib/store/types";
 import { FieldLabel, ControlGroup } from "../EditorPrimitives";
 
 interface Props {
@@ -114,14 +114,14 @@ const SOCIAL_PROFILES = [
 
 export function HeaderSection({ sectionId }: Props) {
   const { section, updateItems } = useSection(sectionId);
-  const item = (section?.items as HeaderItem) || {};
+  const item = (section?.items as HeaderData) || {};
   const photoInputRef = useRef<HTMLInputElement>(null);
 
-  function update(field: keyof HeaderItem, value: string) {
+  function update(field: keyof HeaderData, value: string) {
     updateItems({ ...item, [field]: value });
   }
 
-  function toggleField(field: keyof HeaderItem) {
+  function toggleField(field: keyof HeaderData) {
     const currentValue = item[field];
     if (currentValue !== undefined) {
       removeField(field);
@@ -130,7 +130,7 @@ export function HeaderSection({ sectionId }: Props) {
     }
   }
 
-  function removeField(field: keyof HeaderItem) {
+  function removeField(field: keyof HeaderData) {
     const next = { ...item };
     delete next[field];
     updateItems(next);
@@ -154,10 +154,10 @@ export function HeaderSection({ sectionId }: Props) {
   };
 
   const activePersonalDetails = PERSONAL_DETAILS.filter(
-    (d) => item[d.key as keyof HeaderItem] !== undefined,
+    (d) => item[d.key as keyof HeaderData] !== undefined,
   );
   const activeSocialProfiles = SOCIAL_PROFILES.filter(
-    (d) => item[d.key as keyof HeaderItem] !== undefined,
+    (d) => item[d.key as keyof HeaderData] !== undefined,
   );
 
   return (
@@ -260,14 +260,14 @@ export function HeaderSection({ sectionId }: Props) {
               key={f.key}
               label={f.label}
               icon={f.icon || Link}
-              onRemove={() => removeField(f.key as keyof HeaderItem)}
+              onRemove={() => removeField(f.key as keyof HeaderData)}
             >
               <Input
                 className="h-10 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20 w-full"
                 placeholder={`Enter ${f.label.toLowerCase()}`}
-                value={item[f.key as keyof HeaderItem] || ""}
+                value={item[f.key as keyof HeaderData] || ""}
                 onChange={(e) =>
-                  update(f.key as keyof HeaderItem, e.target.value)
+                  update(f.key as keyof HeaderData, e.target.value)
                 }
               />
             </Field>
@@ -282,12 +282,12 @@ export function HeaderSection({ sectionId }: Props) {
           <div className="flex flex-wrap gap-2">
             {[...PERSONAL_DETAILS, ...SOCIAL_PROFILES].map((f) => {
               const isActive =
-                item[f.key as keyof HeaderItem] !== undefined;
+                item[f.key as keyof HeaderData] !== undefined;
               if (isActive) return null;
               return (
                 <button
                   key={f.key}
-                  onClick={() => toggleField(f.key as keyof HeaderItem)}
+                  onClick={() => toggleField(f.key as keyof HeaderData)}
                   className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted/40 border border-border/50 text-[10px] font-bold uppercase tracking-wider hover:bg-muted hover:border-border transition-all text-muted-foreground/70 hover:text-foreground"
                 >
                   <Plus size={11} />
