@@ -8,6 +8,10 @@ import { DebouncedRichTextArea } from "@/components/ui/debounced-rich-text-area"
 import { useAI } from "@/hooks/useAI";
 import { toast } from "sonner";
 import { FieldLabel, ToggleRow, EntryCard } from "../EditorPrimitives";
+import type { ExperienceItem } from "@/lib/store/types";
+import { Plus, Briefcase, MapPin, Calendar, Link as LinkIcon, Building2, Sparkles, type LucideIcon } from "lucide-react";
+import { generateId } from "@/lib/utils/ids";
+import { MonthYearPicker } from '../MonthYearPicker'
 
 interface Props {
   sectionId: string;

@@ -3,15 +3,20 @@ import { useState, useEffect } from 'react'
 import { Input } from './input'
 import { cn } from '@/lib/utils'
 
-interface DebouncedInputProps extends React.ComponentProps<typeof Input> {
+interface DebouncedInputProps {
+  value: string
+  onChange?: (value: string) => void
   debounceTime?: number
+  className?: string
+  placeholder?: string
 }
 
 export function DebouncedInput({ 
   value, 
   onChange, 
-  debounceTime = 500, 
-  ...props 
+  debounceTime = 500,
+  className,
+  placeholder,
 }: DebouncedInputProps) {
   const [localValue, setLocalValue] = useState(value)
 
@@ -31,7 +36,8 @@ export function DebouncedInput({
 
   return (
     <Input
-      {...props}
+      className={className}
+      placeholder={placeholder}
       value={localValue}
       onChange={(e) => setLocalValue(e.target.value)}
     />
