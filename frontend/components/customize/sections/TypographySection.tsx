@@ -42,11 +42,11 @@ export function TypographySection({ s, upd }: TypographySectionProps) {
 
       <ControlGroup title="Sizes">
         <SliderRow
-          label="Base Font Size" value={s.fontSize} display={`${s.fontSize}pt`}
+          label="Base Font Size" value={s.fontSize} unit="pt"
           min={8} max={13} step={0.5} onChange={(v) => upd({ fontSize: v })}
         />
         <SliderRow
-          label="Line Height" value={s.lineHeight} display={`${s.lineHeight.toFixed(2)}`}
+          label="Line Height" value={s.lineHeight}
           min={1.0} max={2.2} step={0.05} onChange={(v) => upd({ lineHeight: v })}
         />
       </ControlGroup>

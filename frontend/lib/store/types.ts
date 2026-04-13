@@ -385,7 +385,7 @@ export interface Resume {
 export interface ResumeStore {
   resume: Resume | null
   isDirty: boolean
-  setResume: (resume: Resume | null) => void
+  setResume: (resume: Resume | null, isLoaded?: boolean) => void
   updateResumeName: (name: string) => void
   updateSettings: (settings: Partial<ResumeSettings>) => void
   updateSection: (sectionId: string, updates: Partial<ResumeSection>) => void

@@ -1,4 +1,4 @@
-import type { SectionType, ResumeSection } from '@/lib/store/types';
+import type { SectionType, ResumeSection, DateFormat } from '@/lib/store/types';
 
 export interface SectionViewModel {
   title: string;
@@ -15,8 +15,8 @@ export interface RenderContext {
   settings: any;
   // Helper functions (e.g. for date formatting, unit conversion)
   helpers: {
-    formatDate: (start: string, end: string, present: boolean, format: string) => string;
-    pt: (size: number | string) => string;
+    formatDate: (start: string, end: string, present: boolean, format?: DateFormat) => string;
+    pt: (size: number) => string;
   };
 }
 

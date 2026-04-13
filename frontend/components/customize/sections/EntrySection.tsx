@@ -128,7 +128,7 @@ export function EntrySection({ s, upd }: EntrySectionProps) {
 
           {s.columnWidthMode === 'manual' && (
             <SliderRow
-              label="Width" value={s.columnWidth} display={`${s.columnWidth}%`}
+              label="Width" value={s.columnWidth} unit="%"
               min={10} max={60} step={1} onChange={(v) => upd({ columnWidth: v })}
             />
           )}
