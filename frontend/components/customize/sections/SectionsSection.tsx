@@ -84,7 +84,7 @@ export function SectionsSection({ s, upd }: SectionsSectionProps) {
           <SliderRow
             label="Line Thickness"
             value={s.sectionHeadingLineThickness}
-            display={`${s.sectionHeadingLineThickness}pt`}
+            unit="pt"
             min={0.5} max={4} step={0.5}
             onChange={(v) => upd({ sectionHeadingLineThickness: v })}
           />
@@ -108,7 +108,6 @@ export function SectionsSection({ s, upd }: SectionsSectionProps) {
           <SliderRow
             label="Icon Size"
             value={s.sectionHeadingIconSize || 1.0}
-            display={`x${(s.sectionHeadingIconSize || 1.0).toFixed(1)}`}
             min={0.6} max={1.8} step={0.1}
             onChange={(v) => upd({ sectionHeadingIconSize: v })}
           />

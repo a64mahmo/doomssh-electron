@@ -132,19 +132,19 @@ export function LayoutSection({
 
       <ControlGroup title="Margins & Spacing">
         <SliderRow
-          label="Horizontal Margin" value={s.marginHorizontal} display={`${s.marginHorizontal}mm`}
+          label="Horizontal Margin" value={s.marginHorizontal} unit="mm"
           min={5} max={40} step={1} onChange={(v) => upd({ marginHorizontal: v })}
         />
         <SliderRow
-          label="Vertical Margin" value={s.marginVertical} display={`${s.marginVertical}mm`}
+          label="Vertical Margin" value={s.marginVertical} unit="mm"
           min={5} max={40} step={1} onChange={(v) => upd({ marginVertical: v })}
         />
         <SliderRow
-          label="Entry Spacing" value={s.entrySpacing ?? 1.0} display={`x${(s.entrySpacing ?? 1.0).toFixed(1)}`}
+          label="Entry Spacing" value={s.entrySpacing ?? 1.0}
           min={0.5} max={2.0} step={0.1} onChange={(v) => upd({ entrySpacing: v })}
         />
         <SliderRow
-          label="Section Spacing" value={s.sectionSpacing ?? 1.0} display={`x${(s.sectionSpacing ?? 1.0).toFixed(1)}`}
+          label="Section Spacing" value={s.sectionSpacing ?? 1.0}
           min={0.5} max={3.0} step={0.1} onChange={(v) => upd({ sectionSpacing: v })}
         />
       </ControlGroup>
