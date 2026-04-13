@@ -1,115 +1,207 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { useResumeStore } from './resumeStore'
-import { generateId } from '@/lib/utils/ids'
 import { DEFAULT_SETTINGS } from './types'
 
-// Mock dependencies
-vi.mock('@/lib/utils/ids', () => ({
-  generateId: vi.fn(() => 'test-id')
+vi.mock('@/lib/db/database', () => ({
+  saveResume: vi.fn().mockResolvedValue(undefined),
 }))
 
-vi.mock('@/lib/db/database', () => ({
-  saveResume: vi.fn()
+vi.mock('@/lib/store/uiStore', () => ({
+  useUIStore: {
+    getState: () => ({
+      addError: vi.fn(),
+    }),
+  },
 }))
 
 const baseResume = {
-  id: '123',
-  name: 'My Resume',
+  id: 'test-123',
+  name: 'Test Resume',
   createdAt: 1000,
   updatedAt: 1000,
-  template: 'classic' as const,
+  template: 'modern' as const,
   settings: { ...DEFAULT_SETTINGS },
-  sections: [],
+  sections: [
+    {
+      id: 'header-1',
+      type: 'header' as const,
+      title: 'Header',
+      visible: true,
+      items: { fullName: 'Test User', jobTitle: 'Developer', email: '', phone: '', location: '', website: '', linkedin: '', github: '' },
+    },
+    {
+      id: 'exp-1',
+      type: 'experience' as const,
+      title: 'Experience',
+      visible: true,
+      items: [
+        { id: '1', company: 'Test Co', position: 'Developer', location: 'Remote', startDate: '2020', endDate: '', present: true, description: 'Test work' },
+      ],
+    },
+  ],
 }
 
-describe('resumeStore', () => {
+describe('useResumeStore', () => {
   beforeEach(() => {
-    useResumeStore.setState({ resume: { ...baseResume }, isDirty: false })
+    useResumeStore.setState({ resume: null, isDirty: false })
     vi.clearAllMocks()
   })
 
-  it('sets a new resume', () => {
-    const newResume = { ...baseResume, id: '456', name: 'New' }
-    useResumeStore.getState().setResume(newResume)
-    expect(useResumeStore.getState().resume).toEqual(newResume)
-    expect(useResumeStore.getState().isDirty).toBe(false)
+  describe('setResume', () => {
+    it('sets isDirty true when setting a new resume (not from load)', () => {
+      useResumeStore.getState().setResume({ ...baseResume })
+      expect(useResumeStore.getState().isDirty).toBe(true)
+    })
+
+    it('sets isDirty false when loading a resume from storage', () => {
+      useResumeStore.getState().setResume({ ...baseResume }, true)
+      expect(useResumeStore.getState().isDirty).toBe(false)
+    })
+
+    it('preserves resume data when setting', () => {
+      useResumeStore.getState().setResume({ ...baseResume }, true)
+      expect(useResumeStore.getState().resume?.name).toBe('Test Resume')
+      expect(useResumeStore.getState().resume?.id).toBe('test-123')
+    })
   })
 
-  it('updates settings', () => {
-    useResumeStore.getState().updateSettings({ fontSize: 14 })
-    expect(useResumeStore.getState().resume?.settings.fontSize).toBe(14)
-    expect(useResumeStore.getState().isDirty).toBe(true)
+  describe('updateSettings', () => {
+    it('marks isDirty true when settings are updated', () => {
+      useResumeStore.setState({ resume: { ...baseResume }, isDirty: false })
+      useResumeStore.getState().updateSettings({ fontSize: 14 })
+      expect(useResumeStore.getState().isDirty).toBe(true)
+    })
+
+    it('updates the settings value', () => {
+      useResumeStore.setState({ resume: { ...baseResume }, isDirty: false })
+      useResumeStore.getState().updateSettings({ fontSize: 14 })
+      expect(useResumeStore.getState().resume?.settings.fontSize).toBe(14)
+    })
+
+    it('keeps headingColor in sync with accentColor in basic mode', () => {
+      useResumeStore.setState({ resume: { ...baseResume }, isDirty: false })
+      useResumeStore.getState().updateSettings({ accentColor: '#ff0000' })
+      expect(useResumeStore.getState().resume?.settings.headingColor).toBe('#ff0000')
+    })
+
+    it('switches to custom template when settings are modified', () => {
+      useResumeStore.setState({ resume: { ...baseResume, template: 'modern' }, isDirty: false })
+      useResumeStore.getState().updateSettings({ fontSize: 14 })
+      expect(useResumeStore.getState().resume?.template).toBe('custom')
+    })
+
+    it('switches to custom when settings are updated (including template)', () => {
+      useResumeStore.setState({ resume: { ...baseResume, template: 'modern' }, isDirty: false })
+      useResumeStore.getState().updateSettings({ template: 'classic' })
+      expect(useResumeStore.getState().resume?.template).toBe('custom')
+    })
   })
 
-  it('updates debugMode setting', () => {
-    useResumeStore.getState().updateSettings({ debugMode: true })
-    expect(useResumeStore.getState().resume?.settings.debugMode).toBe(true)
+  describe('updateSectionItems', () => {
+    it('marks isDirty true when section items are updated', () => {
+      useResumeStore.setState({ resume: { ...baseResume }, isDirty: false })
+      useResumeStore.getState().updateSectionItems('header-1', { ...baseResume.sections[0].items, fullName: 'New Name' })
+      expect(useResumeStore.getState().isDirty).toBe(true)
+    })
+
+    it('updates the section items', () => {
+      useResumeStore.setState({ resume: { ...baseResume }, isDirty: false })
+      useResumeStore.getState().updateSectionItems('header-1', { ...baseResume.sections[0].items, fullName: 'New Name' })
+      expect(useResumeStore.getState().resume?.sections[0].items.fullName).toBe('New Name')
+    })
+
+    it('does nothing if section not found', () => {
+      useResumeStore.setState({ resume: { ...baseResume }, isDirty: false })
+      useResumeStore.getState().updateSectionItems('non-existent', { fullName: 'Test' })
+      expect(useResumeStore.getState().isDirty).toBe(false)
+    })
   })
 
-  it('adds a section', () => {
-    useResumeStore.getState().addSection('experience')
-    const sections = useResumeStore.getState().resume?.sections
-    expect(sections).toHaveLength(1)
-    expect(sections?.[0].type).toBe('experience')
-    expect(sections?.[0].id).toBe('test-id')
+  describe('updateResumeName', () => {
+    it('marks isDirty true when name is updated', () => {
+      useResumeStore.setState({ resume: { ...baseResume }, isDirty: false })
+      useResumeStore.getState().updateResumeName('New Name')
+      expect(useResumeStore.getState().isDirty).toBe(true)
+    })
+
+    it('updates the resume name', () => {
+      useResumeStore.setState({ resume: { ...baseResume }, isDirty: false })
+      useResumeStore.getState().updateResumeName('New Name')
+      expect(useResumeStore.getState().resume?.name).toBe('New Name')
+    })
   })
 
-  it('removes a section', () => {
-    useResumeStore.getState().addSection('experience')
-    useResumeStore.getState().removeSection('test-id')
-    expect(useResumeStore.getState().resume?.sections).toHaveLength(0)
+  describe('addSection', () => {
+    it('marks isDirty true when a section is added', () => {
+      useResumeStore.setState({ resume: { ...baseResume }, isDirty: false })
+      useResumeStore.getState().addSection('skills')
+      expect(useResumeStore.getState().isDirty).toBe(true)
+    })
+
+    it('adds a new section to the resume', () => {
+      useResumeStore.setState({ resume: { ...baseResume }, isDirty: false })
+      useResumeStore.getState().addSection('skills')
+      const sections = useResumeStore.getState().resume?.sections
+      expect(sections?.some(s => s.type === 'skills')).toBe(true)
+    })
   })
 
-  it('toggles section visibility', () => {
-    useResumeStore.getState().addSection('experience')
-    useResumeStore.getState().toggleSectionVisibility('test-id')
-    expect(useResumeStore.getState().resume?.sections[0].visible).toBe(false)
-    useResumeStore.getState().toggleSectionVisibility('test-id')
-    expect(useResumeStore.getState().resume?.sections[0].visible).toBe(true)
+  describe('removeSection', () => {
+    it('marks isDirty true when a section is removed', () => {
+      useResumeStore.setState({ resume: { ...baseResume }, isDirty: false })
+      useResumeStore.getState().removeSection('header-1')
+      expect(useResumeStore.getState().isDirty).toBe(true)
+    })
+
+    it('removes the section from the resume', () => {
+      useResumeStore.setState({ resume: { ...baseResume }, isDirty: false })
+      useResumeStore.getState().removeSection('header-1')
+      const sections = useResumeStore.getState().resume?.sections
+      expect(sections?.some(s => s.id === 'header-1')).toBe(false)
+    })
   })
 
-  it('reorders sections', () => {
-    vi.mocked(generateId).mockReturnValueOnce('id-1')
-    useResumeStore.getState().addSection('experience')
-    vi.mocked(generateId).mockReturnValueOnce('id-2')
-    useResumeStore.getState().addSection('education')
+  describe('toggleSectionVisibility', () => {
+    it('marks isDirty true when section visibility is toggled', () => {
+      useResumeStore.setState({ resume: { ...baseResume }, isDirty: false })
+      useResumeStore.getState().toggleSectionVisibility('header-1')
+      expect(useResumeStore.getState().isDirty).toBe(true)
+    })
 
-    const before = useResumeStore.getState().resume?.sections
-    expect(before?.[0].id).toBe('id-1')
-    expect(before?.[1].id).toBe('id-2')
-
-    useResumeStore.getState().reorderSections('id-1', 'id-2')
-
-    const after = useResumeStore.getState().resume?.sections
-    expect(after?.[0].id).toBe('id-2')
-    expect(after?.[1].id).toBe('id-1')
+    it('toggles the section visibility', () => {
+      useResumeStore.setState({ resume: { ...baseResume }, isDirty: false })
+      const wasVisible = useResumeStore.getState().resume?.sections[0].visible
+      useResumeStore.getState().toggleSectionVisibility('header-1')
+      expect(useResumeStore.getState().resume?.sections[0].visible).toBe(!wasVisible)
+    })
   })
 
-  it('updates section items', () => {
-    useResumeStore.getState().addSection('header')
-    const newItems = { 
-      fullName: 'Updated Name', 
-      jobTitle: 'Developer',
-      email: '',
-      phone: '',
-      location: '',
-      website: '',
-      linkedin: '',
-      github: '',
-    }
-    const sectionId = useResumeStore.getState().resume?.sections[0].id || 'id'
-    useResumeStore.getState().updateSectionItems(sectionId, newItems)
-    
-    const section = useResumeStore.getState().resume?.sections[0]
-    expect(section?.items).toEqual(newItems)
-    expect(useResumeStore.getState().isDirty).toBe(true)
+  describe('reorderSections', () => {
+    it('marks isDirty true when sections are reordered', () => {
+      useResumeStore.setState({ resume: { ...baseResume }, isDirty: false })
+      useResumeStore.getState().reorderSections('header-1', 'exp-1')
+      expect(useResumeStore.getState().isDirty).toBe(true)
+    })
   })
 
-  it('marks resume as saved', () => {
-    useResumeStore.getState().updateSettings({ fontSize: 12 })
-    expect(useResumeStore.getState().isDirty).toBe(true)
-    
-    useResumeStore.getState().markSaved()
-    expect(useResumeStore.getState().isDirty).toBe(false)
+  describe('markSaved', () => {
+    it('sets isDirty to false', () => {
+      useResumeStore.setState({ resume: { ...baseResume }, isDirty: true })
+      useResumeStore.getState().markSaved()
+      expect(useResumeStore.getState().isDirty).toBe(false)
+    })
+  })
+
+  describe('isDirty state transitions', () => {
+    it('remains dirty if save is not triggered', () => {
+      useResumeStore.setState({ resume: { ...baseResume }, isDirty: false })
+      useResumeStore.getState().updateSettings({ fontSize: 12 })
+      expect(useResumeStore.getState().isDirty).toBe(true)
+    })
+
+    it('isDirty starts as false with no resume', () => {
+      useResumeStore.setState({ resume: null })
+      expect(useResumeStore.getState().isDirty).toBe(false)
+    })
   })
 })

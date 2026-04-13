@@ -1,7 +1,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// SINGLE SOURCE OF TRUTH — all TypeScript types for the resume builder
-// Never define resume-related types anywhere else. Import from here.
+// SHARED TYPES — Common types used by both Electron (main) and Frontend (renderer)
 // ─────────────────────────────────────────────────────────────────────────────
+
+export interface UpdateInfo {
+  version: string
+}
 
 export type SectionType =
   | 'header'
@@ -25,6 +28,7 @@ export type TemplateId =
   | 'crisp'
   | 'tokyo'
   | 'elite'
+  | 'mono'
   | 'blocks'
   | 'dublin'
   | 'london'
@@ -65,12 +69,9 @@ export type EntryLayout = 'date-location-right' | 'date-location-left' | 'date-c
 export type ColumnWidthMode = 'auto' | 'manual'
 export type EducationOrder = 'degree-school' | 'school-degree'
 export type ExperienceOrder = 'title-employer' | 'employer-title'
-export type PhotoSize = 'XS' | 'S' | 'M' | 'L' | 'XL'
-export type PhotoShape = 'circle' | 'rounded' | 'square'
+export type PhotoSize = 'S' | 'M'
+export type PhotoShape = 'circle' | 'rounded'
 export type PhotoPosition = 'beside' | 'top' | 'bottom'
-export type PhotoAlignment = 'left' | 'center' | 'right'
-export type PhotoVerticalAlign = 'top' | 'center' | 'bottom'
-export type PhotoBorderStyle = 'none' | 'thin' | 'medium' | 'thick'
 export type DetailsArrangement = 'column' | 'wrap' | 'grid'
 export type DetailsPosition = 'beside' | 'below'
 export type DetailsTextAlignment = 'left' | 'right' | 'center'
@@ -331,11 +332,6 @@ export interface ResumeSettings {
   nameSize: NameSize
   nameBold: boolean
   photoPosition: PhotoPosition
-  photoAlignment: PhotoAlignment
-  photoVerticalAlign: PhotoVerticalAlign
-  photoBorderStyle: PhotoBorderStyle
-  photoBorderColor: string
-  photoGap: number
   detailsArrangement: DetailsArrangement
   detailsPosition: DetailsPosition
   detailsTextAlignment: DetailsTextAlignment
@@ -363,9 +359,6 @@ export interface ResumeSettings {
 
   // Section Column Mapping (sectionId -> 'main' | 'sidebar')
   sectionColumns: Record<string, 'main' | 'sidebar'>
-
-  // Debug
-  debugMode: boolean
 }
 
 // ─── Resume ───────────────────────────────────────────────────────────────────
@@ -380,176 +373,53 @@ export interface Resume {
   sections: ResumeSection[]
 }
 
-// ─── Store Shape ──────────────────────────────────────────────────────────────
+// ─── Jobs ─────────────────────────────────────────────────────────────────────
 
-export interface ResumeStore {
-  resume: Resume | null
-  isDirty: boolean
-  setResume: (resume: Resume | null) => void
-  updateResumeName: (name: string) => void
-  updateSettings: (settings: Partial<ResumeSettings>) => void
-  updateSection: (sectionId: string, updates: Partial<ResumeSection>) => void
-  updateSectionItems: (sectionId: string, items: AnySectionItems) => void
-  reorderSections: (activeId: string, overId: string) => void
-  addSection: (type: SectionType) => void
-  removeSection: (sectionId: string) => void
-  toggleSectionVisibility: (sectionId: string) => void
-  markSaved: () => void
+export interface JobContact {
+  id: string
+  name: string
+  role: string
+  email: string
+  phone: string
+  linkedin: string
+  notes: string
 }
 
-export type UpdateStatus = 'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'
-
-export interface UIStore {
-  activeSection: string | null
-  showAIPanel: boolean
-  previewZoom: number
-  isExporting: boolean
-  selectedText: string
-  errors: string[]
-  globalDebugMode: boolean
-  updateStatus: UpdateStatus
-  updateProgress: number
-  updateVersion: string | null
-  setActiveSection: (id: string | null) => void
-  setShowAIPanel: (show: boolean) => void
-  setPreviewZoom: (zoom: number) => void
-  setIsExporting: (exporting: boolean) => void
-  setSelectedText: (text: string) => void
-  addError: (error: string) => void
-  clearErrors: () => void
-  setGlobalDebugMode: (enabled: boolean) => void
-  setUpdateStatus: (status: UpdateStatus) => void
-  setUpdateProgress: (progress: number) => void
-  setUpdateVersion: (version: string | null) => void
+export interface JobEvent {
+  id: string
+  type: string
+  date: string
+  title: string
+  description: string
 }
 
-// ─── Default Values ───────────────────────────────────────────────────────────
-
-export const DEFAULT_SETTINGS: ResumeSettings = {
-  // Basics
-  accentColor: '#1a2744',
-  fontFamily: 'Inter',
-  fontSize: 10.5,
-  paperSize: 'letter',
-  dateFormat: 'MMM YYYY',
-  showSectionLabels: true,
-  photoEnabled: false,
-  photoSize: 'M',
-  photoShape: 'circle',
-  language: 'en-GB',
-
-  // Layout & Spacing
-  columnLayout: 'one',
-  columnReverse: false,
-  lineHeight: 1.5,
-  marginHorizontal: 20,
-  marginVertical: 10,
-  entrySpacing: 1,
-  entryLayout: 'date-location-right',
-  columnWidthMode: 'auto',
-  columnWidth: 30,
-  titleSize: 'M',
-  subtitleStyle: 'normal',
-  subtitlePlacement: 'next-line',
-  indentBody: false,
-  listStyle: 'bullet',
-
-  // Design — colors
-  colorMode: 'basic',
-  themeColorStyle: 'basic',
-  textColor: '#1a1a1a',
-  backgroundColor: '#ffffff',
-  headingColor: '#1a2744',
-  dateColor: '#4a5568',
-  subtitleColor: '#4a5568',
-
-  // Design — accent application
-  applyAccentName: true,
-  applyAccentJobTitle: true,
-  applyAccentHeadings: true,
-  applyAccentHeadingLine: true,
-  applyAccentHeaderIcons: false,
-  applyAccentDotsBarsBubbles: false,
-  applyAccentDates: false,
-  applyAccentEntrySubtitle: false,
-  applyAccentLinkIcons: false,
-
-  // Design — section headings
-  sectionHeadingSize: 'M',
-  sectionHeadingCapitalization: 'uppercase',
-  sectionHeadingIcon: 'none',
-  sectionHeadingStyle: 'underline',
-  sectionHeadingIconStyle: 'lucide',
-  sectionHeadingIconSize: 1.0,
-  sectionHeadingLineThickness: 1.5,
-  linkUnderline: false,
-  linkBlue: false,
-
-  // Header
-  headerAlignment: 'center',
-  headerArrangement: 'verticalBar',
-  nameSize: 'L',
-  nameBold: true,
-  photoPosition: 'beside',
-  photoAlignment: 'center',
-  photoVerticalAlign: 'center',
-  photoBorderStyle: 'thin',
-  photoBorderColor: '#e5e7eb',
-  photoGap: 16,
-  detailsArrangement: 'wrap',
-  detailsPosition: 'below',
-  detailsTextAlignment: 'center',
-  detailsSpacing: 'comfortable',
-  contactIcons: false,
-  contactIconStyle: 'none',
-
-  // Footer
-  footerPageNumbers: false,
-  footerEmail: false,
-  footerName: false,
-
-  // Per-section display
-  skillDisplay: 'compact',
-  skillColumns: 3,
-  educationOrder: 'degree-school',
-  experienceOrder: 'title-employer',
-  groupPromotions: false,
-
-  // Entry title styling
-  titleBold: true,
-
-  // Section spacing
-  sectionSpacing: 1.0,
-
-  sectionColumns: {},
-
-  // Debug
-  debugMode: false,
+export interface JobApplication {
+  id: string
+  company: string
+  role: string
+  status: string
+  priority: string
+  url: string
+  source: string
+  location: string
+  workMode: string
+  salaryMin: number | null
+  salaryMax: number | null
+  salaryCurrency: string
+  resumeId: string | null
+  coverLetter: string
+  notes: string
+  contacts: JobContact[]
+  events: JobEvent[]
+  appliedDate: string | null
+  responseDate: string | null
+  deadlineDate: string | null
+  createdAt: number
+  updatedAt: number
+  archivedAt: number | null
 }
 
-export const DEFAULT_HEADER: HeaderData = {
-  fullName: 'Your Name',
-  jobTitle: 'Your Job Title',
-  email: 'email@example.com',
-  phone: '+1 (555) 000-0000',
-  location: 'City, Country',
-  website: '',
-  linkedin: '',
-  github: '',
-}
-
-export const SECTION_LABELS: Record<SectionType, string> = {
-  header: 'Header',
-  summary: 'Summary',
-  experience: 'Work Experience',
-  education: 'Education',
-  skills: 'Skills',
-  projects: 'Projects',
-  certifications: 'Certifications',
-  languages: 'Languages',
-  awards: 'Awards',
-  volunteering: 'Volunteering',
-  publications: 'Publications',
-  references: 'References',
-  custom: 'Custom Section',
+export interface JobsVaultFile {
+  version: number
+  jobs: JobApplication[]
 }

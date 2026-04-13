@@ -2,13 +2,24 @@ import React from 'react'
 import { View } from '@react-pdf/renderer'
 import type { SectionPDFProps } from './shared'
 import { renderMd } from './shared'
+import { getSectionViewModel } from '@/lib/renderers'
 
 export function SummarySectionPDF({ section, ctx, renderHeading }: SectionPDFProps) {
-  const text = (section.items as { text: string })?.text || ''
-  if (!text) return null
+  const viewModel = getSectionViewModel(section, {
+    settings: ctx.s,
+    helpers: {
+      formatDate: () => "",
+      pt: ctx.pt,
+    },
+  });
+
+  if (!viewModel.isVisible) return null;
+
+  const text = (viewModel.items[0] as any)?.text || '';
+
   return (
     <View>
-      {renderHeading(section.title)}
+      {renderHeading(viewModel.title)}
       <View style={{ marginTop: 2 }}>{renderMd(text, ctx)}</View>
     </View>
   )

@@ -13,6 +13,11 @@ import {
   FileText,
 } from 'lucide-react'
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import {
   PointerSensor,
   useSensor,
   useSensors,
@@ -30,13 +35,13 @@ import { HeaderSection } from './sections/HeaderSection'
 import { SectionsSection } from './sections/SectionsSection'
 
 const PANEL_SECTIONS = [
-  { id: 'templates', label: 'Templates',  icon: LayoutTemplate },
-  { id: 'layout',    label: 'Layout',     icon: LayoutIcon },
-  { id: 'typography',label: 'Typography', icon: TypeIcon },
-  { id: 'entry',     label: 'Entry',      icon: FileText },
-  { id: 'colors',    label: 'Colors',     icon: Palette },
-  { id: 'header',    label: 'Header',     icon: HeaderIcon },
-  { id: 'sections',  label: 'Sections',   icon: Settings2 },
+  { id: 'templates', label: 'Templates', description: 'Choose a base template', icon: LayoutTemplate },
+  { id: 'layout',    label: 'Layout',     description: 'Columns, paper size, margins', icon: LayoutIcon },
+  { id: 'typography',label: 'Typography', description: 'Fonts, sizes, line height', icon: TypeIcon },
+  { id: 'entry',     label: 'Entry',      description: 'Entry styles & order', icon: FileText },
+  { id: 'colors',    label: 'Colors',     description: 'Color palette', icon: Palette },
+  { id: 'header',    label: 'Header',     description: 'Name, photo, contact info', icon: HeaderIcon },
+  { id: 'sections',  label: 'Sections',   description: 'Add, remove, reorder sections', icon: Settings2 },
 ] as const
 
 type PanelSectionId = typeof PANEL_SECTIONS[number]['id']
@@ -100,22 +105,26 @@ export function CustomizePanel() {
           const Icon = section.icon
           const active = activeSection === section.id
           return (
-            <button
-              key={section.id}
-              onClick={() => {
-                setActiveSection(section.id)
-                scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
-              }}
-              title={section.label}
-              className={cn(
-                'group relative w-9 h-9 flex items-center justify-center rounded-lg transition-all',
-                active
-                  ? 'bg-foreground text-background shadow-md'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent',
-              )}
-            >
-              <Icon size={18} strokeWidth={active ? 2.5 : 2} />
-            </button>
+            <Tooltip key={section.id}>
+              <TooltipTrigger
+                onClick={() => {
+                  setActiveSection(section.id)
+                  scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+                }}
+                className={cn(
+                  'group relative w-9 h-9 flex items-center justify-center rounded-xl transition-all cursor-pointer',
+                  active
+                    ? 'bg-foreground text-background shadow-md ring-2 ring-foreground/10'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent',
+                )}
+              >
+                <Icon size={18} strokeWidth={active ? 2.5 : 1.8} />
+              </TooltipTrigger>
+              <TooltipContent side="right" className="flex flex-col gap-0.5 max-w-[160px]">
+                <span className="font-semibold text-xs">{section.label}</span>
+                <span className="text-[10px] text-muted-foreground leading-relaxed">{section.description}</span>
+              </TooltipContent>
+            </Tooltip>
           )
         })}
       </nav>

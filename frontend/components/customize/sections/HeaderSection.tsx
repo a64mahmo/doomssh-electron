@@ -4,7 +4,8 @@ import { cn } from '@/lib/utils'
 import {
   ResumeSettings, HeaderAlignment, NameSize, DetailsArrangement,
   DetailsTextAlignment, HeaderArrangement, ContactIconStyle,
-  PhotoSize, PhotoShape, PhotoPosition
+  PhotoSize, PhotoShape, PhotoPosition, PhotoAlignment, PhotoVerticalAlign,
+  PhotoBorderStyle
 } from '@/lib/store/types'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -24,9 +25,17 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  AlignVerticalJustifyCenter,
+  AlignVerticalJustifyEnd,
+  AlignVerticalJustifyStart,
+  Circle,
+  Square,
+  SquareDot,
+  Minus,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { VisualSegmentGroup } from '../CustomizePrimitives'
+import { SliderRow } from '@/components/editor/EditorPrimitives'
 
 interface HeaderSectionProps {
   s: ResumeSettings
@@ -336,6 +345,7 @@ export function HeaderSection({ s, upd }: HeaderSectionProps) {
         <ToggleRow 
           id="show-photo" 
           label="Show Photo" 
+          description="Display your profile photo in the header"
           checked={s.photoEnabled} 
           onCheckedChange={(v) => upd({ photoEnabled: v })}
         />
@@ -353,8 +363,11 @@ export function HeaderSection({ s, upd }: HeaderSectionProps) {
                   value={s.photoSize}
                   onChange={(v) => upd({ photoSize: v as PhotoSize })}
                   options={[
-                    { value: 'S', label: 'Small',  render: () => <span className="text-[10px] font-bold">S</span> },
-                    { value: 'M', label: 'Medium', render: () => <span className="text-[10px] font-bold">M</span> },
+                    { value: 'XS', label: 'XS', render: () => <span className="text-[9px] font-bold">XS</span> },
+                    { value: 'S',  label: 'S',  render: () => <span className="text-[10px] font-bold">S</span> },
+                    { value: 'M',  label: 'M',  render: () => <span className="text-[10px] font-bold">M</span> },
+                    { value: 'L',  label: 'L',  render: () => <span className="text-[11px] font-bold">L</span> },
+                    { value: 'XL', label: 'XL', render: () => <span className="text-[11px] font-bold">XL</span> },
                   ]}
                 />
               </div>
@@ -364,8 +377,9 @@ export function HeaderSection({ s, upd }: HeaderSectionProps) {
                   value={s.photoShape}
                   onChange={(v) => upd({ photoShape: v as PhotoShape })}
                   options={[
-                    { value: 'circle',  label: 'Circle',  render: () => <div className="w-3 h-3 rounded-full bg-current opacity-40" /> },
-                    { value: 'rounded', label: 'Rounded', render: () => <div className="w-3 h-3 rounded-sm bg-current opacity-40" /> },
+                    { value: 'circle',  label: 'Circle',  render: () => <Circle size={12} className="opacity-50" /> },
+                    { value: 'rounded', label: 'Round',   render: () => <SquareDot size={12} className="opacity-50" /> },
+                    { value: 'square',  label: 'Square',  render: () => <Square size={12} className="opacity-50" /> },
                   ]}
                 />
               </div>
@@ -384,6 +398,62 @@ export function HeaderSection({ s, upd }: HeaderSectionProps) {
                 />
               </div>
             )}
+
+            {s.headerAlignment !== 'center' && (
+              <>
+                <div>
+                  <FieldLabel>Horizontal Alignment</FieldLabel>
+                  <SegmentGroup
+                    value={s.photoAlignment}
+                    onChange={(v) => upd({ photoAlignment: v as PhotoAlignment })}
+                    options={[
+                      { value: 'left',   label: 'Left',   render: () => <AlignLeft size={14} /> },
+                      { value: 'center', label: 'Center', render: () => <AlignCenter size={14} /> },
+                      { value: 'right',  label: 'Right',  render: () => <AlignRight size={14} /> },
+                    ]}
+                  />
+                </div>
+
+                <div>
+                  <FieldLabel>Vertical Alignment</FieldLabel>
+                  <SegmentGroup
+                    value={s.photoVerticalAlign}
+                    onChange={(v) => upd({ photoVerticalAlign: v as PhotoVerticalAlign })}
+                    options={[
+                      { value: 'top',    label: 'Top',    render: () => <AlignVerticalJustifyStart size={14} /> },
+                      { value: 'center', label: 'Center', render: () => <AlignVerticalJustifyCenter size={14} /> },
+                      { value: 'bottom', label: 'Bottom', render: () => <AlignVerticalJustifyEnd size={14} /> },
+                    ]}
+                  />
+                </div>
+              </>
+            )}
+
+            <SliderRow
+              id="photo-gap"
+              label="Gap"
+              description="Space between photo and text"
+              value={s.photoGap}
+              min={0}
+              max={32}
+              step={2}
+              unit="pt"
+              onChange={(v) => upd({ photoGap: v })}
+            />
+
+            <div>
+              <FieldLabel>Border Style</FieldLabel>
+              <SegmentGroup
+                value={s.photoBorderStyle}
+                onChange={(v) => upd({ photoBorderStyle: v as PhotoBorderStyle })}
+                options={[
+                  { value: 'none',   label: 'None',   render: () => <Minus size={12} className="opacity-40" /> },
+                  { value: 'thin',   label: 'Thin',   render: () => <div className="w-4 h-4 border border-current opacity-40 rounded-[2px]" /> },
+                  { value: 'medium', label: 'Medium', render: () => <div className="w-4 h-4 border-2 border-current opacity-40 rounded-[2px]" /> },
+                  { value: 'thick',  label: 'Thick',  render: () => <div className="w-4 h-4 border-[3px] border-current opacity-40 rounded-[2px]" /> },
+                ]}
+              />
+            </div>
           </motion.div>
         )}
       </ControlGroup>

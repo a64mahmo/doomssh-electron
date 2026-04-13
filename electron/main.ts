@@ -238,8 +238,14 @@ const fsp = fs.promises
 
 async function readVaultDir(): Promise<string | null> {
   try {
-    const p = (await fsp.readFile(VAULT_PATH_FILE, 'utf8')).trim()
-    return p || null
+    if (fs.existsSync(VAULT_PATH_FILE)) {
+      const p = (await fsp.readFile(VAULT_PATH_FILE, 'utf8')).trim()
+      if (p) return p
+    }
+    // Default vault directory in userData
+    const defaultVault = path.join(app.getPath('userData'), 'vault')
+    await fsp.mkdir(defaultVault, { recursive: true })
+    return defaultVault
   } catch { return null }
 }
 
