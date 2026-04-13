@@ -1,6 +1,6 @@
 {
   "name": "doomssh",
-  "version": "1.1.5",
+  "version": "1.2.0",
   "private": true,
   "main": "electron/dist/main.js",
   "build": {
@@ -26,6 +26,13 @@
       "target": [
         {
           "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
           "arch": [
             "arm64",
             "x64"
