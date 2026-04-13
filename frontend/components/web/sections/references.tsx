@@ -1,41 +1,50 @@
 import React from "react";
-import type { ReferenceItem } from "@/lib/store/types";
 import type { SectionProps } from "./shared";
+import { getSectionViewModel } from "@/lib/renderers";
 
 export function ReferencesSection({ section, ctx, renderHeading }: SectionProps) {
-  const items = (section.items as ReferenceItem[]) || [];
-  if (!items.length) return null;
-  const { base, colors, lh, pt, s } = ctx;
+  const viewModel = getSectionViewModel(section, {
+    settings: ctx.s,
+    helpers: {
+      formatDate: () => "",
+      pt: (size: number | string) => `${size}pt`,
+    },
+  });
+
+  if (!viewModel.isVisible) return null;
+
+  const { base, colors, lh, s } = ctx;
+
   return (
     <div>
-      {renderHeading(section.title)}
+      {renderHeading(viewModel.title)}
       <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-        {items.map((item) => (
-          <div key={item.id} className="min-w-0">
+        {viewModel.items.map((item: any, index) => (
+          <div key={item.id || index} className="min-w-0">
             <div
               style={{
                 fontWeight: "bold",
-                fontSize: pt(base * 0.9),
+                fontSize: `${base * 0.9}pt`,
                 lineHeight: 1.4,
               }}
             >
-              {item.name}
+              {item.primaryText}
             </div>
-            {item.position && (
+            {item.secondaryText && (
               <div
                 style={{
-                  fontSize: pt(base * 0.85),
+                  fontSize: `${base * 0.85}pt`,
                   color: colors.subtitle,
                   lineHeight: lh,
                 }}
               >
-                {item.position}
+                {item.secondaryText}
               </div>
             )}
             {item.company && (
               <div
                 style={{
-                  fontSize: pt(base * 0.85),
+                  fontSize: `${base * 0.85}pt`,
                   color: colors.subtitle,
                   lineHeight: lh,
                 }}
@@ -46,7 +55,7 @@ export function ReferencesSection({ section, ctx, renderHeading }: SectionProps)
             {item.email && (
               <div
                 style={{
-                  fontSize: pt(base * 0.82),
+                  fontSize: `${base * 0.82}pt`,
                   color: s.applyAccentLinkIcons ? colors.accent : colors.text,
                   lineHeight: lh,
                 }}
@@ -57,7 +66,7 @@ export function ReferencesSection({ section, ctx, renderHeading }: SectionProps)
             {item.phone && (
               <div
                 style={{
-                  fontSize: pt(base * 0.82),
+                  fontSize: `${base * 0.82}pt`,
                   color: colors.subtitle,
                   lineHeight: lh,
                 }}

@@ -1,12 +1,10 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { useResumeStore } from './resumeStore'
-import { saveResume } from '@/lib/db/database'
 import { DEFAULT_SETTINGS } from './types'
-import { useUIStore } from './uiStore'
 
-// Mock dependencies
-vi.mock('@/lib/db/database', () => ({
-  saveResume: vi.fn().mockResolvedValue(undefined)
+// Mock persistence manager entirely to avoid timer conflicts
+vi.mock('./persistenceManager', () => ({
+  initPersistence: vi.fn(),
 }))
 
 const baseResume = {
@@ -21,87 +19,40 @@ const baseResume = {
 
 describe('resumeStore Persistence logic', () => {
   beforeEach(() => {
-    vi.useFakeTimers()
     useResumeStore.setState({ resume: { ...baseResume }, isDirty: false })
-    useUIStore.getState().clearErrors()
-    vi.clearAllMocks()
   })
 
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
-  it('debounces multiple saves into one', async () => {
-    const store = useResumeStore.getState()
-    
-    // Trigger 3 updates rapidly
-    store.updateSettings({ fontSize: 14 })
-    store.updateSettings({ fontSize: 16 })
-    store.updateResumeName('New Name')
-    
-    expect(saveResume).not.toHaveBeenCalled()
-    
-    // Advance timers by 500ms
-    vi.advanceTimersByTime(500)
-    
-    expect(saveResume).toHaveBeenCalledTimes(1)
-    expect(saveResume).toHaveBeenCalledWith(expect.objectContaining({
-      name: 'New Name',
-      settings: expect.objectContaining({ fontSize: 16 })
-    }))
-  })
-
-  it('updates name and schedules save', () => {
-    useResumeStore.getState().updateResumeName('Renamed Resume')
-    expect(useResumeStore.getState().resume?.name).toBe('Renamed Resume')
-    expect(useResumeStore.getState().isDirty).toBe(true)
-    
-    vi.advanceTimersByTime(500)
-    expect(saveResume).toHaveBeenCalled()
-  })
-
-  it('adds an error to uiStore when save fails', async () => {
-    vi.mocked(saveResume).mockRejectedValueOnce(new Error('Disk Full'))
-    
-    useResumeStore.getState().updateResumeName('Failed Save')
-    expect(useResumeStore.getState().isDirty).toBe(true)
-    
-    vi.advanceTimersByTime(500)
-    
-    // Wait for the async timeout callback to finish
-    await vi.runAllTimersAsync()
-    
-    expect(saveResume).toHaveBeenCalled()
-    const errors = useUIStore.getState().errors
-    expect(errors).toContain('Persistence Error: Disk Full')
-    // Should still be dirty if save failed
+  it('marks isDirty true when name is updated', () => {
+    useResumeStore.getState().updateResumeName('New Name')
+    expect(useResumeStore.getState().resume?.name).toBe('New Name')
     expect(useResumeStore.getState().isDirty).toBe(true)
   })
 
-  it('clears isDirty flag after successful save', async () => {
-    vi.mocked(saveResume).mockResolvedValueOnce(undefined)
-    
-    useResumeStore.getState().updateResumeName('Success Save')
+  it('marks isDirty true when settings are updated', () => {
+    useResumeStore.getState().setResume(useResumeStore.getState().resume!, true)
+    useResumeStore.getState().updateSettings({ fontSize: 14 })
+    expect(useResumeStore.getState().resume?.settings.fontSize).toBe(14)
     expect(useResumeStore.getState().isDirty).toBe(true)
-    
-    vi.advanceTimersByTime(500)
-    await vi.runAllTimersAsync()
-    
-    expect(saveResume).toHaveBeenCalled()
-    expect(useResumeStore.getState().isDirty).toBe(false)
+  })
+
+  it('marks isDirty true when section items are updated', () => {
+    const resume = useResumeStore.getState().resume
+    if (!resume) return
+    const sectionId = resume.sections[0]?.id
+    if (sectionId) {
+      useResumeStore.getState().updateSectionItems(sectionId, [{ id: '1', name: 'Test' }])
+      expect(useResumeStore.getState().isDirty).toBe(true)
+    }
   })
 
   it('keeps headingColor in sync with accentColor in basic mode', () => {
-    // Start with basic mode
     useResumeStore.getState().updateSettings({ colorMode: 'basic', accentColor: '#ff0000' })
     
-    // Check they match
     let settings = useResumeStore.getState().resume?.settings
     expect(settings?.colorMode).toBe('basic')
     expect(settings?.headingColor).toBe('#ff0000')
     expect(settings?.accentColor).toBe('#ff0000')
 
-    // Update accentColor and check headingColor follows
     useResumeStore.getState().updateSettings({ accentColor: '#0000ff' })
     settings = useResumeStore.getState().resume?.settings
     expect(settings?.accentColor).toBe('#0000ff')
@@ -116,5 +67,12 @@ describe('resumeStore Persistence logic', () => {
     
     useResumeStore.getState().updateSettings({ fontSize: 13 })
     expect(useResumeStore.getState().resume?.template).toBe('custom')
+  })
+
+  it('sets isDirty false when markSaved is called', () => {
+    useResumeStore.getState().updateResumeName('Test')
+    expect(useResumeStore.getState().isDirty).toBe(true)
+    useResumeStore.getState().markSaved()
+    expect(useResumeStore.getState().isDirty).toBe(false)
   })
 })

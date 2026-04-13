@@ -1,38 +1,43 @@
 import React from "react";
-import type { ProjectItem } from "@/lib/store/types";
 import { formatDateRange } from "@/lib/utils/dates";
 import type { SectionProps } from "./shared";
 import { Entry } from "./shared";
+import { getSectionViewModel } from "@/lib/renderers";
 
 export function ProjectsSection({ section, ctx, renderHeading, isSidebar }: SectionProps) {
-  const items = (section.items as ProjectItem[]) || [];
-  if (!items.length) return null;
-  const { base, colors, s, pt } = ctx;
+  const viewModel = getSectionViewModel(section, {
+    settings: ctx.s,
+    helpers: {
+      formatDate: formatDateRange,
+      pt: (size: number | string) => `${size}pt`,
+    },
+  });
+
+  if (!viewModel.isVisible) return null;
+
+  const { base, colors } = ctx;
+
   return (
     <div>
-      {renderHeading(section.title)}
-      {items.map((item) => (
+      {renderHeading(viewModel.title)}
+      {viewModel.items.map((item, index) => (
         <Entry
-          key={item.id}
-          title={item.name}
+          key={item.id || index}
+          title={item.primaryText}
           subtitle={
-            item.url ? (
+            item.secondaryText ? (
               <div
                 style={{
-                  fontSize: pt(base * 0.85),
-                  color: s.linkBlue ? "#0066cc" : (s.applyAccentLinkIcons ? colors.accent : colors.text),
-                  textDecoration: s.linkUnderline ? "underline" : "none",
+                  fontSize: `${base * 0.85}pt`,
+                  color: ctx.s.linkBlue ? "#0066cc" : (ctx.s.applyAccentLinkIcons ? colors.accent : colors.text),
+                  textDecoration: ctx.s.linkUnderline ? "underline" : "none",
                 }}
               >
-                {item.url}
+                {item.secondaryText}
               </div>
             ) : undefined
           }
-          date={
-            item.date
-              ? formatDateRange(item.date, "", false, s.dateFormat)
-              : undefined
-          }
+          date={item.dateRange}
           description={item.description}
           ctx={ctx}
           isSidebar={isSidebar}

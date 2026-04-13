@@ -439,12 +439,18 @@ export function MasterTemplate({
           {(() => {
             const align = s.headerAlignment;
             const showPhoto = s.photoEnabled && h?.photo;
-            const sizeMap = { S: 36, M: 48, L: 64 };
+            const sizeMap = { XS: 28, S: 36, M: 48, L: 64, XL: 80 };
             const photoPx = sizeMap[s.photoSize] || 48;
-            const photoBr = s.photoShape === "circle" ? "50%" : "6pt";
+            const photoBr = s.photoShape === "circle" ? "50%" : s.photoShape === "rounded" ? "6pt" : "0";
             const photoPos = s.photoPosition;
             const isRight = align === "right";
             const isCenter = align === "center";
+            const photoGap = s.photoGap || 12;
+
+            const borderWidth = s.photoBorderStyle === 'none' ? 0 
+              : s.photoBorderStyle === 'thin' ? 0.5 
+              : s.photoBorderStyle === 'medium' ? 1 
+              : 1.5;
 
             const photoEl = showPhoto ? (
               <img
@@ -456,6 +462,9 @@ export function MasterTemplate({
                   borderRadius: photoBr,
                   objectFit: "cover",
                   flexShrink: 0,
+                  borderWidth: `${borderWidth}pt`,
+                  borderColor: s.photoBorderColor || '#e5e7eb',
+                  borderStyle: 'solid',
                 }}
               />
             ) : null;
@@ -519,11 +528,11 @@ export function MasterTemplate({
 
                     <div className="flex flex-col items-center">
                       {photoPos === "top" && photoEl && (
-                        <div className="mb-1">{photoEl}</div>
+                        <div style={{ marginBottom: `${photoGap / 2}pt` }}>{photoEl}</div>
                       )}
                       {nameEl}
                       {photoPos === "bottom" && photoEl && (
-                        <div className="mt-1">{photoEl}</div>
+                        <div style={{ marginTop: `${photoGap / 2}pt` }}>{photoEl}</div>
                       )}
                     </div>
                   </div>
@@ -538,13 +547,16 @@ export function MasterTemplate({
             // Left / Right Alignment (Structural Split)
             const isBeside = s.detailsPosition === "beside";
 
+            const photoAlignment = s.photoAlignment || 'left';
+            const photoVAlign = s.photoVerticalAlign || 'center';
+            const vAlignClass = photoVAlign === 'top' ? 'items-start' : photoVAlign === 'bottom' ? 'items-end' : 'items-center';
+
             if (isBeside) {
               return (
                 <div
                   data-header
                   className={cn(
-                    "grid grid-cols-2 items-center pb-1 mb-1 gap-x-6 w-full",
-                    isRight ? "flex-row-reverse" : "flex-row",
+                    "grid grid-cols-2 pb-1 mb-1 gap-x-6 w-full",
                   )}
                   style={{
                     color: s.themeColorStyle === 'advanced' ? colors.background : colors.text,
@@ -553,19 +565,27 @@ export function MasterTemplate({
                   {/* Side A: Identity (Left-aligned if on left, Right-aligned if on right) */}
                   <div
                     className={cn(
-                      "flex items-center gap-x-6 min-w-0",
+                      "flex min-w-0 gap-x-6",
+                      vAlignClass,
                       isRight ? "justify-end" : "justify-start",
+                      photoAlignment === 'left' ? "flex-row" : photoAlignment === 'right' ? "flex-row-reverse" : "flex-row",
                     )}
                   >
-                    {!isRight && photoEl}
-                    {nameEl}
-                    {isRight && photoEl}
+                    {(photoAlignment !== 'right') && photoEl}
+                    <div className={cn(
+                      "flex flex-col",
+                      isRight ? "items-end text-right" : "items-start text-left",
+                    )}>
+                      {nameEl}
+                    </div>
+                    {(photoAlignment === 'right' || (photoAlignment === 'center' && !isRight)) && photoEl}
                   </div>
 
                   {/* Side B: Contacts (Respects detailsTextAlignment) */}
                   <div
                     className={cn(
                       "flex min-w-0",
+                      vAlignClass,
                       s.detailsTextAlignment === "left"
                         ? "justify-start"
                         : s.detailsTextAlignment === "right"
@@ -586,7 +606,7 @@ export function MasterTemplate({
                 className={cn(
                   "flex pb-1 mb-1 w-full",
                   isRight ? "flex-row-reverse" : "flex-row",
-                  isRight ? "items-start" : "items-start",
+                  vAlignClass,
                 )}
                 style={{
                   color: s.themeColorStyle === 'advanced' ? colors.background : colors.text,
@@ -594,7 +614,10 @@ export function MasterTemplate({
               >
                 {/* Photo Side */}
                 {photoEl && (
-                  <div className={cn(isRight ? "ml-6" : "mr-6")}>{photoEl}</div>
+                  <div style={{ 
+                    marginRight: !isRight ? `${photoGap}pt` : 0,
+                    marginLeft: isRight ? `${photoGap}pt` : 0,
+                  }}>{photoEl}</div>
                 )}
 
                 {/* Text Side (Identity + Contacts Stack) */}

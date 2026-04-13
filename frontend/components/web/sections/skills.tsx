@@ -1,19 +1,27 @@
 import React from "react";
-import type { SkillItem } from "@/lib/store/types";
 import type { SectionProps } from "./shared";
+import { getSectionViewModel } from "@/lib/renderers";
 
 export function SkillsSection({ section, ctx, renderHeading }: SectionProps) {
-  const items = (section.items as SkillItem[]) || [];
-  if (!items.length) return null;
-  const { base, lh, colors, s, pt } = ctx;
+  const viewModel = getSectionViewModel(section, {
+    settings: ctx.s,
+    helpers: {
+      formatDate: () => "",
+      pt: (size: number | string) => `${size}pt`,
+    },
+  });
+
+  if (!viewModel.isVisible) return null;
+
+  const { base, lh, colors, s } = ctx;
   const display = s.skillDisplay;
 
   return (
     <div>
-      {renderHeading(section.title)}
+      {renderHeading(viewModel.title)}
       {display === "compact" && (
-        <div style={{ fontSize: pt(base), lineHeight: lh, color: colors.text }}>
-          {items.map((sk) => sk.name).join(" · ")}
+        <div style={{ fontSize: `${base}pt`, lineHeight: lh, color: colors.text }}>
+          {viewModel.items.map((sk: any) => sk.name).join(" · ")}
         </div>
       )}
       {display === "grid" &&
@@ -27,10 +35,10 @@ export function SkillsSection({ section, ctx, renderHeading }: SectionProps) {
                 gap: "4pt",
               }}
             >
-              {items.map((sk) => (
+              {viewModel.items.map((sk: any) => (
                 <div
                   key={sk.id}
-                  style={{ fontSize: pt(base * 0.9), lineHeight: lh }}
+                  style={{ fontSize: `${base * 0.9}pt`, lineHeight: lh }}
                 >
                   • {sk.category ? `${sk.category}: ` : ""}
                   {sk.name}
@@ -41,7 +49,7 @@ export function SkillsSection({ section, ctx, renderHeading }: SectionProps) {
         })()}
       {display === "level" && (
         <div>
-          {items.map((sk) => (
+          {viewModel.items.map((sk: any) => (
             <div
               key={sk.id}
               style={{
@@ -50,14 +58,14 @@ export function SkillsSection({ section, ctx, renderHeading }: SectionProps) {
                 marginBottom: "2pt",
               }}
             >
-              <div style={{ fontSize: pt(base * 0.9), lineHeight: lh }}>
+              <div style={{ fontSize: `${base * 0.9}pt`, lineHeight: lh }}>
                 {sk.category ? `${sk.category}: ` : ""}
                 {sk.name}
               </div>
               {sk.level && (
                 <div
                   style={{
-                    fontSize: pt(base * 0.9),
+                    fontSize: `${base * 0.9}pt`,
                     lineHeight: lh,
                     color: colors.subtitle,
                   }}
@@ -71,7 +79,7 @@ export function SkillsSection({ section, ctx, renderHeading }: SectionProps) {
       )}
       {display === "bubble" && (
         <div className="flex flex-wrap gap-1.5">
-          {items.map((sk) => (
+          {viewModel.items.map((sk: any) => (
             <span
               key={sk.id}
               className="px-2 py-0.5 rounded-full text-[10px] font-semibold"

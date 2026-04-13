@@ -1,49 +1,140 @@
 # System Architecture
 
-DoomSSH is built as a modern, decoupled full-stack application with a desktop bridge via Electron.
+DoomSSH is a modern, decoupled full-stack application with a desktop bridge via Electron. It combines a local-first data model, a headless rendering pipeline, and a secure AI integration.
 
 ## Overview
 
 ```mermaid
 graph TD
     A[Electron App] --> B[Next.js Frontend]
-    B --> E[Dexie.js / IndexedDB]
+    B --> E[Vault / JSON Storage]
     A --> F[Anthropic API]
     B -- IPC --> A
 ```
 
 ## Data Management
 
-The application employs a local-first storage strategy to ensure responsiveness and data safety:
+### Local State (Zustand)
 
-1.  **Local State (Zustand):** High-frequency UI updates and the active editing state are managed in-memory using Zustand. This ensures that typing and drag-and-drop operations are buttery smooth.
-2.  **Local Storage (Dexie.js):** All resume data is mirrored to the browser's IndexedDB via Dexie.js. This allows the application to work offline and ensures that no progress is lost if the tab or app is closed unexpectedly.
-3.  **Encrypted Storage (Electron):** Sensitive data like Anthropic API keys and authentication tokens are stored using Electron's `safeStorage` API, ensuring they are protected by the operating system's native credential management.
+High-frequency UI updates and the active editing state are managed in-memory using **Zustand** with Immer. This ensures that typing, drag-and-drop, and other interactions are buttery smooth.
+
+### Persistence Manager
+
+The Zustand store is intentionally **persistence-agnostic**. A dedicated `PersistenceManager` (`frontend/lib/store/persistenceManager.ts`) subscribes to state changes and debounces writes to the Vault:
+
+```typescript
+// frontend/lib/store/persistenceManager.ts
+export function initPersistence() {
+  useResumeStore.subscribe(
+    (state) => state.isDirty,
+    (isDirty) => {
+      if (!isDirty) return;
+      // Debounce 500ms, then write to vault
+    }
+  );
+}
+```
+
+This decoupling means:
+- The store is easier to test and reason about
+- I/O never blocks the main thread
+- Saving logic can be swapped without touching the store
+
+### Vault Storage (Electron)
+
+Resume data is stored as **JSON files** in a user-defined or default system directory. By default, the app creates a `vault/` folder inside its user data directory. Users can also select any custom directory.
+
+Sensitive data (Anthropic API keys) is stored using **Electron's `safeStorage` API**, which leverages the OS keychain (macOS Keychain / Windows Credential Manager).
 
 ## Communication
 
--   **Frontend to AI:** All AI interactions (Claude Opus 4.6) are routed through the Electron Main Process via IPC. This allows for secure storage of API keys and bypasses browser CORS restrictions.
--   **Frontend to PDF:** Client-side PDF generation using `@react-pdf/renderer` primitives ensures that private data never leaves the user's machine for the purpose of rendering.
+### Frontend to AI
 
-## Modular Dual-Renderer Architecture
+All AI interactions (Claude Opus 4.6) are routed through the Electron Main Process via IPC. This bypasses browser CORS restrictions and keeps API keys off the renderer.
 
-DoomSSH implements a unique "Mirror-World" rendering strategy where the HTML preview and the PDF export are driven by identical, modular logic trees.
+```mermaid
+sequenceDiagram
+    Frontend ->> Electron: ipcRenderer.send('ai:start', messages)
+    Electron ->> Anthropic: messages.stream()
+    loop Streaming chunks
+        Electron ->> Frontend: ipcRenderer.emit('ai:chunk', text)
+    end
+    Electron ->> Frontend: ipcRenderer.emit('ai:done')
+```
 
-### Rendering Paths
-1.  **Web Renderer (DOM):** Located in `frontend/components/web/sections/`. Uses Tailwind CSS for high-performance interactive previews.
-2.  **PDF Renderer (Vector):** Located in `frontend/components/pdf/sections/`. Uses `@react-pdf/renderer` for high-fidelity vector generation.
+### Frontend to PDF
 
-### Structural Parity
-Every section type (Experience, Education, Skills, etc.) has a dedicated pair of renderer files. This modularity ensures that:
--   **Maintainability:** Changes to a specific section's layout are isolated.
--   **Fidelity:** Visual parity is maintained by updating both renderers simultaneously.
--   **Testing:** Each section can be independently verified for regression and visual consistency.
+Client-side PDF generation using `@react-pdf/renderer` ensures that private data **never leaves the user's machine** for rendering purposes.
+
+## Headless Rendering Architecture
+
+DoomSSH uses a **Headless Controller** pattern to guarantee perfect visual parity between the interactive HTML preview and the exported PDF.
+
+### The Pipeline
+
+```
+Resume Data → Section Controller → SectionViewModel → Renderer (Web / PDF)
+```
+
+### 1. Controllers (`frontend/lib/renderers/`)
+
+Each section type has a dedicated controller that:
+- Transforms raw store data into a normalized **ViewModel**
+- Handles **visibility logic** (e.g., hide section if no items)
+- Handles **ordering logic** (e.g., "Employer → Title" vs "Title → Employer")
+- Handles **date formatting** via a shared helper
+
+```typescript
+// frontend/lib/renderers/types.ts
+export interface SectionViewModel {
+  title: string;
+  isVisible: boolean;
+  type: SectionType;
+  items: any[];         // Processed, ready-to-render items
+  meta?: Record<string, any>;
+}
+
+export interface RenderContext {
+  settings: any;         // ResumeSettings
+  helpers: {
+    formatDate: (start, end, present, format) => string;
+    pt: (size) => string;
+  };
+}
+```
+
+### 2. Renderers (`frontend/components/web/` & `frontend/components/pdf/`)
+
+Renderers are "dumb" components. They receive a `SectionViewModel` and map it to the appropriate UI framework primitives:
+
+- **Web Renderer** → Tailwind CSS + React DOM
+- **PDF Renderer** → `@react-pdf/renderer` vector primitives
+
+### Why This Matters
+
+In a typical dual-renderer setup, you maintain two copies of the same logic. When you change how dates are formatted or how items are ordered, you must update **both** files — and it's easy to miss one.
+
+With the headless pattern, **every business rule lives in exactly one place**. Changing `experienceOrder` from `'position-employer'` to `'employer-title'` requires editing only `experience.ts` in the renderers folder. Both the live preview and the PDF export update automatically.
+
+### Adding a New Section
+
+1. Add the section type to `frontend/lib/store/types.ts` (`SectionType` union)
+2. Create a controller in `frontend/lib/renderers/` (or add to `index.ts`)
+3. Create a Web renderer in `frontend/components/web/sections/`
+4. Create a PDF renderer in `frontend/components/pdf/sections/`
+5. Register in both `index.tsx` files (web and pdf section registries)
+6. Add editor components in `frontend/components/editor/sections/`
+7. Add a data entry form in the Customize Panel if needed
 
 ## Testing Strategy
 
-The project employs a multi-tiered testing architecture managed in the `tests/` directory:
+- **Unit Tests** (`frontend/lib/**/*.test.ts`): Vitest tests for controllers, stores, and utilities.
+- **Integration Tests** (`tests/`): Playwright tests for UI component coordination.
+- **Regression Tests**: Ensure state mutations propagate through the rendering pipeline.
+- **Visual Regression**: Automated snapshot comparisons to detect layout drift.
 
--   **Integration Tests:** Verify the coordination between modular UI components (e.g., the `CustomizePanel`) and the global state.
--   **Regression Tests:** Ensure that state mutations correctly propagate through the dual-renderer pipeline.
--   **Performance Benchmarks:** Measure and enforce strict render-time and page-load thresholds.
--   **Visual Regression:** Automated snapshot comparisons to detect subtle layout shifts across different browser engines.
+Run all tests:
+```bash
+npm run test --prefix frontend    # Unit tests
+npm run test:all                  # Full suite (requires Playwright)
+```

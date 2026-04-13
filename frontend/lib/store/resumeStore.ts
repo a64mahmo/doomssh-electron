@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
+import { subscribeWithSelector } from 'zustand/middleware'
 import type {
   Resume,
   ResumeSection,
@@ -10,7 +11,6 @@ import type {
 } from '@/lib/store/types'
 import { SECTION_LABELS } from '@/lib/store/types'
 import { generateId } from '@/lib/utils/ids'
-import { saveResume } from '@/lib/db/database'
 import { useUIStore } from '@/lib/store/uiStore'
 
 // Default items factory — one place that defines empty state per section type
@@ -37,40 +37,19 @@ function createDefaultItems(type: SectionType): AnySectionItems {
   }
 }
 
-let saveTimeout: ReturnType<typeof setTimeout> | null = null
-
-// immer produces a Proxy during the set() callback — that Proxy is revoked
-// once the mutation is done. We must NOT close over the draft directly.
-// Instead we schedule a re-read from the store's finalized state.
-function scheduleSave(getState: () => { resume: Resume | null; markSaved: () => void }) {
-  if (saveTimeout) clearTimeout(saveTimeout)
-  saveTimeout = setTimeout(async () => {
-    const resume = getState().resume
-    if (resume) {
-      try {
-        await saveResume(resume)
-        getState().markSaved()
-      } catch (err) {
-        console.error('Failed to save resume:', err)
-        useUIStore.getState().addError(`Persistence Error: ${err instanceof Error ? err.message : String(err)}`)
-      }
-    }
-  }, 500)
-}
-
 export const useResumeStore = create<ResumeStore>()(
-  immer((set, get) => ({
+  subscribeWithSelector(
+    immer((set, get) => ({
     resume: null,
     isDirty: false,
 
-    setResume: (resume) => set({ resume, isDirty: false }),
+    setResume: (resume, isLoaded = false) => set({ resume, isDirty: isLoaded ? false : true }),
 
     updateResumeName: (name) =>
       set((state) => {
         if (!state.resume) return
         state.resume.name = name
         state.isDirty = true
-        scheduleSave(get)
       }),
 
     updateSettings: (updates) =>
@@ -91,7 +70,6 @@ export const useResumeStore = create<ResumeStore>()(
           state.resume.template = 'custom'
         }
         state.isDirty = true
-        scheduleSave(get)
       }),
 
     updateSection: (sectionId, updates) =>
@@ -101,7 +79,6 @@ export const useResumeStore = create<ResumeStore>()(
         if (idx === -1) return
         state.resume.sections[idx] = { ...state.resume.sections[idx], ...updates }
         state.isDirty = true
-        scheduleSave(get)
       }),
 
     updateSectionItems: (sectionId, items) =>
@@ -111,7 +88,6 @@ export const useResumeStore = create<ResumeStore>()(
         if (idx === -1) return
         state.resume.sections[idx].items = items
         state.isDirty = true
-        scheduleSave(get)
       }),
 
     reorderSections: (activeId, overId) =>
@@ -124,7 +100,6 @@ export const useResumeStore = create<ResumeStore>()(
         const [moved] = sections.splice(activeIdx, 1)
         sections.splice(overIdx, 0, moved)
         state.isDirty = true
-        scheduleSave(get)
       }),
 
     addSection: (type) =>
@@ -139,7 +114,6 @@ export const useResumeStore = create<ResumeStore>()(
         }
         state.resume.sections.push(newSection)
         state.isDirty = true
-        scheduleSave(get)
       }),
 
     removeSection: (sectionId) =>
@@ -147,7 +121,6 @@ export const useResumeStore = create<ResumeStore>()(
         if (!state.resume) return
         state.resume.sections = state.resume.sections.filter((s) => s.id !== sectionId)
         state.isDirty = true
-        scheduleSave(get)
       }),
 
     toggleSectionVisibility: (sectionId) =>
@@ -157,10 +130,10 @@ export const useResumeStore = create<ResumeStore>()(
         if (section) {
           section.visible = !section.visible
           state.isDirty = true
-          scheduleSave(get)
         }
       }),
 
     markSaved: () => set({ isDirty: false }),
-  }))
+    }))
+  )
 )

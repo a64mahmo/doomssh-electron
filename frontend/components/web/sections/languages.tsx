@@ -1,19 +1,28 @@
 import React from "react";
-import type { LanguageItem } from "@/lib/store/types";
 import type { SectionProps } from "./shared";
+import { getSectionViewModel } from "@/lib/renderers";
 
 export function LanguagesSection({ section, ctx, renderHeading }: SectionProps) {
-  const items = (section.items as LanguageItem[]) || [];
-  if (!items.length) return null;
-  const { base, colors, lh, pt } = ctx;
+  const viewModel = getSectionViewModel(section, {
+    settings: ctx.s,
+    helpers: {
+      formatDate: () => "",
+      pt: (size: number | string) => `${size}pt`,
+    },
+  });
+
+  if (!viewModel.isVisible) return null;
+
+  const { base, colors, lh } = ctx;
+
   return (
     <div>
-      {renderHeading(section.title)}
+      {renderHeading(viewModel.title)}
       <div className="flex flex-wrap gap-x-5 gap-y-1">
-        {items.map((item) => (
+        {viewModel.items.map((item: any, index) => (
           <div
-            key={item.id}
-            style={{ fontSize: pt(base * 0.9), lineHeight: lh }}
+            key={item.id || index}
+            style={{ fontSize: `${base * 0.9}pt`, lineHeight: lh }}
           >
             {item.language}
             {item.level && (

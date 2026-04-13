@@ -1,22 +1,29 @@
 import React from 'react'
 import { View } from '@react-pdf/renderer'
-import type { CustomItem } from '@/lib/store/types'
 import { formatDateRange } from '@/lib/utils/dates'
 import type { SectionPDFProps } from './shared'
 import { Entry } from './shared'
+import { getSectionViewModel } from '@/lib/renderers'
 
 export function CustomSectionPDF({ section, ctx, renderHeading, isSidebar }: SectionPDFProps) {
-  const items = (section.items as CustomItem[]) || []
-  if (!items.length) return null
-  const { s } = ctx
+  const viewModel = getSectionViewModel(section, {
+    settings: ctx.s,
+    helpers: {
+      formatDate: formatDateRange,
+      pt: ctx.pt,
+    },
+  });
+
+  if (!viewModel.isVisible) return null;
+
   return (
     <View>
-      {renderHeading(section.title)}
-      {items.map(item => (
-        <Entry key={item.id}
-          title={item.title}
-          subtitle={item.subtitle || undefined}
-          date={item.date ? formatDateRange(item.date, '', false, s.dateFormat) : undefined}
+      {renderHeading(viewModel.title)}
+      {viewModel.items.map((item, index) => (
+        <Entry key={item.id || index}
+          title={item.primaryText}
+          subtitle={item.secondaryText || undefined}
+          date={item.dateRange}
           description={item.description}
           ctx={ctx}
           isSidebar={isSidebar}

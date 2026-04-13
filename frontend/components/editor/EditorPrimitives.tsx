@@ -133,32 +133,47 @@ export function EntryCard({
 }
 
 export function SliderRow({
+  id,
   label,
+  description,
   value,
-  display,
   min, max, step,
+  unit = '',
   onChange,
 }: {
+  id?: string
   label: string
+  description?: string
   value: number
-  display: string
   min: number
   max: number
   step: number
+  unit?: string
   onChange: (v: number) => void
 }) {
+  const display = unit ? `${value}${unit}` : value.toString()
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <FieldLabel className="mb-0">{label}</FieldLabel>
+        <div>
+          <label htmlFor={id} className="text-[10px] font-bold text-muted-foreground/80 tracking-wide cursor-pointer">{label}</label>
+          {description && <p className="text-[9px] text-muted-foreground/50 mt-0.5">{description}</p>}
+        </div>
         <span className="text-[10px] font-mono tabular-nums text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
           {display}
         </span>
       </div>
-      <Slider min={min} max={max} step={step} value={[value]} onValueChange={(v) => {
-        const val = Array.isArray(v) ? v[0] : v
-        if (typeof val === 'number') onChange(val)
-      }} />
+      <Slider 
+        id={id}
+        min={min} 
+        max={max} 
+        step={step} 
+        value={[value]} 
+        onValueChange={(v) => {
+          const val = Array.isArray(v) ? v[0] : v
+          if (typeof val === 'number') onChange(val)
+        }} 
+      />
     </div>
   )
 }

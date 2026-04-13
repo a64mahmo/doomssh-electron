@@ -17,7 +17,7 @@ type Panel = 'content' | 'style'
 
 const MIN_W = 260
 const MAX_W = 560
-const DEFAULT_W = 360
+const DEFAULT_W = MAX_W
 
 export function BuilderClient() {
   const params = useParams()
@@ -50,7 +50,7 @@ export function BuilderClient() {
         router.replace('/builder')
         return
       }
-      setResume(r)
+      setResume(r, true)
     }
     load()
     return () => { cancelled = true }

@@ -197,10 +197,22 @@ export function ResumePDF({ resume }: { resume: Resume }) {
   const h = header?.items as HeaderData | undefined
 
   // Photo dimensions & shape
-  const photoSizeMap = { S: 36, M: 48, L: 64, XL: 80 }
+  const photoSizeMap = { XS: 28, S: 36, M: 48, L: 64, XL: 80 }
   const photoPx = photoSizeMap[s.photoSize] || 48
   const photoBorderRadius = s.photoShape === 'circle' ? photoPx / 2 : s.photoShape === 'rounded' ? 6 : 0
-  const photoStyle: Style = { width: photoPx, height: photoPx, borderRadius: photoBorderRadius, objectFit: 'cover' as const }
+  const photoGap = s.photoGap || 12
+  const photoBorderWidth = s.photoBorderStyle === 'none' ? 0 
+    : s.photoBorderStyle === 'thin' ? 0.5 
+    : s.photoBorderStyle === 'medium' ? 1 
+    : 1.5
+  const photoStyle: Style = { 
+    width: photoPx, 
+    height: photoPx, 
+    borderRadius: photoBorderRadius, 
+    objectFit: 'cover' as const,
+    borderWidth: photoBorderWidth,
+    borderColor: s.photoBorderColor || '#e5e7eb',
+  }
 
   const visibleSections = resume.sections.filter(sec => sec.visible !== false && sec.type !== 'header')
 
@@ -302,8 +314,8 @@ export function ResumePDF({ resume }: { resume: Resume }) {
 
             // Center Alignment
             if (align === "center") {
-              const sizeMap = { S: 36, M: 48, L: 64 };
-              const photoPx = sizeMap[s.photoSize as "S" | "M" | "L"] || 48;
+              const sizeMap = { XS: 28, S: 36, M: 48, L: 64, XL: 80 };
+              const photoPx = sizeMap[s.photoSize as keyof typeof sizeMap] || 48;
 
               return (
                 <View
@@ -331,11 +343,11 @@ export function ResumePDF({ resume }: { resume: Resume }) {
 
                   <View style={{ alignItems: "center" }}>
                     {photoPos === "top" && photoEl && (
-                      <View style={{ marginBottom: 6 }}>{photoEl}</View>
+                      <View style={{ marginBottom: photoGap / 2 }}>{photoEl}</View>
                     )}
                     {nameText("center")}
                     {photoPos === "bottom" && photoEl && (
-                      <View style={{ marginTop: 6 }}>{photoEl}</View>
+                      <View style={{ marginTop: photoGap / 2 }}>{photoEl}</View>
                     )}
                   </View>
 
@@ -349,6 +361,8 @@ export function ResumePDF({ resume }: { resume: Resume }) {
             // Left / Right Alignment
             const isRight = align === "right";
             const isBeside = s.detailsPosition === "beside";
+            const photoAlignment = s.photoAlignment || 'left';
+            const photoVAlign = s.photoVerticalAlign || 'center';
 
             if (isBeside) {
               return (
@@ -356,27 +370,30 @@ export function ResumePDF({ resume }: { resume: Resume }) {
                   style={{
                     marginBottom: 4,
                     paddingBottom: 4,
-                    flexDirection: isRight ? "row-reverse" : "row",
-                    alignItems: "center",
+                    flexDirection: "row",
+                    alignItems: photoVAlign === 'top' ? 'flex-start' : photoVAlign === 'bottom' ? 'flex-end' : 'center',
                     width: "100%",
                   }}
                 >
                   {/* Side A: Identity */}
                   <View
                     style={{
-                      flexDirection: isRight ? "row-reverse" : "row",
-                      alignItems: "center",
+                      flexDirection: photoAlignment === 'right' ? "row-reverse" : "row",
+                      alignItems: photoVAlign === 'top' ? 'flex-start' : photoVAlign === 'bottom' ? 'flex-end' : 'center',
                       flex: 1,
                     }}
                   >
-                    {photoEl && (
-                      <View
-                        style={{ [isRight ? "marginLeft" : "marginRight"]: 12 }}
-                      >
+                    {(photoAlignment !== 'right') && photoEl && (
+                      <View style={{ [isRight ? "marginLeft" : "marginRight"]: photoGap }}>
                         {photoEl}
                       </View>
                     )}
                     {nameText(isRight ? "right" : "left")}
+                    {(photoAlignment === 'right' || (photoAlignment === 'center' && !isRight)) && photoEl && (
+                      <View style={{ [isRight ? "marginLeft" : "marginRight"]: photoGap }}>
+                        {photoEl}
+                      </View>
+                    )}
                   </View>
 
                   {/* Side B: Contacts */}
@@ -405,12 +422,12 @@ export function ResumePDF({ resume }: { resume: Resume }) {
                   marginBottom: 4,
                   paddingBottom: 4,
                   flexDirection: isRight ? "row-reverse" : "row",
-                  alignItems: "flex-start",
+                  alignItems: photoVAlign === 'top' ? 'flex-start' : photoVAlign === 'bottom' ? 'flex-end' : 'flex-start',
                 }}
               >
                 {/* Photo Side */}
                 {photoEl && (
-                  <View style={{ [isRight ? "marginLeft" : "marginRight"]: 16 }}>
+                  <View style={{ [isRight ? "marginLeft" : "marginRight"]: photoGap }}>
                     {photoEl}
                   </View>
                 )}
