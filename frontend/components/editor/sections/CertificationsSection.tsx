@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useSection } from '@/hooks/useResume'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { DebouncedInput } from '@/components/ui/debounced-input'
 import { Plus, Award, Building2, Calendar, Link as LinkIcon, type LucideIcon } from 'lucide-react'
 import type { CertificationItem } from '@/lib/store/types'
 import { generateId } from '@/lib/utils/ids'
@@ -72,19 +72,19 @@ export function CertificationsSection({ sectionId }: Props) {
             <div className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Certification Name" icon={Award}>
-                  <Input 
+                  <DebouncedInput 
                     placeholder="e.g. AWS Certified Solutions Architect"
                     className="h-10 text-sm bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
                     value={item.name} 
-                    onChange={(e) => update(item.id, { name: e.target.value })} 
+                    onChange={(v) => update(item.id, { name: v })} 
                   />
                 </Field>
                 <Field label="Issuer" icon={Building2}>
-                  <Input 
+                  <DebouncedInput 
                     placeholder="e.g. Amazon Web Services"
                     className="h-10 text-sm bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
                     value={item.issuer} 
-                    onChange={(e) => update(item.id, { issuer: e.target.value })} 
+                    onChange={(v) => update(item.id, { issuer: v })} 
                   />
                 </Field>
               </div>
@@ -99,11 +99,11 @@ export function CertificationsSection({ sectionId }: Props) {
               </div>
 
               <Field label="URL / Link" icon={LinkIcon}>
-                <Input
+                <DebouncedInput
                   placeholder="https://..."
                   className="h-10 text-sm bg-muted/20 border-border/50 focus-visible:ring-primary/20"
                   value={item.url}
-                  onChange={(e) => update(item.id, { url: e.target.value })}
+                  onChange={(v) => update(item.id, { url: v })}
                 />
               </Field>
             </div>

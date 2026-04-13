@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2026-04-13
+
+### Added
+
+- **Debounced Input Components** - Performance optimization for editor fields
+  - `frontend/components/ui/debounced-input.tsx` - Debounced wrapper for Input
+  - `frontend/components/ui/debounced-rich-text-area.tsx` - Debounced wrapper for RichTextArea
+  - Applied to all editor sections (Experience, Education, Projects, Summary, etc.)
+  - 500ms debounce delay prevents excessive state updates during typing
+
+- **Performance Tests** - Visual and load testing suite
+  - `tests/performance/render-speed.spec.ts` - Page load and template switching benchmarks
+  - `tests/performance/load-test.spec.ts` - Large resume rendering performance
+
+### Changed
+
+- **PreviewPanel** - Increased debounce from 400ms to 800ms for PDF regeneration
+- **Editor Sections** - Replaced direct Input/RichTextArea with debounced versions
+
+### Fixed
+
+- **SkillsSection crash** - Fixed null reference when `name` was undefined in `addSkill()`
+- **SkillsSection test** - Test failure due to `asChild` prop incompatibility
+
 ## [0.4.0] - 2026-04-12
 
 ### Added

@@ -2,12 +2,12 @@
 import { useState } from 'react'
 import { useSection } from '@/hooks/useResume'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { DebouncedInput } from '@/components/ui/debounced-input'
 import { Plus, Award, Building2, Calendar, type LucideIcon, Sparkles } from 'lucide-react'
 import type { AwardItem } from '@/lib/store/types'
 import { generateId } from '@/lib/utils/ids'
 import { MonthYearPicker } from '../MonthYearPicker'
-import { RichTextArea } from '../RichTextArea'
+import { DebouncedRichTextArea } from '@/components/ui/debounced-rich-text-area'
 import { useAI } from '@/hooks/useAI'
 import { toast } from 'sonner'
 import { FieldLabel, EntryCard } from '../EditorPrimitives'
@@ -90,19 +90,19 @@ export function AwardsSection({ sectionId }: Props) {
             <div className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Award Title" icon={Award}>
-                  <Input 
+                  <DebouncedInput 
                     placeholder="e.g. Employee of the Month"
                     className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
                     value={item.title} 
-                    onChange={(e) => update(item.id, { title: e.target.value })} 
+                    onChange={(v) => update(item.id, { title: v })} 
                   />
                 </Field>
                 <Field label="Issuer" icon={Building2}>
-                  <Input 
+                  <DebouncedInput 
                     placeholder="e.g. Acme Corp"
                     className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
                     value={item.issuer} 
-                    onChange={(e) => update(item.id, { issuer: e.target.value })} 
+                    onChange={(v) => update(item.id, { issuer: v })} 
                   />
                 </Field>
               </div>
@@ -123,7 +123,7 @@ export function AwardsSection({ sectionId }: Props) {
                     <Sparkles size={10} /> AI Enhanced
                   </div>
                 </div>
-                <RichTextArea
+                <DebouncedRichTextArea
                   placeholder="Describe the award and your achievements..."
                   value={item.description}
                   onChange={(v) => update(item.id, { description: v })}

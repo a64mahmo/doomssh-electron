@@ -126,6 +126,34 @@ With the headless pattern, **every business rule lives in exactly one place**. C
 6. Add editor components in `frontend/components/editor/sections/`
 7. Add a data entry form in the Customize Panel if needed
 
+## Performance Optimization
+
+DoomSSH employs several strategies to ensure smooth performance, especially when dealing with real-time PDF preview regeneration.
+
+### Debounced Input
+
+Typing in editor fields can trigger expensive operations (PDF blob regeneration, state persistence). To prevent lag during rapid typing, DoomSSH uses debounced input components:
+
+- **`DebouncedInput`** (`frontend/components/ui/debounced-input.tsx`): Wraps standard inputs with a 500ms debounce delay
+- **`DebouncedRichTextArea`** (`frontend/components/ui/debounced-rich-text-area.tsx`): Same for rich text areas
+
+These components maintain local state and only propagate changes to the store after the user stops typing for 500ms.
+
+### PDF Preview Debouncing
+
+The live PDF preview (`frontend/components/preview/PreviewPanel.tsx`) regenerates on every change. This is debounced at 800ms to balance responsiveness with performance:
+
+```typescript
+debounceRef.current = setTimeout(async () => {
+  const blob = await pdf(<ResumePDF resume={resume} />).toBlob();
+  // ...
+}, 800);
+```
+
+### Persistence Debouncing
+
+The `PersistenceManager` also debounces disk writes to prevent excessive I/O during editing sessions.
+
 ## Testing Strategy
 
 - **Unit Tests** (`frontend/lib/**/*.test.ts`): Vitest tests for controllers, stores, and utilities.

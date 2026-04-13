@@ -2,20 +2,9 @@
 import { useState } from "react";
 import { useSection } from "@/hooks/useResume";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Plus,
-  Calendar,
-  MapPin,
-  Building2,
-  Briefcase,
-  Sparkles,
-  type LucideIcon,
-} from "lucide-react";
-import type { ExperienceItem } from "@/lib/store/types";
-import { generateId } from "@/lib/utils/ids";
-import { MonthYearPicker } from "../MonthYearPicker";
-import { RichTextArea } from "../RichTextArea";
+import { DebouncedInput } from "@/components/ui/debounced-input";
+import { DebouncedRichTextArea } from "@/components/ui/debounced-rich-text-area";
+
 import { useAI } from "@/hooks/useAI";
 import { toast } from "sonner";
 import { FieldLabel, ToggleRow, EntryCard } from "../EditorPrimitives";
@@ -120,36 +109,39 @@ export function ExperienceSection({ sectionId }: Props) {
             <div className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Position" icon={Briefcase}>
-                  <Input
-                    placeholder="e.g. Senior Software Engineer"
-                    className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20"
-                    value={item.position}
-                    onChange={(e) =>
-                      update(item.id, { position: e.target.value })
-                    }
-                  />
+                    <DebouncedInput
+                      placeholder="e.g. Senior Software Engineer"
+                      className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20"
+                      value={item.position}
+                      onChange={(v) =>
+                        update(item.id, { position: v })
+                      }
+                    />
+
                 </Field>
                 <Field label="Company" icon={Building2}>
-                  <Input
-                    placeholder="e.g. Acme Corp"
-                    className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20"
-                    value={item.company}
-                    onChange={(e) =>
-                      update(item.id, { company: e.target.value })
-                    }
-                  />
+                    <DebouncedInput
+                      placeholder="e.g. Acme Corp"
+                      className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20"
+                      value={item.company}
+                      onChange={(v) =>
+                        update(item.id, { company: v })
+                      }
+                    />
+
                 </Field>
               </div>
 
               <Field label="Location" icon={MapPin}>
-                <Input
-                  placeholder="Remote / NYC"
-                  className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20"
-                  value={item.location}
-                  onChange={(e) =>
-                    update(item.id, { location: e.target.value })
-                  }
-                />
+                 <DebouncedInput
+                   placeholder="Remote / NYC"
+                   className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20"
+                   value={item.location}
+                   onChange={(v) =>
+                     update(item.id, { location: v })
+                   }
+                 />
+
               </Field>
               <div className="grid grid-cols-1 gap-2">
                 <Field label="Start Date" icon={Calendar}>
@@ -184,14 +176,15 @@ export function ExperienceSection({ sectionId }: Props) {
                     <Sparkles size={10} /> AI Enhanced
                   </div>
                 </div>
-                <RichTextArea
-                  placeholder="• Reduced system latency by 40% through query optimization..."
-                  value={item.description}
-                  onChange={(v) => update(item.id, { description: v })}
-                  onAIImprove={() =>
-                    handleAIImprove(item.id, item.description, item.position)
-                  }
-                />
+                 <DebouncedRichTextArea
+                   placeholder="• Reduced system latency by 40% through query optimization..."
+                   value={item.description}
+                   onChange={(v) => update(item.id, { description: v })}
+                   onAIImprove={() =>
+                     handleAIImprove(item.id, item.description, item.position)
+                   }
+                 />
+
               </div>
             </div>
           </EntryCard>

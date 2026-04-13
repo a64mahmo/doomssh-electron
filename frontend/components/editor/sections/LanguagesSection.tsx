@@ -1,7 +1,7 @@
 'use client'
 import { useSection } from '@/hooks/useResume'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { DebouncedInput } from '@/components/ui/debounced-input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Plus, Trash2, Copy, Languages, Signal, type LucideIcon } from 'lucide-react'
@@ -88,12 +88,12 @@ export function LanguagesSection({ sectionId }: Props) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Field label="Language" icon={Languages}>
-                <Input 
-                  placeholder="e.g. English"
-                  className="h-9 text-xs font-medium focus-visible:ring-1" 
-                  value={item.language} 
-                  onChange={(e) => update(item.id, { language: e.target.value })} 
-                />
+<DebouncedInput 
+                    placeholder="e.g. English"
+                    className="h-9 text-xs font-medium focus-visible:ring-1" 
+                    value={item.language} 
+                    onChange={(v) => update(item.id, { language: v })} 
+                  />
               </Field>
               <Field label="Proficiency" icon={Signal}>
                 <Select

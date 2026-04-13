@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useSection } from '@/hooks/useResume'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { DebouncedInput } from '@/components/ui/debounced-input'
 import { Plus, User, Building2, Briefcase, Mail, Phone, type LucideIcon } from 'lucide-react'
 import type { ReferenceItem } from '@/lib/store/types'
 import { generateId } from '@/lib/utils/ids'
@@ -70,48 +70,48 @@ export function ReferencesSection({ sectionId }: Props) {
           >
             <div className="space-y-5">
               <Field label="Reference Name" icon={User}>
-                <Input 
-                  placeholder="e.g. Jane Smith"
-                  className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
-                  value={item.name} 
-                  onChange={(e) => update(item.id, { name: e.target.value })} 
-                />
+<DebouncedInput 
+                    placeholder="e.g. Jane Smith"
+                    className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
+                    value={item.name} 
+                    onChange={(v) => update(item.id, { name: v })} 
+                  />
               </Field>
 
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Position" icon={Briefcase}>
-                  <Input 
+                  <DebouncedInput 
                     placeholder="e.g. CTO"
                     className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
                     value={item.position} 
-                    onChange={(e) => update(item.id, { position: e.target.value })} 
+                    onChange={(v) => update(item.id, { position: v })} 
                   />
                 </Field>
                 <Field label="Company" icon={Building2}>
-                  <Input 
+                  <DebouncedInput 
                     placeholder="e.g. Acme Corp"
                     className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
                     value={item.company} 
-                    onChange={(e) => update(item.id, { company: e.target.value })} 
+                    onChange={(v) => update(item.id, { company: v })} 
                   />
                 </Field>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Email" icon={Mail}>
-                  <Input 
+                  <DebouncedInput 
                     placeholder="jane@example.com"
                     className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
                     value={item.email} 
-                    onChange={(e) => update(item.id, { email: e.target.value })} 
+                    onChange={(v) => update(item.id, { email: v })} 
                   />
                 </Field>
                 <Field label="Phone" icon={Phone}>
-                  <Input 
+                  <DebouncedInput 
                     placeholder="+1 (555) 000-0000"
                     className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
                     value={item.phone} 
-                    onChange={(e) => update(item.id, { phone: e.target.value })} 
+                    onChange={(v) => update(item.id, { phone: v })} 
                   />
                 </Field>
               </div>

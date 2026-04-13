@@ -1,6 +1,6 @@
 'use client'
 import { useSection } from '@/hooks/useResume'
-import { RichTextArea } from '../RichTextArea'
+import { DebouncedRichTextArea } from '@/components/ui/debounced-rich-text-area'
 import type { SummaryItem } from '@/lib/store/types'
 import { useAI } from '@/hooks/useAI'
 import { toast } from 'sonner'
@@ -38,7 +38,7 @@ export function SummarySection({ sectionId }: Props) {
               <Sparkles size={10} /> AI Enhanced
             </div>
           </div>
-          <RichTextArea
+          <DebouncedRichTextArea
             rows={8}
             placeholder="A results-driven professional with experience in..."
             value={item.text}

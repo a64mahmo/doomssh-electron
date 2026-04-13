@@ -2,12 +2,12 @@
 import { useState } from 'react'
 import { useSection } from '@/hooks/useResume'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { DebouncedInput } from '@/components/ui/debounced-input'
 import { Plus, Calendar, type LucideIcon, Sparkles, Type, Building2 } from 'lucide-react'
 import type { CustomItem } from '@/lib/store/types'
 import { generateId } from '@/lib/utils/ids'
 import { MonthYearPicker } from '../MonthYearPicker'
-import { RichTextArea } from '../RichTextArea'
+import { DebouncedRichTextArea } from '@/components/ui/debounced-rich-text-area'
 import { useAI } from '@/hooks/useAI'
 import { toast } from 'sonner'
 import { FieldLabel, EntryCard } from '../EditorPrimitives'
@@ -90,19 +90,19 @@ export function CustomSection({ sectionId }: Props) {
             <div className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Title" icon={Type}>
-                  <Input 
+                  <DebouncedInput 
                     placeholder="e.g. Project Lead"
                     className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
                     value={item.title} 
-                    onChange={(e) => update(item.id, { title: e.target.value })} 
+                    onChange={(v) => update(item.id, { title: v })} 
                   />
                 </Field>
                 <Field label="Subtitle" icon={Building2}>
-                  <Input 
+                  <DebouncedInput 
                     placeholder="e.g. Acme Corp"
                     className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
                     value={item.subtitle} 
-                    onChange={(e) => update(item.id, { subtitle: e.target.value })} 
+                    onChange={(v) => update(item.id, { subtitle: v })} 
                   />
                 </Field>
               </div>
@@ -123,7 +123,7 @@ export function CustomSection({ sectionId }: Props) {
                     <Sparkles size={10} /> AI Enhanced
                   </div>
                 </div>
-                <RichTextArea
+                <DebouncedRichTextArea
                   placeholder="Additional details..."
                   value={item.description}
                   onChange={(v) => update(item.id, { description: v })}

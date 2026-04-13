@@ -31,7 +31,7 @@ export function SkillsSection({ sectionId }: Props) {
   const openId = activeId ?? Object.keys(categories)[0] ?? null
 
   function addSkill(category: string, name: string) {
-    if (!name.trim()) return
+    if (!name || !name.trim()) return
     const names = name.split(',').map(n => n.trim()).filter(Boolean)
     const newItems = names.map(n => ({
       id: generateId(),
@@ -119,13 +119,13 @@ export function SkillsSection({ sectionId }: Props) {
                   <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/30 group-focus-within/input:text-primary transition-colors">
                     <ListFilter size={12} />
                   </div>
-                  <Input
-                    className="h-9 text-xs pl-8 bg-muted/20 border-border/50 focus-visible:ring-primary/20"
-                    placeholder="Add skills (comma separated)..."
-                    value={newSkillText[cat] || ''}
-                    onChange={(e) => setNewSkillText(prev => ({ ...prev, [cat]: e.target.value }))}
-                    onKeyDown={(e) => e.key === 'Enter' && addSkill(cat, newSkillText[cat])}
-                  />
+<Input
+                      className="h-9 text-xs pl-8 bg-muted/20 border-border/50 focus-visible:ring-primary/20"
+                      placeholder="Add skills (comma separated)..."
+                      value={newSkillText[cat] || ''}
+                      onChange={(e) => setNewSkillText(prev => ({ ...prev, [cat]: e.target.value }))}
+                      onKeyDown={(e) => e.key === 'Enter' && addSkill(cat, newSkillText[cat])}
+                    />
                 </div>
                 <Button 
                   variant="outline" 

@@ -2,12 +2,12 @@
 import { useState } from 'react'
 import { useSection } from '@/hooks/useResume'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { DebouncedInput } from '@/components/ui/debounced-input'
 import { Plus, FolderGit2, Link as LinkIcon, Calendar, type LucideIcon, Sparkles } from 'lucide-react'
 import type { ProjectItem } from '@/lib/store/types'
 import { generateId } from '@/lib/utils/ids'
 import { MonthYearPicker } from '../MonthYearPicker'
-import { RichTextArea } from '../RichTextArea'
+import { DebouncedRichTextArea } from '@/components/ui/debounced-rich-text-area'
 import { useAI } from '@/hooks/useAI'
 import { toast } from 'sonner'
 import { FieldLabel, EntryCard } from '../EditorPrimitives'
@@ -89,11 +89,11 @@ export function ProjectsSection({ sectionId }: Props) {
           >
             <div className="space-y-5">
               <Field label="Project Name" icon={FolderGit2}>
-                <Input
+                <DebouncedInput
                   placeholder="e.g. Portfolio Website"
                   className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20"
                   value={item.name}
-                  onChange={(e) => update(item.id, { name: e.target.value })}
+                  onChange={(v) => update(item.id, { name: v })}
                 />
               </Field>
 
@@ -107,11 +107,11 @@ export function ProjectsSection({ sectionId }: Props) {
               </div>
 
               <Field label="URL / Link" icon={LinkIcon}>
-                <Input 
+                <DebouncedInput 
                   placeholder="https://github.com/yourusername/project"
                   className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
                   value={item.url} 
-                  onChange={(e) => update(item.id, { url: e.target.value })} 
+                  onChange={(v) => update(item.id, { url: v })} 
                 />
               </Field>
 
@@ -122,7 +122,7 @@ export function ProjectsSection({ sectionId }: Props) {
                     <Sparkles size={10} /> AI Enhanced
                   </div>
                 </div>
-                <RichTextArea
+                <DebouncedRichTextArea
                   placeholder="• Developed using React and Next.js..."
                   value={item.description}
                   onChange={(v) => update(item.id, { description: v })}

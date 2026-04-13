@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useSection } from '@/hooks/useResume'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { DebouncedInput } from '@/components/ui/debounced-input'
 import { Plus, GraduationCap, MapPin, Calendar, Award, type LucideIcon } from 'lucide-react'
 import type { EducationItem } from '@/lib/store/types'
 import { generateId } from '@/lib/utils/ids'
@@ -75,38 +75,38 @@ export function EducationSection({ sectionId }: Props) {
             <div className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Institution" icon={GraduationCap}>
-                  <Input 
+                  <DebouncedInput 
                     placeholder="e.g. Stanford University"
                     className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
                     value={item.institution} 
-                    onChange={(e) => update(item.id, { institution: e.target.value })} 
+                    onChange={(v) => update(item.id, { institution: v })} 
                   />
                 </Field>
                 <Field label="Location" icon={MapPin}>
-                  <Input 
+                  <DebouncedInput 
                     placeholder="e.g. Stanford, CA"
                     className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
                     value={item.location} 
-                    onChange={(e) => update(item.id, { location: e.target.value })} 
+                    onChange={(v) => update(item.id, { location: v })} 
                   />
                 </Field>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Degree" icon={Award}>
-                  <Input 
+                  <DebouncedInput 
                     placeholder="e.g. Bachelor of Science"
                     className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
                     value={item.degree} 
-                    onChange={(e) => update(item.id, { degree: e.target.value })} 
+                    onChange={(v) => update(item.id, { degree: v })} 
                   />
                 </Field>
                 <Field label="Field of Study" icon={Award}>
-                  <Input 
+                  <DebouncedInput 
                     placeholder="e.g. Computer Science"
                     className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
                     value={item.field} 
-                    onChange={(e) => update(item.id, { field: e.target.value })} 
+                    onChange={(v) => update(item.id, { field: v })} 
                   />
                 </Field>
               </div>
@@ -128,11 +128,11 @@ export function EducationSection({ sectionId }: Props) {
               </div>
 
               <Field label="GPA" icon={Award}>
-                <Input
+                <DebouncedInput
                   placeholder="e.g. 3.8/4.0"
                   className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20"
                   value={item.gpa}
-                  onChange={(e) => update(item.id, { gpa: e.target.value })}
+                  onChange={(v) => update(item.id, { gpa: v })}
                 />
               </Field>
 

@@ -2,12 +2,12 @@
 import { useState } from 'react'
 import { useSection } from '@/hooks/useResume'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { DebouncedInput } from '@/components/ui/debounced-input'
 import { Plus, Briefcase, Calendar, type LucideIcon, Sparkles, Building2 } from 'lucide-react'
 import type { VolunteeringItem } from '@/lib/store/types'
 import { generateId } from '@/lib/utils/ids'
 import { MonthYearPicker } from '../MonthYearPicker'
-import { RichTextArea } from '../RichTextArea'
+import { DebouncedRichTextArea } from '@/components/ui/debounced-rich-text-area'
 import { useAI } from '@/hooks/useAI'
 import { toast } from 'sonner'
 import { FieldLabel, EntryCard, ToggleRow } from '../EditorPrimitives'
@@ -93,19 +93,19 @@ export function VolunteeringSection({ sectionId }: Props) {
             <div className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Organization" icon={Building2}>
-                  <Input 
+                  <DebouncedInput 
                     placeholder="e.g. Red Cross"
                     className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
                     value={item.organization} 
-                    onChange={(e) => update(item.id, { organization: e.target.value })} 
+                    onChange={(v) => update(item.id, { organization: v })} 
                   />
                 </Field>
                 <Field label="Role" icon={Briefcase}>
-                  <Input 
+                  <DebouncedInput 
                     placeholder="e.g. Volunteer"
                     className="h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20" 
                     value={item.role} 
-                    onChange={(e) => update(item.id, { role: e.target.value })} 
+                    onChange={(v) => update(item.id, { role: v })} 
                   />
                 </Field>
               </div>
@@ -142,7 +142,7 @@ export function VolunteeringSection({ sectionId }: Props) {
                     <Sparkles size={10} /> AI Enhanced
                   </div>
                 </div>
-                <RichTextArea
+                <DebouncedRichTextArea
                   placeholder="Describe your volunteer work..."
                   value={item.description}
                   onChange={(v) => update(item.id, { description: v })}
