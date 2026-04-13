@@ -31,15 +31,15 @@ Most modern resume builders lock your data behind a subscription or a cloud acco
 
 ## Tech Stack
 
-| Layer | Technology |
-| :--- | :--- |
-| **Runtime** | **Electron 34** (Native OS integration & Security) |
-| **Frontend** | **Next.js 15** (App Router, React 19, Static Export) |
-| **State** | **Zustand + Immer** (High-performance immutable state) |
-| **Storage** | **Local Vault** (JSON-based files) |
-| **Styles** | **Tailwind CSS 4** + **Base UI** (Atomic, Dark-mode ready) |
-| **PDF Engine** | **@react-pdf/renderer** (Client-side vector generation) |
-| **AI Bridge** | **Anthropic SDK** (IPC-streamed for credential safety) |
+| Layer          | Technology                                                 |
+| :------------- | :--------------------------------------------------------- |
+| **Runtime**    | **Electron 34** (Native OS integration & Security)         |
+| **Frontend**   | **Next.js 15** (App Router, React 19, Static Export)       |
+| **State**      | **Zustand + Immer** (High-performance immutable state)     |
+| **Storage**    | **Local Vault** (JSON-based files)                         |
+| **Styles**     | **Tailwind CSS 4** + **Base UI** (Atomic, Dark-mode ready) |
+| **PDF Engine** | **@react-pdf/renderer** (Client-side vector generation)    |
+| **AI Bridge**  | **Anthropic SDK** (IPC-streamed for credential safety)     |
 
 ---
 
@@ -78,30 +78,30 @@ doomssh/
 ├── electron/                    # Main Process
 │   ├── main.ts                  # Entry point, IPC handlers, window management
 │   └── preload.ts               # Secure bridge to renderer
-├── frontend/                     # Next.js 15 Workspace
+├── frontend/                    # Next.js 15 Workspace
 │   ├── app/                     # App Router pages
 │   │   ├── builder/             # Resume builder UI
 │   │   ├── print/               # PDF export route
-│   │   └── api/ai/             # AI streaming endpoints
+│   │   └── api/ai/              # AI streaming endpoints
 │   ├── components/
 │   │   ├── web/                 # HTML renderers (Web preview)
 │   │   │   └── sections/        # Section components (DOM)
 │   │   ├── pdf/                 # PDF renderers (Vector export)
 │   │   │   └── sections/        # Section components (@react-pdf)
-│   │   ├── customize/            # Design panel & styling controls
+│   │   ├── customize/           # Design panel & styling controls
 │   │   ├── editor/              # Data entry forms & inputs
-│   │   └── jobs/               # Application tracker UI
-│   ├── hooks/                  # useResume, useAI, useJobs
+│   │   └── jobs/                # Application tracker UI
+│   ├── hooks/                   # useResume, useAI, useJobs
 │   └── lib/
 │       ├── renderers/           # Headless section controllers
 │       │   ├── index.ts         # Controller registry
-│       │   ├── experience.ts   # Experience logic
-│       │   └── types.ts        # ViewModel types
+│       │   ├── experience.ts    # Experience logic
+│       │   └── types.ts         # ViewModel types
 │       ├── store/               # Zustand stores
 │       │   ├── resumeStore.ts   # Resume state (source of truth)
 │       │   ├── persistenceManager.ts  # Debounced vault writes
 │       │   ├── jobStore.ts      # Job tracker state
-│       │   └── uiStore.ts      # UI state (errors, modals)
+│       │   └── uiStore.ts       # UI state (errors, modals)
 │       ├── db/                  # Vault CRUD via Electron IPC
 │       └── pdf/                 # PDF build utilities
 ├── tests/                       # Playwright E2E & regression tests
@@ -149,49 +149,49 @@ The following settings can be adjusted via the **Customize Panel** in the builde
 
 #### Typography
 
-| Setting | Options | Description |
-|---------|---------|-------------|
-| **Font Family** | Any Google Font | e.g., "Merriweather", "Raleway", "Inter" |
-| **Font Size** | 8–16pt | Base body text size |
-| **Name Size** | S / M / L / XL | Scales the candidate's name proportionally |
-| **Section Heading Size** | S / M / L / XL | Scales section titles |
-| **Line Height** | 1.0–2.0 | Vertical spacing between lines |
-| **Letter Spacing** | Tight / Normal / Wide | Horizontal spacing on headings |
-| **Section Capitalization** | Uppercase / Capitalize / None | Transforms section heading text |
+| Setting                    | Options                       | Description                                |
+| -------------------------- | ----------------------------- | ------------------------------------------ |
+| **Font Family**            | Any Google Font               | e.g., "Merriweather", "Raleway", "Inter"   |
+| **Font Size**              | 8–16pt                        | Base body text size                        |
+| **Name Size**              | S / M / L / XL                | Scales the candidate's name proportionally |
+| **Section Heading Size**   | S / M / L / XL                | Scales section titles                      |
+| **Line Height**            | 1.0–2.0                       | Vertical spacing between lines             |
+| **Letter Spacing**         | Tight / Normal / Wide         | Horizontal spacing on headings             |
+| **Section Capitalization** | Uppercase / Capitalize / None | Transforms section heading text            |
 
 #### Colors
 
-| Setting | Options | Description |
-|---------|---------|-------------|
-| **Accent Color** | Hex color | Primary brand color (links, headings, decorations) |
-| **Color Mode** | Basic / Advanced | Basic uses one color; Advanced enables a full palette |
-| **Heading Color** | Hex color | Color for section titles (Advanced mode) |
-| **Text Color** | Hex color | Body text color (Advanced mode) |
-| **Background Color** | Hex color | Page background (Advanced mode) |
+| Setting              | Options          | Description                                           |
+| -------------------- | ---------------- | ----------------------------------------------------- |
+| **Accent Color**     | Hex color        | Primary brand color (links, headings, decorations)    |
+| **Color Mode**       | Basic / Advanced | Basic uses one color; Advanced enables a full palette |
+| **Heading Color**    | Hex color        | Color for section titles (Advanced mode)              |
+| **Text Color**       | Hex color        | Body text color (Advanced mode)                       |
+| **Background Color** | Hex color        | Page background (Advanced mode)                       |
 
 #### Layout
 
-| Setting | Options | Description |
-|---------|---------|-------------|
-| **Paper Size** | Letter / A4 | Standard North American or international |
-| **Margin** | 10–30mm | Page margins |
-| **Column Layout** | One Column / Two Columns / Mix | Single-page or sidebar layout |
-| **Column Width** | 25%–40% | Sidebar width in two-column layouts |
-| **Column Reverse** | On / Off | Swaps sidebar to the left side |
-| **Entry Spacing** | Compact / Normal / Spacious | Vertical gap between resume entries |
+| Setting            | Options                        | Description                              |
+| ------------------ | ------------------------------ | ---------------------------------------- |
+| **Paper Size**     | Letter / A4                    | Standard North American or international |
+| **Margin**         | 10–30mm                        | Page margins                             |
+| **Column Layout**  | One Column / Two Columns / Mix | Single-page or sidebar layout            |
+| **Column Width**   | 25%–40%                        | Sidebar width in two-column layouts      |
+| **Column Reverse** | On / Off                       | Swaps sidebar to the left side           |
+| **Entry Spacing**  | Compact / Normal / Spacious    | Vertical gap between resume entries      |
 
 #### Section Display
 
-| Setting | Options | Description |
-|---------|---------|-------------|
-| **Show Section Labels** | On / Off | Toggle section headings |
-| **Section Heading Style** | Underline / Overline / Top-Bottom / Box / Background / Left Bar | Decoration style for headings |
-| **Section Heading Icon** | None / Outline / Filled / Knockout | Icon before section headings |
-| **Experience Order** | Position → Company / Company → Position | Which field appears first |
-| **Education Order** | School → Degree / Degree → School | Which field appears first |
-| **Skill Display** | Compact / Grid / Level / Bubble | How skills are laid out |
-| **Photo** | Enable / Disable, Shape, Position | Optional profile photo |
-| **Contact Icons** | None / Outline / Filled | Icon style for contact details |
+| Setting                   | Options                                                         | Description                    |
+| ------------------------- | --------------------------------------------------------------- | ------------------------------ |
+| **Show Section Labels**   | On / Off                                                        | Toggle section headings        |
+| **Section Heading Style** | Underline / Overline / Top-Bottom / Box / Background / Left Bar | Decoration style for headings  |
+| **Section Heading Icon**  | None / Outline / Filled / Knockout                              | Icon before section headings   |
+| **Experience Order**      | Position → Company / Company → Position                         | Which field appears first      |
+| **Education Order**       | School → Degree / Degree → School                               | Which field appears first      |
+| **Skill Display**         | Compact / Grid / Level / Bubble                                 | How skills are laid out        |
+| **Photo**                 | Enable / Disable, Shape, Position                               | Optional profile photo         |
+| **Contact Icons**         | None / Outline / Filled                                         | Icon style for contact details |
 
 ### Programmatic Template Customization
 
@@ -200,31 +200,31 @@ Templates are defined as **JSON data** in `frontend/lib/store/types.ts` via the 
 ```typescript
 // Example: Create a "Modern Minimal" template preset
 const modernMinimalTemplate = {
-  template: 'modern-minimal',
+  template: "modern-minimal",
   settings: {
-    fontFamily: 'Inter',
+    fontFamily: "Inter",
     fontSize: 10,
-    nameSize: 'M',
-    sectionHeadingSize: 'S',
-    accentColor: '#2563eb',
-    colorMode: 'advanced',
-    headingColor: '#1e293b',
-    textColor: '#334155',
-    backgroundColor: '#ffffff',
-    columnLayout: 'one',
+    nameSize: "M",
+    sectionHeadingSize: "S",
+    accentColor: "#2563eb",
+    colorMode: "advanced",
+    headingColor: "#1e293b",
+    textColor: "#334155",
+    backgroundColor: "#ffffff",
+    columnLayout: "one",
     marginHorizontal: 20,
     marginVertical: 15,
     entrySpacing: 1.2,
     lineHeight: 1.4,
-    sectionHeadingStyle: 'underline',
-    sectionHeadingCapitalization: 'uppercase',
+    sectionHeadingStyle: "underline",
+    sectionHeadingCapitalization: "uppercase",
     showSectionLabels: true,
-    experienceOrder: 'position-employer',
-    educationOrder: 'school-degree',
-    skillDisplay: 'compact',
-    dateFormat: 'MMM YYYY',
-  }
-}
+    experienceOrder: "position-employer",
+    educationOrder: "school-degree",
+    skillDisplay: "compact",
+    dateFormat: "MMM YYYY",
+  },
+};
 ```
 
 To add a new template preset:
@@ -245,9 +245,9 @@ export const experienceController: SectionController = (section, ctx) => {
   const { helpers } = ctx;
   const settings = (ctx.settings || {}) as any;
 
-  const processedItems = items.map(item => {
-    const isEmployerFirst = settings.experienceOrder === 'employer-title';
-    
+  const processedItems = items.map((item) => {
+    const isEmployerFirst = settings.experienceOrder === "employer-title";
+
     return {
       id: item.id,
       // primaryText = bold/large title
@@ -255,7 +255,12 @@ export const experienceController: SectionController = (section, ctx) => {
       // secondaryText = subtitle/label
       secondaryText: isEmployerFirst ? item.position : item.company,
       location: item.location,
-      dateRange: helpers.formatDate(item.startDate, item.endDate, item.present, settings.dateFormat || 'YYYY'),
+      dateRange: helpers.formatDate(
+        item.startDate,
+        item.endDate,
+        item.present,
+        settings.dateFormat || "YYYY",
+      ),
       description: item.description,
     };
   });
@@ -263,7 +268,7 @@ export const experienceController: SectionController = (section, ctx) => {
   return {
     title: section.title,
     isVisible: section.visible !== false && processedItems.length > 0,
-    type: 'experience',
+    type: "experience",
     items: processedItems,
   };
 };

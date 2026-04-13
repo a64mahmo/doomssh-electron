@@ -107,6 +107,8 @@ export function CustomizePanel() {
           return (
             <Tooltip key={section.id}>
               <TooltipTrigger
+                aria-label={section.label}
+                data-testid={`nav-${section.id}`}
                 onClick={() => {
                   setActiveSection(section.id)
                   scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
