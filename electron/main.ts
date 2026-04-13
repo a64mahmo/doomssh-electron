@@ -9,6 +9,13 @@ import { autoUpdater, UpdateInfo } from 'electron-updater'
 autoUpdater.logger = console
 autoUpdater.autoDownload = true
 autoUpdater.autoInstallOnAppQuit = true
+autoUpdater.requestHeaders = { 'PRIVATE-TOKEN': process.env.GITHUB_TOKEN }
+
+autoUpdater.on('update-available', (info: UpdateInfo) => {
+  console.log('[updater] update available:', info.version)
+  console.log('[updater] files:', info.files)
+  mainWindow?.webContents.send('app:update-available', info)
+})
 
 const isDev = process.env.NODE_ENV !== 'production' && (process.env.NODE_ENV === 'development' || !app.isPackaged)
 
@@ -503,7 +510,7 @@ autoUpdater.on('update-not-available', (info: UpdateInfo) => {
 })
 
 autoUpdater.on('download-progress', (progressObj) => {
-  console.log('[updater] download progress:', progressObj.percent)
+  console.log('[updater] download progress:', progressObj.percent, 'bytesPerSecond:', progressObj.bytesPerSecond, 'transferred:', progressObj.transferred, 'total:', progressObj.total)
   mainWindow?.webContents.send('app:update-progress', progressObj)
 })
 
