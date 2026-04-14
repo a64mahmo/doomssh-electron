@@ -51,8 +51,10 @@ export function KanbanColumn({ config, jobs, onSelectJob, onAddJob }: KanbanColu
       <div
         ref={setNodeRef}
         className={cn(
-          'flex-1 min-h-0 rounded-lg transition-colors',
-          isOver && 'bg-accent/50 ring-1 ring-foreground/10'
+          'flex-1 min-h-0 rounded-lg transition-all duration-200',
+          isOver 
+            ? 'bg-accent/30 ring-2 ring-primary/20 shadow-inner scale-[1.01]' 
+            : 'bg-transparent'
         )}
       >
         <ScrollArea className="h-full">
@@ -60,7 +62,10 @@ export function KanbanColumn({ config, jobs, onSelectJob, onAddJob }: KanbanColu
             items={jobs.map((j) => j.id)}
             strategy={verticalListSortingStrategy}
           >
-            <div className="flex flex-col gap-1.5 p-1">
+            <div className={cn(
+              'flex flex-col gap-1.5 p-1 min-h-[80px]',
+              isOver && 'bg-primary/5 rounded-md'
+            )}>
               {jobs.map((job) => (
                 <KanbanCard
                   key={job.id}
@@ -69,8 +74,13 @@ export function KanbanColumn({ config, jobs, onSelectJob, onAddJob }: KanbanColu
                 />
               ))}
               {jobs.length === 0 && (
-                <div className="flex items-center justify-center h-20 text-[11px] text-muted-foreground/50 border border-dashed border-border rounded-lg">
-                  Drop here
+                <div className={cn(
+                  'flex items-center justify-center h-20 text-[11px] border-2 border-dashed rounded-lg transition-colors',
+                  isOver 
+                    ? 'border-primary bg-primary/10 text-primary' 
+                    : 'border-border/50 text-muted-foreground/50'
+                )}>
+                  {isOver ? 'Drop here!' : 'Drop here'}
                 </div>
               )}
             </div>

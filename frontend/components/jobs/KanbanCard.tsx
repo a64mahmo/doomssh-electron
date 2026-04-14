@@ -22,22 +22,25 @@ const priorityColors: Record<string, string> = {
 interface KanbanCardProps {
   job: JobApplication
   onClick: () => void
+  isDragging?: boolean
 }
 
-export function KanbanCard({ job, onClick }: KanbanCardProps) {
+export function KanbanCard({ job, onClick, isDragging }: KanbanCardProps) {
   const {
     attributes,
     listeners,
     setNodeRef,
     transform,
     transition,
-    isDragging,
+    isDragging: isSorting,
   } = useSortable({ id: job.id, data: { type: 'job', job } })
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   }
+
+  const isActive = isDragging || isSorting
 
   const daysAgo = job.appliedDate
     ? dayjs(job.appliedDate).fromNow()
@@ -49,11 +52,16 @@ export function KanbanCard({ job, onClick }: KanbanCardProps) {
     <div
       ref={setNodeRef}
       style={style}
-      className={cn(isDragging && 'opacity-50 z-50')}
+      className={cn(isActive && 'opacity-40 z-50')}
     >
       <Card
         size="sm"
-        className="cursor-pointer hover:ring-1 hover:ring-foreground/10 transition-all group"
+        className={cn(
+          'cursor-pointer transition-all group',
+          isActive 
+            ? 'ring-2 ring-primary/50 shadow-lg scale-[1.02]' 
+            : 'hover:ring-1 hover:ring-foreground/10 hover:shadow-md'
+        )}
         onClick={onClick}
       >
         <CardHeader className="p-3 pb-0">

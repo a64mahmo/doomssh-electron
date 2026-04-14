@@ -8,10 +8,12 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  KeyboardSensor,
   type DragStartEvent,
   type DragEndEvent,
   type DragOverEvent,
 } from '@dnd-kit/core'
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
@@ -38,7 +40,8 @@ export function KanbanBoard({ onSelectJob, onAddJob }: KanbanBoardProps) {
   const [showArchived, setShowArchived] = useState(false)
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
   const activeJobs = jobs.filter((j) => !j.archivedAt && ACTIVE_STATUSES.includes(j.status))
@@ -65,7 +68,6 @@ export function KanbanBoard({ onSelectJob, onAddJob }: KanbanBoardProps) {
     if (!over) return
 
     const jobId = active.id as string
-    // Determine target status from droppable column or from a card in that column
     let targetStatus: JobStatus | null = null
 
     if (over.data.current?.type === 'column') {
@@ -106,12 +108,12 @@ export function KanbanBoard({ onSelectJob, onAddJob }: KanbanBoardProps) {
               })}
             </div>
 
-            <DragOverlay dropAnimation={null}>
-              {activeJob && (
-                <div className="w-[252px] opacity-90 rotate-2 scale-105">
-                  <KanbanCard job={activeJob} onClick={() => {}} />
+            <DragOverlay>
+              {activeJob ? (
+                <div className="w-[252px] shadow-xl rotate-2 scale-105">
+                  <KanbanCard job={activeJob} onClick={() => {}} isDragging />
                 </div>
-              )}
+              ) : null}
             </DragOverlay>
           </DndContext>
         </ScrollArea>

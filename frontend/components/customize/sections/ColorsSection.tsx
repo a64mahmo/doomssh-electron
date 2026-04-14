@@ -22,7 +22,7 @@ export function ColorsSection({ s, upd }: ColorsSectionProps) {
     <>
       {/* -- Accent Color ----------------------------------------- */}
       <ControlGroup title="Accent Color">
-        <div className="grid grid-cols-8 gap-2">
+        <div className="grid grid-cols-8 gap-2 overflow-hidden">
           {ACCENT_PRESETS.map((color) => (
             <button
               key={color}
@@ -186,7 +186,7 @@ export function ColorsSection({ s, upd }: ColorsSectionProps) {
 
       {/* -- Background ------------------------------------------- */}
       <ControlGroup title="Background">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 overflow-hidden -mx-1">
           {[
             { bg: '#ffffff', label: 'White'  },
             { bg: '#fdfbf7', label: 'Cream'  },
