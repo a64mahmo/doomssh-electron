@@ -22,6 +22,11 @@ import {
   Columns,
   Layout as LayoutIcon,
   GripVertical,
+  LayoutTemplate,
+  PanelLeft,
+  PanelRight,
+  Square,
+  RectangleHorizontal,
 } from 'lucide-react'
 import {
   DndContext,
@@ -31,7 +36,7 @@ import {
   type DragOverEvent,
   type SensorContext,
 } from '@dnd-kit/core'
-import { DroppableColumn } from '../CustomizePrimitives'
+import { DroppableColumn, VisualSegmentGroup } from '../CustomizePrimitives'
 
 interface LayoutSectionProps {
   s: ResumeSettings
@@ -56,36 +61,95 @@ export function LayoutSection({
   sidebarIds,
   sections,
 }: LayoutSectionProps) {
+  const accent = s.accentColor || '#3b82f6'
+
   return (
     <>
-      <ControlGroup title="Page">
+      <ControlGroup title="Page Structure">
         <div>
           <FieldLabel>Column Layout</FieldLabel>
-          <SegmentGroup
+          <VisualSegmentGroup
             value={s.columnLayout}
             onChange={(v) => upd({ columnLayout: v as ColumnLayout })}
+            columns={2}
             options={[
-              { value: 'one',  label: 'Single',  render: () => <AlignLeft  size={14} /> },
-              { value: 'two',  label: 'Two col', render: () => <Columns    size={14} /> },
-              { value: 'mix',  label: 'Mixed',   render: () => <LayoutIcon size={14} /> },
+              { 
+                value: 'one',  
+                label: 'Single',  
+                render: () => (
+                  <div className="w-10 h-7 border border-current/20 rounded-sm p-1 flex flex-col gap-1">
+                    <div className="h-1 w-full bg-current opacity-40 rounded-full" />
+                    <div className="h-0.5 w-full bg-current opacity-20 rounded-full" />
+                    <div className="h-0.5 w-full bg-current opacity-20 rounded-full" />
+                  </div>
+                ) 
+              },
+              { 
+                value: 'two',  
+                label: 'Two Col',  
+                render: () => (
+                  <div className="w-10 h-7 border border-current/20 rounded-sm p-1 flex gap-1">
+                    <div className="w-1/3 border-r border-current/10 pr-1 flex flex-col gap-1">
+                      <div className="h-0.5 w-full bg-current opacity-30 rounded-full" />
+                      <div className="h-0.5 w-full bg-current opacity-10 rounded-full" />
+                    </div>
+                    <div className="flex-1 flex flex-col gap-1">
+                      <div className="h-1 w-full bg-current opacity-40 rounded-full" />
+                      <div className="h-0.5 w-full bg-current opacity-20 rounded-full" />
+                    </div>
+                  </div>
+                ) 
+              },
             ]}
           />
         </div>
 
         {s.columnLayout !== 'one' && (
-          <ToggleRow
-            id="col-reverse"
-            label="Sidebar on Left"
-            checked={s.columnReverse}
-            onCheckedChange={(v) => upd({ columnReverse: v })}
-          />
+          <div>
+            <FieldLabel>Sidebar Position</FieldLabel>
+            <VisualSegmentGroup
+              value={s.columnReverse ? 'left' : 'right'}
+              onChange={(v) => upd({ columnReverse: v === 'left' })}
+              columns={2}
+              options={[
+                { 
+                  value: 'left', 
+                  label: 'Left', 
+                  render: () => (
+                    <div className="w-10 h-7 border border-current/20 rounded-sm p-1 flex gap-1">
+                      <div className="w-1/3 rounded-[1px]" style={{ backgroundColor: `${accent}40` }} />
+                      <div className="flex-1 border-l border-current/10 pl-1 flex flex-col gap-1 pt-1">
+                        <div className="h-0.5 w-full bg-current opacity-20 rounded-full" />
+                        <div className="h-0.5 w-4/5 bg-current opacity-20 rounded-full" />
+                      </div>
+                    </div>
+                  ) 
+                },
+                { 
+                  value: 'right', 
+                  label: 'Right', 
+                  render: () => (
+                    <div className="w-10 h-7 border border-current/20 rounded-sm p-1 flex gap-1">
+                      <div className="flex-1 border-r border-current/10 pr-1 flex flex-col gap-1 pt-1">
+                        <div className="h-0.5 w-full bg-current opacity-20 rounded-full" />
+                        <div className="h-0.5 w-4/5 bg-current opacity-20 rounded-full" />
+                      </div>
+                      <div className="w-1/3 rounded-[1px]" style={{ backgroundColor: `${accent}40` }} />
+                    </div>
+                  ) 
+                },
+              ]}
+            />
+          </div>
         )}
 
         <div className="grid grid-cols-2 gap-2">
           <div>
             <FieldLabel>Paper Size</FieldLabel>
             <Select value={s.paperSize} onValueChange={(v) => upd({ paperSize: v as PaperSize })}>
-              <SelectTrigger className="w-full h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full h-8 text-xs bg-muted/20 border-border/50 hover:bg-muted/40 transition-colors">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="letter">US Letter</SelectItem>
                 <SelectItem value="a4">A4</SelectItem>
@@ -95,7 +159,9 @@ export function LayoutSection({
           <div>
             <FieldLabel>Date Format</FieldLabel>
             <Select value={s.dateFormat} onValueChange={(v) => upd({ dateFormat: v as DateFormat })}>
-              <SelectTrigger className="w-full h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full h-8 text-xs bg-muted/20 border-border/50 hover:bg-muted/40 transition-colors">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="MMM YYYY">Jan 2024</SelectItem>
                 <SelectItem value="MMMM YYYY">January 2024</SelectItem>
@@ -110,7 +176,9 @@ export function LayoutSection({
         <div>
           <FieldLabel>Language</FieldLabel>
           <Select value={s.language} onValueChange={(v) => v && upd({ language: v })}>
-            <SelectTrigger className="w-full h-8 text-xs"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-full h-8 text-xs bg-muted/20 border-border/50 hover:bg-muted/40 transition-colors">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="en-US">English (US)</SelectItem>
               <SelectItem value="en-GB">English (UK)</SelectItem>
@@ -153,9 +221,15 @@ export function LayoutSection({
 
       <ControlGroup title="Section Placement">
         {s.columnLayout === 'one' ? (
-          <div className="py-4 px-3 rounded-xl bg-muted/40 border border-dashed border-border/60 text-center">
-            <p className="text-[11px] text-muted-foreground/60">
-              Switch to two-column or mixed layout to assign sections.
+          <div className="py-8 px-3 rounded-2xl bg-muted/20 border border-dashed border-border/40 text-center space-y-2">
+            <div className="w-10 h-10 rounded-full bg-muted/40 flex items-center justify-center mx-auto mb-1">
+              <LayoutTemplate size={18} className="text-muted-foreground/30" />
+            </div>
+            <p className="text-[11px] font-medium text-muted-foreground/60">
+              Single column layout active
+            </p>
+            <p className="text-[10px] text-muted-foreground/40 leading-relaxed px-4">
+              All sections are displayed in a single vertical flow. Switch to two-column to assign to sidebar.
             </p>
           </div>
         ) : (
@@ -166,13 +240,46 @@ export function LayoutSection({
             onDragOver={handleDragOver}
             onDragEnd={() => setDragActiveId(null)}
           >
-            <div className="flex gap-3">
-              <DroppableColumn id="main-col" title="Main" items={mainIds} resumeSections={sections} />
-              <DroppableColumn id="sidebar-col" title="Sidebar" items={sidebarIds} resumeSections={sections} />
+            <div className="flex gap-4">
+              {s.columnReverse ? (
+                <>
+                  <DroppableColumn 
+                    id="sidebar-col" 
+                    title="Sidebar" 
+                    icon={<PanelLeft size={10} />}
+                    items={sidebarIds} 
+                    resumeSections={sections} 
+                  />
+                  <DroppableColumn 
+                    id="main-col" 
+                    title="Main Content" 
+                    icon={<Square size={10} />}
+                    items={mainIds} 
+                    resumeSections={sections} 
+                  />
+                </>
+              ) : (
+                <>
+                  <DroppableColumn 
+                    id="main-col" 
+                    title="Main Content" 
+                    icon={<Square size={10} />}
+                    items={mainIds} 
+                    resumeSections={sections} 
+                  />
+                  <DroppableColumn 
+                    id="sidebar-col" 
+                    title="Sidebar" 
+                    icon={<PanelRight size={10} />}
+                    items={sidebarIds} 
+                    resumeSections={sections} 
+                  />
+                </>
+              )}
             </div>
             <DragOverlay dropAnimation={{ sideEffects: defaultDropAnimationSideEffects({ styles: { active: { opacity: '0.4' } } }) }}>
               {dragActiveId ? (
-                <div className="flex items-center gap-2 px-3 py-2 bg-background border-2 border-primary rounded-lg shadow-xl">
+                <div className="flex items-center gap-2 px-3 py-2 bg-background border-2 border-primary rounded-lg shadow-xl ring-4 ring-primary/10">
                   <GripVertical size={13} className="text-primary" />
                   <span className="text-xs font-semibold">
                     {sections.find(sec => sec.id === dragActiveId)?.title}

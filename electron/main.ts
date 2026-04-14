@@ -198,7 +198,7 @@ function registerAppProtocol() {
   const fileCache = new Map<string, { data: Buffer; mtime: number }>()
   const CACHE_TTL = 30000 // 30 seconds for dynamic content
 
-  protocol.handle('app', (request) => {
+  protocol.handle('app', async (request) => {
     try {
       const url = request.url.replace('app://-', '')
       let relativePath = url.split(/[?#]/)[0]
@@ -207,7 +207,9 @@ function registerAppProtocol() {
 
       let fullPath = path.join(outDir, relativePath)
 
-      if (!fs.existsSync(fullPath)) {
+      try {
+        await fs.promises.access(fullPath)
+      } catch {
         if (relativePath.startsWith('builder/jobs')) {
           fullPath = path.join(outDir, 'builder', 'jobs', 'index.html')
         } else if (relativePath.startsWith('builder/')) {
@@ -220,7 +222,7 @@ function registerAppProtocol() {
       }
 
       // Use cached data if available and not stale
-      const stat = fs.statSync(fullPath)
+      const stat = await fs.promises.stat(fullPath)
       const mtime = stat.mtimeMs
       const cached = fileCache.get(fullPath)
       
@@ -237,7 +239,7 @@ function registerAppProtocol() {
         })
       }
 
-      const data = fs.readFileSync(fullPath)
+      const data = await fs.promises.readFile(fullPath)
       fileCache.set(fullPath, { data, mtime })
       
       const ext = path.extname(fullPath).slice(1).toLowerCase()

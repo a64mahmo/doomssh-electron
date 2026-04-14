@@ -107,13 +107,16 @@ export function SortableSectionItem({ id, title }: { id: string; title: string }
   )
 }
 
-export function DroppableColumn({ id, title, items, resumeSections }: {
-  id: string; title: string; items: string[]; resumeSections: { id: string; title: string }[]
+export function DroppableColumn({ id, title, icon, items, resumeSections }: {
+  id: string; title: string; icon?: React.ReactNode; items: string[]; resumeSections: { id: string; title: string }[]
 }) {
   const { setNodeRef, isOver } = useDroppable({ id })
   return (
     <div className="flex-1 min-w-0">
-      <p className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-widest mb-2 px-1">{title}</p>
+      <div className="flex items-center gap-1.5 mb-2 px-1">
+        {icon && <div className="text-muted-foreground/30">{icon}</div>}
+        <p className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-widest">{title}</p>
+      </div>
       <div 
         ref={setNodeRef}
         className={cn(

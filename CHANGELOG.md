@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-04-14
+
+### Added
+
+- **Extended Distribution Targets** - Added portable targets for Windows and Linux, and NSIS for macOS (arm64) to improve installation reliability.
+- **Detailed Update Logging** - Integrated deep error reporting for the auto-updater, accessible via Bug Mode in Settings.
+- **Job Tracker UX Improvements** - Added keyboard support for drag-and-drop, increased activation distance, and enhanced visual feedback (column highlights and scale effects).
+
+### Changed
+
+- **Performance Tuning** - Reduced debounce timings for inputs (300ms) and PDF regeneration (500ms) to improve perceived responsiveness.
+- **Static Asset Optimization** - Implemented caching headers and in-memory file caching for the `app://` protocol in Electron.
+- **Layout Controls** - Simplified column layout options and replaced the sidebar position toggle with a a clear Left/Right selector.
+- **Persistence Manager** - Implemented save rate limiting (max 1 save per second) to reduce IPC overhead.
+- **Dashboard Performance** - Isolated `ResumeCard` re-renders to prevent full list flashes when updating a single resume.
+
+### Fixed
+
+- **macOS App Integrity** - Fixed "damaged app" error by enabling Hardened Runtime and adjusting Gatekeeper assessment.
+- **macOS Auto-Updates** - Added ZIP target support to ensure compatibility with `electron-updater`.
+- **UI Polish (ColorsSection)** - Fixed cut-off color pickers and added proper color filling for text color previews.
+- **State Management** - Fixed "controlled vs uncontrolled" warning in `ToggleRow` component.
+- **TypeScript Errors** - Fixed missing imports and type mismatches in `ExperienceSection` and `AwardsSection`.
+- **Two-Column DND** - Fixed section placement logic between columns in the customize panel.
+
 ## [1.1.0] - 2026-04-13
 
 ### Added

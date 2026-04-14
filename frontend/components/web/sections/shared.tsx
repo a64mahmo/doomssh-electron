@@ -77,8 +77,7 @@ export function Entry({
     : s.entryLayout || "date-location-right";
 
   const DateElement = date ? (
-    <div className="flex items-center gap-1.5 opacity-80 shrink-0">
-      <BsIcon name="calendar" size={10} className="shrink-0" />
+    <div className="opacity-80 shrink-0">
       <span style={{ fontSize: pt(base * 0.85), color: s.applyAccentDates ? colors.accent : colors.date, whiteSpace: "nowrap", fontWeight: 500 }}>
         {date}
       </span>
@@ -86,8 +85,7 @@ export function Entry({
   ) : null;
 
   const LocationElement = location ? (
-    <div className="flex items-center gap-1.5 opacity-80 shrink-0">
-      <BsIcon name="geo-alt" size={10} className="shrink-0" />
+    <div className="opacity-80 shrink-0">
       <span style={{ fontSize: pt(base * 0.85), color: colors.subtitle, whiteSpace: "nowrap", fontWeight: 500 }}>
         {location}
       </span>
@@ -121,7 +119,7 @@ export function Entry({
               </div>
             )}
           </div>
-          <div className="flex flex-col items-end gap-1 shrink-0 pt-1">
+          <div className="flex flex-col items-end shrink-0 pt-1">
             {DateElement}
             {LocationElement}
           </div>
@@ -143,7 +141,7 @@ export function Entry({
               </div>
             )}
           </div>
-          <div className="flex flex-col items-start gap-1 shrink-0 pt-1">
+          <div className="flex flex-col items-start shrink-0 pt-1">
             {DateElement}
             {LocationElement}
           </div>
@@ -159,8 +157,9 @@ export function Entry({
                 <span style={{ ...subStyle, marginLeft: "8pt" }}>{subtitle}</span>
               )}
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               {DateElement}
+              {date && location && <span className="opacity-20">•</span>}
               {LocationElement}
             </div>
           </div>
@@ -186,8 +185,9 @@ export function Entry({
             </div>
           )}
           {!isSidebar && (
-            <div className="flex items-center gap-4 mt-0.5">
+            <div className="flex items-center gap-3 mt-0.5">
               {DateElement}
+              {date && location && <span className="opacity-20">•</span>}
               {LocationElement}
             </div>
           )}
@@ -209,7 +209,7 @@ export function Entry({
         </div>
       )}
       {isSidebar && (
-        <div className="flex items-center gap-4 mt-1">
+        <div className="flex flex-col gap-0.5 mt-1">
           {DateElement}
           {LocationElement}
         </div>

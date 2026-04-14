@@ -96,10 +96,7 @@ export function Entry({
   const layout = isSidebar ? "full-width" : (s.entryLayout || "date-location-right");
 
   const DateElement = date ? (
-    <View style={{ flexDirection: 'row', alignItems: 'center', opacity: 0.8 }}>
-      <View style={{ marginRight: 4 }}>
-        <BsIconPDF name="calendar" size={8} color={s.applyAccentDates ? colors.accent : colors.date} />
-      </View>
+    <View style={{ opacity: 0.8 }}>
       <Text style={{ fontSize: pt(base * 0.85), color: s.applyAccentDates ? colors.accent : colors.date, fontWeight: 500 }}>
         {date}
       </Text>
@@ -107,10 +104,7 @@ export function Entry({
   ) : null;
 
   const LocationElement = location ? (
-    <View style={{ flexDirection: 'row', alignItems: 'center', opacity: 0.8 }}>
-      <View style={{ marginRight: 4 }}>
-        <BsIconPDF name="geo-alt" size={8} color={colors.subtitle} />
-      </View>
+    <View style={{ opacity: 0.8 }}>
       <Text style={{ fontSize: pt(base * 0.85), color: colors.subtitle, fontWeight: 500 }}>
         {location}
       </Text>
@@ -168,7 +162,7 @@ export function Entry({
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               {DateElement}
-              {date && location && <View style={{ width: 12 }} />}
+              {date && location && <Text style={{ fontSize: pt(base * 0.8), opacity: 0.2, marginHorizontal: 6 }}>{"•"}</Text>}
               {LocationElement}
             </View>
           </View>
@@ -190,7 +184,7 @@ export function Entry({
           {!isSidebar && (
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
               {DateElement}
-              {date && location && <View style={{ width: 12 }} />}
+              {date && location && <Text style={{ fontSize: pt(base * 0.8), opacity: 0.2, marginHorizontal: 6 }}>{"•"}</Text>}
               {LocationElement}
             </View>
           )}
@@ -206,10 +200,11 @@ export function Entry({
       )}
 
       {isSidebar && (
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+        <View style={{ marginTop: 2 }}>
           {DateElement}
-          {date && location && <View style={{ width: 12 }} />}
-          {LocationElement}
+          <View style={{ marginTop: 1 }}>
+            {LocationElement}
+          </View>
         </View>
       )}
     </View>

@@ -188,20 +188,20 @@ export function ToggleRow({
   id: string
   label: string
   description?: string
-  checked: boolean
+  checked?: boolean
   onCheckedChange: (v: boolean) => void
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 py-1">
-      <div>
-        <label htmlFor={id} className="text-xs font-medium cursor-pointer select-none leading-tight">
+    <div className="flex items-center justify-between gap-3 h-8 px-1 rounded-md hover:bg-accent/50 transition-colors cursor-pointer group">
+      <div className="flex flex-col justify-center overflow-hidden">
+        <label htmlFor={id} className="text-xs font-medium cursor-pointer select-none leading-tight truncate">
           {label}
         </label>
         {description && (
-          <p className="text-[10px] text-muted-foreground/60 mt-0.5">{description}</p>
+          <p className="text-[10px] text-muted-foreground/60 truncate">{description}</p>
         )}
       </div>
-      <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} className="shrink-0" />
+      <Switch id={id} checked={checked ?? false} onCheckedChange={onCheckedChange} className="shrink-0" />
     </div>
   )
 }

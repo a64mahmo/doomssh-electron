@@ -22,7 +22,7 @@ export function ColorsSection({ s, upd }: ColorsSectionProps) {
     <>
       {/* -- Accent Color ----------------------------------------- */}
       <ControlGroup title="Accent Color">
-        <div className="grid grid-cols-8 gap-2 overflow-hidden">
+        <div className="grid grid-cols-8 gap-2 -mx-1 pr-1">
           {ACCENT_PRESETS.map((color) => (
             <button
               key={color}
@@ -57,12 +57,15 @@ export function ColorsSection({ s, upd }: ColorsSectionProps) {
         </div>
 
         <div className="flex gap-2 items-center mt-2">
-          <div className="relative shrink-0 w-8 h-8 rounded-lg border border-border overflow-hidden">
+          <div 
+            className="relative shrink-0 w-8 h-8 rounded-lg border border-border overflow-hidden"
+            style={{ backgroundColor: s.accentColor }}
+          >
             <input
               type="color"
               value={s.accentColor}
               onChange={(e) => upd({ accentColor: e.target.value })}
-              className="absolute inset-[-4px] w-[calc(100%+8px)] h-[calc(100%+8px)] cursor-pointer"
+              className="absolute inset-[-4px] w-[calc(100%+8px)] h-[calc(100%+8px)] cursor-pointer opacity-0"
             />
           </div>
           <Input
@@ -186,7 +189,7 @@ export function ColorsSection({ s, upd }: ColorsSectionProps) {
 
       {/* -- Background ------------------------------------------- */}
       <ControlGroup title="Background">
-        <div className="flex items-center gap-2 overflow-hidden -mx-1">
+        <div className="flex items-center gap-2 -mx-1 pr-1">
           {[
             { bg: '#ffffff', label: 'White'  },
             { bg: '#fdfbf7', label: 'Cream'  },
@@ -201,7 +204,7 @@ export function ColorsSection({ s, upd }: ColorsSectionProps) {
               title={label}
               onClick={() => upd({ backgroundColor: bg, ...textColorsForBg(bg) })}
               className={cn(
-                'size-7 rounded-full transition-all hover:scale-110 shrink-0',
+                'size-7 rounded-full transition-all hover:scale-110 shrink-0 border border-border/30',
                 s.backgroundColor === bg
                   ? 'ring-2 ring-offset-2 ring-primary scale-105'
                   : 'ring-1 ring-border/50',
@@ -209,7 +212,10 @@ export function ColorsSection({ s, upd }: ColorsSectionProps) {
               style={{ backgroundColor: bg }}
             />
           ))}
-          <div className="relative size-7 rounded-full border border-border overflow-hidden shrink-0">
+          <div 
+            className="relative size-7 rounded-full border border-border overflow-hidden shrink-0"
+            style={{ backgroundColor: s.backgroundColor }}
+          >
             <input
               type="color"
               value={s.backgroundColor}
@@ -223,7 +229,7 @@ export function ColorsSection({ s, upd }: ColorsSectionProps) {
                   upd({ backgroundColor: v })
                 }
               }}
-              className="absolute inset-[-4px] w-[calc(100%+8px)] h-[calc(100%+8px)] cursor-pointer"
+              className="absolute inset-[-4px] w-[calc(100%+8px)] h-[calc(100%+8px)] cursor-pointer opacity-0"
             />
           </div>
         </div>
@@ -258,12 +264,15 @@ export function ColorsSection({ s, upd }: ColorsSectionProps) {
               <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
               <div className="flex items-center gap-1.5">
                 <span className="text-[9px] font-mono text-muted-foreground/40 uppercase">{val}</span>
-                <div className="relative size-6 rounded-md border border-border overflow-hidden">
+                <div 
+                  className="relative size-6 rounded-md border border-border overflow-hidden"
+                  style={{ backgroundColor: val }}
+                >
                   <input
                     type="color"
                     value={val}
                     onChange={(e) => upd({ [key]: e.target.value } as never)}
-                    className="absolute inset-[-4px] w-[calc(100%+8px)] h-[calc(100%+8px)] cursor-pointer"
+                    className="absolute inset-[-4px] w-[calc(100%+8px)] h-[calc(100%+8px)] cursor-pointer opacity-0"
                   />
                 </div>
               </div>
