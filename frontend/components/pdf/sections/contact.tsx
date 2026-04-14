@@ -4,6 +4,7 @@ import type { HeaderData } from '@/lib/store/types'
 import type { TemplateCtx } from '@/lib/pdf/templateCtx'
 import { BsIconPDF } from '@/lib/icons/BsIconPDF'
 import { DEFAULT_CONTACT_ICONS } from '@/lib/icons/bootstrapIcons'
+import { isLight } from '@/lib/pdf/styleUtils'
 
 function ContactItemPDF({
   iconName,
@@ -23,9 +24,12 @@ function ContactItemPDF({
   const showIcons = s.contactIcons
   const iconStyle = s.contactIconStyle || 'none'
 
-  const defaultText = s.themeColorStyle === 'advanced' ? colors.background : colors.text;
+  const isLightBg = s.themeColorStyle === 'advanced' && isLight(colors.accent);
+  const advancedIconColor = isLightBg ? '#1a1a1a' : '#ffffff';
+
+  const defaultText = s.themeColorStyle === 'advanced' ? advancedIconColor : colors.text;
   const finalTextColor = isBlue ? '#2563eb' : (textColorOverride || defaultText);
-  const finalIconColor = isBlue ? "#2563eb" : (s.applyAccentHeaderIcons ? (s.themeColorStyle === 'advanced' ? colors.background : colors.accent) : finalTextColor);
+  const finalIconColor = isBlue ? "#2563eb" : (s.applyAccentHeaderIcons ? (s.themeColorStyle === 'advanced' ? advancedIconColor : colors.accent) : finalTextColor);
 
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', ...itemStyleOverrides }}>

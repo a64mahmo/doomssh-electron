@@ -2,6 +2,7 @@ import React from 'react'
 import { View, Text } from '@react-pdf/renderer'
 import type { SectionPDFProps } from './shared'
 import { getSectionViewModel } from '@/lib/renderers'
+import { isLight } from '@/lib/pdf/styleUtils'
 
 export function SkillsSectionPDF({ section, ctx, renderHeading }: SectionPDFProps) {
   const viewModel = getSectionViewModel(section, {
@@ -16,6 +17,9 @@ export function SkillsSectionPDF({ section, ctx, renderHeading }: SectionPDFProp
 
   const { base, lh, colors, bullet, s } = ctx;
   const display = s.skillDisplay;
+
+  const bubbleBg = s.applyAccentDotsBarsBubbles ? colors.accent : colors.text;
+  const bubbleText = isLight(bubbleBg) ? '#1a1a1a' : colors.background;
 
   return (
     <View>
@@ -55,8 +59,8 @@ export function SkillsSectionPDF({ section, ctx, renderHeading }: SectionPDFProp
           {viewModel.items.map((sk: any) => (
             <Text key={sk.id} style={{
               fontSize: ctx.pt(base * 0.85),
-              backgroundColor: s.applyAccentDotsBarsBubbles ? colors.accent : colors.text,
-              color: colors.background,
+              backgroundColor: bubbleBg,
+              color: bubbleText,
               paddingVertical: 2,
               paddingHorizontal: 7,
               borderRadius: 99,

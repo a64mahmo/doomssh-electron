@@ -5,7 +5,7 @@ import {
   ResumeSettings, HeaderAlignment, NameSize, DetailsArrangement,
   DetailsTextAlignment, HeaderArrangement, ContactIconStyle,
   PhotoSize, PhotoShape, PhotoPosition, PhotoAlignment, PhotoVerticalAlign,
-  PhotoBorderStyle
+  PhotoBorderStyle, DetailsPosition
 } from '@/lib/store/types'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -103,20 +103,51 @@ export function HeaderSection({ s, upd }: HeaderSectionProps) {
         </div>
 
         {s.headerAlignment !== 'center' && (
-          <ToggleRow 
-            id="details-pos" 
-            label="Details beside name" 
-            description="Put contact info next to your name instead of below it"
-            checked={s.detailsPosition === 'beside'} 
-            onCheckedChange={(v) => {
-              const pos = v ? 'beside' : 'below'
-              const updates: Partial<ResumeSettings> = { detailsPosition: pos }
-              if (pos === 'beside' && s.detailsArrangement === 'wrap') {
-                updates.detailsArrangement = 'column'
-              }
-              upd(updates)
-            }}
-          />
+          <div>
+            <FieldLabel>Details Position</FieldLabel>
+            <VisualSegmentGroup
+              columns={2}
+              value={s.detailsPosition}
+              onChange={(v) => {
+                const pos = v as DetailsPosition
+                const updates: Partial<ResumeSettings> = { detailsPosition: pos }
+                if (pos === 'beside' && s.detailsArrangement === 'wrap') {
+                  updates.detailsArrangement = 'column'
+                }
+                upd(updates)
+              }}
+              options={[
+                { 
+                  value: 'below', 
+                  label: 'Below', 
+                  render: () => (
+                    <div className="flex flex-col items-start gap-1 w-10 px-0.5">
+                      <div className="h-1.5 w-full bg-current rounded-sm" />
+                      <div className="flex gap-1 w-full">
+                        <div className="h-1 w-1/3 bg-current opacity-40 rounded-full" />
+                        <div className="h-1 w-1/3 bg-current opacity-40 rounded-full" />
+                        <div className="h-1 w-1/3 bg-current opacity-40 rounded-full" />
+                      </div>
+                    </div>
+                  ) 
+                },
+                { 
+                  value: 'beside', 
+                  label: 'Beside', 
+                  render: () => (
+                    <div className="flex items-center gap-1.5 w-10 px-0.5">
+                      <div className="h-1.5 w-1/2 bg-current rounded-sm" />
+                      <div className="flex flex-col gap-0.5 w-1/2">
+                        <div className="h-0.5 w-full bg-current opacity-40 rounded-full" />
+                        <div className="h-0.5 w-full bg-current opacity-40 rounded-full" />
+                        <div className="h-0.5 w-full bg-current opacity-40 rounded-full" />
+                      </div>
+                    </div>
+                  ) 
+                },
+              ]}
+            />
+          </div>
         )}
 
         <div className="grid grid-cols-2 gap-3 pt-1">
@@ -342,13 +373,39 @@ export function HeaderSection({ s, upd }: HeaderSectionProps) {
       <Separator className="opacity-30" />
 
       <ControlGroup title="Photo">
-        <ToggleRow 
-          id="show-photo" 
-          label="Show Photo" 
-          description="Display your profile photo in the header"
-          checked={s.photoEnabled} 
-          onCheckedChange={(v) => upd({ photoEnabled: v })}
-        />
+        <div>
+          <FieldLabel>Show Photo</FieldLabel>
+          <VisualSegmentGroup
+            columns={2}
+            value={s.photoEnabled ? 'show' : 'hide'}
+            onChange={(v) => upd({ photoEnabled: v === 'show' })}
+            options={[
+              { 
+                value: 'hide', 
+                label: 'Hidden', 
+                render: () => (
+                  <div className="flex flex-col items-center justify-center gap-1 w-10">
+                    <div className="h-1.5 w-full bg-current rounded-sm" />
+                    <div className="h-1 w-2/3 bg-current opacity-40 rounded-sm" />
+                  </div>
+                ) 
+              },
+              { 
+                value: 'show', 
+                label: 'Visible', 
+                render: () => (
+                  <div className="flex items-center gap-1.5 w-12 px-0.5">
+                    <div className="size-4 shrink-0 rounded-full border-[1.5px] border-current opacity-80" />
+                    <div className="flex flex-col gap-1 w-full">
+                      <div className="h-1 w-full bg-current rounded-sm" />
+                      <div className="h-1 w-2/3 bg-current opacity-40 rounded-sm" />
+                    </div>
+                  </div>
+                ) 
+              },
+            ]}
+          />
+        </div>
 
         {s.photoEnabled && (
           <motion.div
@@ -387,13 +444,38 @@ export function HeaderSection({ s, upd }: HeaderSectionProps) {
 
             {s.headerAlignment === 'center' && (
               <div>
-                <FieldLabel>Position</FieldLabel>
-                <SegmentGroup
+                <FieldLabel>Photo Position</FieldLabel>
+                <VisualSegmentGroup
+                  columns={2}
                   value={s.photoPosition === 'beside' ? 'top' : s.photoPosition}
                   onChange={(v) => upd({ photoPosition: v as PhotoPosition })}
                   options={[
-                    { value: 'top',    label: 'Above', render: () => <span className="text-[10px] font-bold">Above</span> },
-                    { value: 'bottom', label: 'Below', render: () => <span className="text-[10px] font-bold">Below</span> },
+                    { 
+                      value: 'top', 
+                      label: 'Above', 
+                      render: () => (
+                        <div className="flex flex-col items-center gap-1.5 w-12 px-0.5">
+                          <div className="size-4 shrink-0 rounded-full border-[1.5px] border-current opacity-80" />
+                          <div className="flex flex-col items-center gap-1 w-full">
+                            <div className="h-1 w-full bg-current rounded-sm" />
+                            <div className="h-1 w-2/3 bg-current opacity-40 rounded-sm" />
+                          </div>
+                        </div>
+                      ) 
+                    },
+                    { 
+                      value: 'bottom', 
+                      label: 'Below', 
+                      render: () => (
+                        <div className="flex flex-col items-center gap-1.5 w-12 px-0.5">
+                          <div className="flex flex-col items-center gap-1 w-full">
+                            <div className="h-1 w-full bg-current rounded-sm" />
+                            <div className="h-1 w-2/3 bg-current opacity-40 rounded-sm" />
+                          </div>
+                          <div className="size-4 shrink-0 rounded-full border-[1.5px] border-current opacity-80" />
+                        </div>
+                      ) 
+                    },
                   ]}
                 />
               </div>
@@ -402,14 +484,38 @@ export function HeaderSection({ s, upd }: HeaderSectionProps) {
             {s.headerAlignment !== 'center' && (
               <>
                 <div>
-                  <FieldLabel>Horizontal Alignment</FieldLabel>
-                  <SegmentGroup
-                    value={s.photoAlignment}
+                  <FieldLabel>Photo Position</FieldLabel>
+                  <VisualSegmentGroup
+                    columns={2}
+                    value={s.photoAlignment === 'center' ? (s.headerAlignment === 'right' ? 'right' : 'left') : s.photoAlignment}
                     onChange={(v) => upd({ photoAlignment: v as PhotoAlignment })}
                     options={[
-                      { value: 'left',   label: 'Left',   render: () => <AlignLeft size={14} /> },
-                      { value: 'center', label: 'Center', render: () => <AlignCenter size={14} /> },
-                      { value: 'right',  label: 'Right',  render: () => <AlignRight size={14} /> },
+                      { 
+                        value: 'left', 
+                        label: 'Left', 
+                        render: () => (
+                          <div className="flex items-center gap-1.5 w-12 px-0.5">
+                            <div className="size-4 shrink-0 rounded-full border-[1.5px] border-current opacity-80" />
+                            <div className="flex flex-col gap-1 w-full">
+                              <div className="h-1 w-full bg-current rounded-sm" />
+                              <div className="h-1 w-2/3 bg-current opacity-40 rounded-sm" />
+                            </div>
+                          </div>
+                        ) 
+                      },
+                      { 
+                        value: 'right', 
+                        label: 'Right', 
+                        render: () => (
+                          <div className="flex items-center gap-1.5 w-12 px-0.5">
+                            <div className="flex flex-col items-end gap-1 w-full">
+                              <div className="h-1 w-full bg-current rounded-sm" />
+                              <div className="h-1 w-2/3 bg-current opacity-40 rounded-sm" />
+                            </div>
+                            <div className="size-4 shrink-0 rounded-full border-[1.5px] border-current opacity-80" />
+                          </div>
+                        ) 
+                      },
                     ]}
                   />
                 </div>
@@ -441,18 +547,37 @@ export function HeaderSection({ s, upd }: HeaderSectionProps) {
               onChange={(v) => upd({ photoGap: v })}
             />
 
-            <div>
-              <FieldLabel>Border Style</FieldLabel>
-              <SegmentGroup
-                value={s.photoBorderStyle}
-                onChange={(v) => upd({ photoBorderStyle: v as PhotoBorderStyle })}
-                options={[
-                  { value: 'none',   label: 'None',   render: () => <Minus size={12} className="opacity-40" /> },
-                  { value: 'thin',   label: 'Thin',   render: () => <div className="w-4 h-4 border border-current opacity-40 rounded-[2px]" /> },
-                  { value: 'medium', label: 'Medium', render: () => <div className="w-4 h-4 border-2 border-current opacity-40 rounded-[2px]" /> },
-                  { value: 'thick',  label: 'Thick',  render: () => <div className="w-4 h-4 border-[3px] border-current opacity-40 rounded-[2px]" /> },
-                ]}
-              />
+            <div className={s.photoBorderStyle !== 'none' ? "grid grid-cols-[1fr_auto] gap-3 items-end" : ""}>
+              <div className="flex-1 min-w-0">
+                <FieldLabel>Border Style</FieldLabel>
+                <SegmentGroup
+                  value={s.photoBorderStyle}
+                  onChange={(v) => upd({ photoBorderStyle: v as PhotoBorderStyle })}
+                  options={[
+                    { value: 'none',   label: 'None',   render: () => <Minus size={12} className="opacity-40" /> },
+                    { value: 'thin',   label: 'Thin',   render: () => <div className="w-4 h-4 border border-current opacity-40 rounded-[2px]" /> },
+                    { value: 'medium', label: 'Medium', render: () => <div className="w-4 h-4 border-2 border-current opacity-40 rounded-[2px]" /> },
+                    { value: 'thick',  label: 'Thick',  render: () => <div className="w-4 h-4 border-[3px] border-current opacity-40 rounded-[2px]" /> },
+                  ]}
+                />
+              </div>
+
+              {s.photoBorderStyle !== 'none' && (
+                <div className="flex flex-col gap-1.5 pb-[2px]">
+                  <div
+                    className="relative w-8 h-8 rounded-lg shadow-sm border border-border overflow-hidden group shrink-0"
+                    style={{ backgroundColor: s.photoBorderColor || '#e5e7eb' }}
+                    title="Border Color"
+                  >
+                    <input
+                      type="color"
+                      value={s.photoBorderColor || '#e5e7eb'}
+                      onChange={(e) => upd({ photoBorderColor: e.target.value })}
+                      className="absolute inset-[-4px] w-[calc(100%+8px)] h-[calc(100%+8px)] cursor-pointer opacity-0"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </motion.div>
         )}

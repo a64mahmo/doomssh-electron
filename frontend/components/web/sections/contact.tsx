@@ -4,6 +4,7 @@ import type { HeaderData } from "@/lib/store/types";
 import type { TemplateCtx } from "@/lib/pdf/templateCtx";
 import { BsIcon } from "@/lib/icons/BsIcon";
 import { DEFAULT_CONTACT_ICONS } from "@/lib/icons/bootstrapIcons";
+import { isLight } from "@/lib/pdf/styleUtils";
 
 function ContactItem({
   iconName,
@@ -22,9 +23,12 @@ function ContactItem({
   const showIcons = s.contactIcons;
   const iconStyle = s.contactIconStyle || "none";
 
-  const defaultText = s.themeColorStyle === "advanced" ? colors.background : colors.text;
+  const isLightBg = s.themeColorStyle === "advanced" && isLight(colors.accent);
+  const advancedIconColor = isLightBg ? "#1a1a1a" : "#ffffff";
+
+  const defaultText = s.themeColorStyle === "advanced" ? advancedIconColor : colors.text;
   const finalTextColor = isBlue ? "#2563eb" : (textColorOverride || defaultText);
-  const finalIconColor = isBlue ? "#2563eb" : (s.applyAccentHeaderIcons ? (s.themeColorStyle === "advanced" ? colors.background : colors.accent) : finalTextColor);
+  const finalIconColor = isBlue ? "#2563eb" : (s.applyAccentHeaderIcons ? (s.themeColorStyle === "advanced" ? advancedIconColor : colors.accent) : finalTextColor);
 
   return (
     <div className="flex items-center whitespace-nowrap group gap-[6px]">

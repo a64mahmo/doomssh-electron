@@ -20,7 +20,7 @@ function PreviewInner({ resume }: { resume: Resume }) {
   const debounceRef                       = useRef<ReturnType<typeof setTimeout> | null>(null)
   const prevUrlRef                        = useRef<string | null>(null)
 
-  // Regenerate the PDF blob whenever the resume changes (debounced 400 ms)
+  // Regenerate the PDF blob whenever the resume changes (debounced 500 ms)
   useEffect(() => {
     if (!resume?.sections?.length) return // Don't render if resume not ready
     

@@ -267,6 +267,7 @@ function SectionHeading({
           const mode = s.sectionHeadingIcon;
           const isKnockout = mode === "knockout";
           const boxSize = hSize * 1.1 * iconSizeMultiplier;
+          const knockoutText = isLight(headingColor) ? '#1a1a1a' : colors.background;
           return (
             <div
               style={{
@@ -277,7 +278,7 @@ function SectionHeading({
                 height: pt(isKnockout ? boxSize * 1.4 : boxSize),
                 borderRadius: isKnockout ? "4pt" : 0,
                 backgroundColor: isKnockout ? headingColor : "transparent",
-                color: isKnockout ? colors.background : headingColor,
+                color: isKnockout ? knockoutText : headingColor,
                 border: "none",
               }}
             >
@@ -297,7 +298,7 @@ function SectionHeading({
                         fill: mode === "filled" ? "currentColor" : "none",
                         stroke:
                           mode === "filled"
-                            ? colors.background
+                            ? knockoutText
                             : "currentColor",
                       },
                     )
@@ -447,6 +448,9 @@ export function MasterTemplate({
             const isCenter = align === "center";
             const photoGap = s.photoGap || 12;
 
+            const isLightBg = s.themeColorStyle === 'advanced' && isLight(colors.accent);
+            const advancedTextColor = isLightBg ? '#1a1a1a' : '#ffffff';
+
             const borderWidth = s.photoBorderStyle === 'none' ? 0 
               : s.photoBorderStyle === 'thin' ? 0.5 
               : s.photoBorderStyle === 'medium' ? 1 
@@ -484,7 +488,7 @@ export function MasterTemplate({
                   className="m-0 font-bold tracking-tight print:text-black"
                   style={{
                     fontSize: pt(nameSize),
-                    color: s.themeColorStyle === 'advanced' ? colors.background : (s.applyAccentName ? colors.accent : colors.text),
+                    color: s.themeColorStyle === 'advanced' ? advancedTextColor : (s.applyAccentName ? colors.accent : colors.text),
                     lineHeight: 1.1,
                   }}
                 >
@@ -495,7 +499,7 @@ export function MasterTemplate({
                     className="mt-1 font-medium uppercase tracking-[0.2em] opacity-70 print:text-black print:opacity-100"
                     style={{ 
                       fontSize: pt(base * 1.1),
-                      color: s.themeColorStyle === 'advanced' ? colors.background : (s.applyAccentJobTitle ? colors.accent : colors.text),
+                      color: s.themeColorStyle === 'advanced' ? advancedTextColor : (s.applyAccentJobTitle ? colors.accent : colors.text),
                     }}
                   >
                     {h.jobTitle}
@@ -504,7 +508,7 @@ export function MasterTemplate({
               </div>
             );
 
-            const contactTextColor = s.themeColorStyle === 'advanced' ? colors.background : (s.applyAccentName ? colors.accent : colors.text);
+            const contactTextColor = s.themeColorStyle === 'advanced' ? advancedTextColor : (s.applyAccentName ? colors.accent : colors.text);
             const contactEl = h ? <ContactLine h={h} ctx={ctx} textColorOverride={contactTextColor} /> : null;
 
             // Center Alignment (Absolute centering for Name)
@@ -514,7 +518,7 @@ export function MasterTemplate({
                   data-header
                   className="flex flex-col items-center text-center pb-1 mb-1 w-full"
                   style={{
-                    color: s.themeColorStyle === 'advanced' ? colors.background : colors.text,
+                    color: s.themeColorStyle === 'advanced' ? advancedTextColor : colors.text,
                   }}
                 >
                   {/* Identity Unit (Photo + Name) */}
@@ -552,6 +556,7 @@ export function MasterTemplate({
             const vAlignClass = photoVAlign === 'top' ? 'items-start' : photoVAlign === 'bottom' ? 'items-end' : 'items-center';
 
             if (isBeside) {
+              const photoOnRight = photoAlignment === 'right' || (photoAlignment === 'center' && isRight);
               return (
                 <div
                   data-header
@@ -559,7 +564,7 @@ export function MasterTemplate({
                     "grid grid-cols-2 pb-1 mb-1 gap-x-6 w-full",
                   )}
                   style={{
-                    color: s.themeColorStyle === 'advanced' ? colors.background : colors.text,
+                    color: s.themeColorStyle === 'advanced' ? advancedTextColor : colors.text,
                   }}
                 >
                   {/* Side A: Identity (Left-aligned if on left, Right-aligned if on right) */}
@@ -568,17 +573,17 @@ export function MasterTemplate({
                       "flex min-w-0 gap-x-6",
                       vAlignClass,
                       isRight ? "justify-end" : "justify-start",
-                      photoAlignment === 'left' ? "flex-row" : photoAlignment === 'right' ? "flex-row-reverse" : "flex-row",
+                      photoOnRight ? "flex-row-reverse" : "flex-row",
                     )}
                   >
-                    {(photoAlignment !== 'right') && photoEl}
+                    {!photoOnRight && photoEl}
                     <div className={cn(
                       "flex flex-col",
                       isRight ? "items-end text-right" : "items-start text-left",
                     )}>
                       {nameEl}
                     </div>
-                    {(photoAlignment === 'right' || (photoAlignment === 'center' && !isRight)) && photoEl}
+                    {photoOnRight && photoEl}
                   </div>
 
                   {/* Side B: Contacts (Respects detailsTextAlignment) */}
@@ -600,23 +605,24 @@ export function MasterTemplate({
             }
 
             // Below Arrangement
+            const photoOnRight = photoAlignment === 'right' || (photoAlignment === 'center' && isRight);
             return (
               <div
                 data-header
                 className={cn(
                   "flex pb-1 mb-1 w-full",
-                  isRight ? "flex-row-reverse" : "flex-row",
+                  photoOnRight ? "flex-row-reverse" : "flex-row",
                   vAlignClass,
                 )}
                 style={{
-                  color: s.themeColorStyle === 'advanced' ? colors.background : colors.text,
+                  color: s.themeColorStyle === 'advanced' ? advancedTextColor : colors.text,
                 }}
               >
                 {/* Photo Side */}
                 {photoEl && (
                   <div style={{ 
-                    marginRight: !isRight ? `${photoGap}pt` : 0,
-                    marginLeft: isRight ? `${photoGap}pt` : 0,
+                    marginRight: !photoOnRight ? `${photoGap}pt` : 0,
+                    marginLeft: photoOnRight ? `${photoGap}pt` : 0,
                   }}>{photoEl}</div>
                 )}
 

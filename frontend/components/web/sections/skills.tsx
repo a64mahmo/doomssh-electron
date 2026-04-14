@@ -1,6 +1,7 @@
 import React from "react";
 import type { SectionProps } from "./shared";
 import { getSectionViewModel } from "@/lib/renderers";
+import { isLight } from "@/lib/pdf/styleUtils";
 
 export function SkillsSection({ section, ctx, renderHeading }: SectionProps) {
   const viewModel = getSectionViewModel(section, {
@@ -15,6 +16,9 @@ export function SkillsSection({ section, ctx, renderHeading }: SectionProps) {
 
   const { base, lh, colors, s } = ctx;
   const display = s.skillDisplay;
+  
+  const bubbleBg = s.applyAccentDotsBarsBubbles ? colors.accent : colors.text;
+  const bubbleText = isLight(bubbleBg) ? '#1a1a1a' : colors.background;
 
   return (
     <div>
@@ -84,8 +88,8 @@ export function SkillsSection({ section, ctx, renderHeading }: SectionProps) {
               key={sk.id}
               className="px-2 py-0.5 rounded-full text-[10px] font-semibold"
               style={{
-                backgroundColor: s.applyAccentDotsBarsBubbles ? colors.accent : colors.text,
-                color: colors.background,
+                backgroundColor: bubbleBg,
+                color: bubbleText,
               }}
             >
               {sk.name}

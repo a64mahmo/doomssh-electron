@@ -429,7 +429,16 @@ ipcMain.handle('get-debug-mode', () => {
 ipcMain.handle('restart-and-install', () => {
   console.log('[updater] quitAndInstall called')
   try {
-    autoUpdater.quitAndInstall(false, true)
+    // macOS requires this to be true for the underlying Squirrel.Mac framework
+    // to actually apply the update when the app quits.
+    autoUpdater.autoInstallOnAppQuit = true
+    
+    // Defer the quit to allow the IPC response to reach the frontend
+    setTimeout(() => {
+      autoUpdater.quitAndInstall(false, true)
+    }, 100)
+    
+    return { success: true }
   } catch (err) {
     console.error('[updater] quitAndInstall error:', err)
     throw err

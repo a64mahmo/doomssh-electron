@@ -6,6 +6,7 @@ import { buildCtx } from '@/lib/pdf/templateCtx'
 import { registerFont } from './fonts'
 import { SectionRendererPDF, ContactLinePDF, hexA } from './sections'
 import { SECTION_ICONS, type SvgElement } from "@/lib/icons/sectionIcons";
+import { isLight } from '@/lib/pdf/styleUtils'
 
 function SectionIcon({ 
   type, 
@@ -156,6 +157,7 @@ function SectionHeading({
       {showIcon && (() => {
         const mode = s.sectionHeadingIcon
         const isKnockout = mode === 'knockout'
+        const knockoutText = isLight(headingColor) ? '#1a1a1a' : colors.background;
         return (
           <View style={{
             width: isKnockout ? iconSize * 1.4 : iconSize,
@@ -166,15 +168,15 @@ function SectionHeading({
             justifyContent: 'center',
             borderRadius: isKnockout ? 4 : 0,
             backgroundColor: isKnockout ? headingColor : 'transparent',
-            color: isKnockout ? colors.background : headingColor,
+            color: isKnockout ? knockoutText : headingColor,
             border: 'none',
           }}>
             <SectionIcon
               type={type}
               size={isKnockout ? iconSize * 0.75 : iconSize}
-              color={isKnockout ? colors.background : headingColor}
+              color={isKnockout ? knockoutText : headingColor}
               mode={mode}
-              background={isKnockout ? colors.heading : colors.background}
+              background={isKnockout ? headingColor : colors.background}
             />
           </View>
         )
@@ -267,7 +269,7 @@ export function ResumePDF({ resume }: { resume: Resume }) {
         {/* ── Header ───────────────────────────────────────────────── */}
         <View style={{
           backgroundColor: s.themeColorStyle === 'advanced' ? colors.accent : 'transparent',
-          color: s.themeColorStyle === 'advanced' ? colors.background : colors.text,
+          color: s.themeColorStyle === 'advanced' ? (isLight(colors.accent) ? '#1a1a1a' : '#ffffff') : colors.text,
           marginLeft: s.themeColorStyle === 'advanced' ? `-${s.marginHorizontal}mm` : 0,
           marginRight: s.themeColorStyle === 'advanced' ? `-${s.marginHorizontal}mm` : 0,
           marginTop: s.themeColorStyle === 'advanced' ? `-${s.marginVertical}mm` : 0,
@@ -281,14 +283,15 @@ export function ResumePDF({ resume }: { resume: Resume }) {
             const showPhoto = s.photoEnabled && h?.photo
             const align = s.headerAlignment
             const photoPos = s.photoPosition
-            const headerTextColor = s.themeColorStyle === 'advanced' ? colors.background : (s.applyAccentName ? colors.accent : colors.text);
+            const isLightBg = s.themeColorStyle === 'advanced' && isLight(colors.accent);
+            const headerTextColor = s.themeColorStyle === 'advanced' ? (isLightBg ? '#1a1a1a' : '#ffffff') : (s.applyAccentName ? colors.accent : colors.text);
 
             const nameText = (textAlign: 'left' | 'center' | 'right') => (
               <View style={{ alignItems: textAlign === 'center' ? 'center' : (textAlign === 'right' ? 'flex-end' : 'flex-start') }}>
                 <Text style={{ 
                   fontSize: pt(nameSize), 
                   fontWeight: 'bold', 
-                  color: s.themeColorStyle === 'advanced' ? colors.background : (s.applyAccentName ? colors.accent : colors.text), 
+                  color: s.themeColorStyle === 'advanced' ? (isLightBg ? '#1a1a1a' : '#ffffff') : (s.applyAccentName ? colors.accent : colors.text), 
                   lineHeight: 1.1, 
                   letterSpacing: -0.5, 
                   textAlign 
@@ -298,7 +301,7 @@ export function ResumePDF({ resume }: { resume: Resume }) {
                 {h?.jobTitle && (
                   <Text style={{ 
                     fontSize: pt(base * 1.1), 
-                    color: s.themeColorStyle === 'advanced' ? colors.background : (s.applyAccentJobTitle ? hexA(colors.accent, 0.7) : hexA(colors.text, 0.7)), 
+                    color: s.themeColorStyle === 'advanced' ? (isLightBg ? '#1a1a1a' : '#ffffff') : (s.applyAccentJobTitle ? hexA(colors.accent, 0.7) : hexA(colors.text, 0.7)), 
                     marginTop: 4, 
                     textAlign,
                     textTransform: 'uppercase',
@@ -365,6 +368,7 @@ export function ResumePDF({ resume }: { resume: Resume }) {
             const photoVAlign = s.photoVerticalAlign || 'center';
 
             if (isBeside) {
+              const photoOnRight = photoAlignment === 'right' || (photoAlignment === 'center' && isRight);
               return (
                 <View
                   style={{
@@ -378,18 +382,18 @@ export function ResumePDF({ resume }: { resume: Resume }) {
                   {/* Side A: Identity */}
                   <View
                     style={{
-                      flexDirection: photoAlignment === 'right' ? "row-reverse" : "row",
+                      flexDirection: photoOnRight ? "row-reverse" : "row",
                       alignItems: photoVAlign === 'top' ? 'flex-start' : photoVAlign === 'bottom' ? 'flex-end' : 'center',
                       flex: 1,
                     }}
                   >
-                    {(photoAlignment !== 'right') && photoEl && (
+                    {!photoOnRight && photoEl && (
                       <View style={{ [isRight ? "marginLeft" : "marginRight"]: photoGap }}>
                         {photoEl}
                       </View>
                     )}
                     {nameText(isRight ? "right" : "left")}
-                    {(photoAlignment === 'right' || (photoAlignment === 'center' && !isRight)) && photoEl && (
+                    {photoOnRight && photoEl && (
                       <View style={{ [isRight ? "marginLeft" : "marginRight"]: photoGap }}>
                         {photoEl}
                       </View>
@@ -415,19 +419,20 @@ export function ResumePDF({ resume }: { resume: Resume }) {
             }
 
             // Below arrangement
+            const photoOnRight = photoAlignment === 'right' || (photoAlignment === 'center' && isRight);
             return (
               <View
                 style={{
                   width: "100%",
                   marginBottom: 4,
                   paddingBottom: 4,
-                  flexDirection: isRight ? "row-reverse" : "row",
-                  alignItems: photoVAlign === 'top' ? 'flex-start' : photoVAlign === 'bottom' ? 'flex-end' : 'flex-start',
+                  flexDirection: photoOnRight ? "row-reverse" : "row",
+                  alignItems: photoVAlign === 'top' ? 'flex-start' : photoVAlign === 'bottom' ? 'flex-end' : 'center',
                 }}
               >
                 {/* Photo Side */}
                 {photoEl && (
-                  <View style={{ [isRight ? "marginLeft" : "marginRight"]: photoGap }}>
+                  <View style={{ [photoOnRight ? "marginLeft" : "marginRight"]: photoGap }}>
                     {photoEl}
                   </View>
                 )}
@@ -477,6 +482,8 @@ export function ResumePDF({ resume }: { resume: Resume }) {
                   width: hasSidebar ? `${mainWidth}%` : '100%',
                   paddingRight: !s.columnReverse && hasSidebar ? 20 : 0,
                   paddingLeft: s.columnReverse && hasSidebar ? 20 : 0,
+                  paddingTop: 5,
+                  paddingBottom: 20,
                   borderRightWidth: !s.columnReverse && hasSidebar ? 0.5 : 0,
                   borderRightColor: dividerColor,
                   borderRightStyle: 'solid',
@@ -502,6 +509,8 @@ export function ResumePDF({ resume }: { resume: Resume }) {
                     width: `${sidebarWidth}%`,
                     paddingLeft: !s.columnReverse ? 20 : 0,
                     paddingRight: s.columnReverse ? 20 : 0,
+                    paddingTop: 5,
+                    paddingBottom: 20,
                     backgroundColor: sidebarBg,
                   }}>
                     {sidebarSections.map((section, i) => (
