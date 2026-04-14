@@ -8,7 +8,7 @@ import { autoUpdater, UpdateInfo } from 'electron-updater'
 // ── Auto Update Config ────────────────────────────────────────────────────────
 autoUpdater.logger = console
 autoUpdater.autoDownload = true
-autoUpdater.autoInstallOnAppQuit = true
+autoUpdater.autoInstallOnAppQuit = false // We'll control install manually
 
 const isDev = process.env.NODE_ENV !== 'production' && (process.env.NODE_ENV === 'development' || !app.isPackaged)
 
@@ -425,7 +425,13 @@ ipcMain.handle('get-debug-mode', () => {
 })
 
 ipcMain.handle('restart-and-install', () => {
-  autoUpdater.quitAndInstall()
+  console.log('[updater] quitAndInstall called')
+  try {
+    autoUpdater.quitAndInstall(false, true)
+  } catch (err) {
+    console.error('[updater] quitAndInstall error:', err)
+    throw err
+  }
 })
 
 ipcMain.handle('save-pdf', async (_event, { bytes, fileName }: { bytes: number[]; fileName: string }) => {
@@ -534,6 +540,7 @@ autoUpdater.on('download-progress', (progressObj) => {
 
 autoUpdater.on('update-downloaded', (info: UpdateInfo) => {
   console.log('[updater] update downloaded:', info.version)
+  console.log('[updater] file paths:', (info as any).files)
   mainWindow?.webContents.send('app:update-downloaded', info)
 })
 
