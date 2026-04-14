@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { useUIStore } from '@/lib/store/uiStore'
 
 export function ElectronProvider() {
-  const { setUpdateStatus, setUpdateProgress, setUpdateVersion } = useUIStore()
+  const { setUpdateStatus, setUpdateProgress, setUpdateVersion, setUpdateError, globalDebugMode } = useUIStore()
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.electron) return
@@ -20,6 +20,7 @@ export function ElectronProvider() {
     const unsubAvailable = window.electron.onUpdateAvailable((info) => {
       setUpdateStatus('available')
       setUpdateVersion(info.version)
+      setUpdateError(null)
       toast.info(`Update available: v${info.version} is downloading…`, {
         id: 'app-update',
         duration: 5000,
@@ -28,7 +29,7 @@ export function ElectronProvider() {
 
     const unsubNotAvailable = window.electron.onUpdateNotAvailable(() => {
       setUpdateStatus('not-available')
-      // Reset to idle after a while
+      setUpdateError(null)
       setTimeout(() => setUpdateStatus('idle'), 5000)
     })
 
@@ -40,6 +41,7 @@ export function ElectronProvider() {
     const unsubDownloaded = window.electron.onUpdateDownloaded((info) => {
       setUpdateStatus('downloaded')
       setUpdateVersion(info.version)
+      setUpdateError(null)
       toast.success(`Update ready: v${info.version}`, {
         id: 'app-update',
         action: {
@@ -50,12 +52,27 @@ export function ElectronProvider() {
       })
     })
 
-    const unsubError = window.electron.onUpdateError((error) => {
+    const unsubError = window.electron.onUpdateError((errorStr) => {
       setUpdateStatus('error')
-      toast.error(`Update error: ${error}`, {
+      // Try to parse JSON error, otherwise use as-is
+      let errorMsg = errorStr
+      try {
+        const parsed = JSON.parse(errorStr)
+        errorMsg = parsed.message || errorStr
+        // Store full debug info only when bug mode is on
+        if (globalDebugMode) {
+          setUpdateError(JSON.stringify(parsed, null, 2))
+        } else {
+          setUpdateError(null)
+        }
+      } catch {
+        errorMsg = errorStr
+        setUpdateError(globalDebugMode ? errorStr : null)
+      }
+      toast.error(`Update error: ${errorMsg}`, {
         id: 'app-update',
       })
-      setTimeout(() => setUpdateStatus('idle'), 5000)
+      setTimeout(() => setUpdateStatus('idle'), 8000)
     })
 
     return () => {
@@ -66,7 +83,7 @@ export function ElectronProvider() {
       unsubDownloaded()
       unsubError()
     }
-  }, [setUpdateStatus, setUpdateProgress, setUpdateVersion])
+  }, [setUpdateStatus, setUpdateProgress, setUpdateVersion, setUpdateError, globalDebugMode])
 
   return null
 }

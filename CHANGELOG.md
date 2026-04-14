@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-04-13
+
+### Added
+
+- **ZIP Distribution for macOS** - Added ZIP target to electron-builder config for proper auto-updates
+  - `package.json` - Added `zip` target alongside `dmg` for mac builds
+
+### Changed
+
+- **DebouncedInput** - Simplified props interface for better type safety
+  - `frontend/components/ui/debounced-input.tsx` - Removed `React.ComponentProps` extension
+  - Now explicitly defines `value`, `onChange`, `debounceTime`, `className`, `placeholder`
+- **Debounce Timings** - Reduced for faster load times
+  - Input debounce: 500ms → 300ms
+  - PDF render debounce: 800ms → 500ms
+- **Persistence Manager** - Added save rate limiting
+  - `frontend/lib/store/persistenceManager.ts` - Max 1 save per second to prevent overwhelming IPC
+
+### Fixed
+
+- **ExperienceSection Missing Imports** - Fixed TypeScript errors
+  - Added `LucideIcon` type import from lucide-react
+  - Added `ExperienceItem` type import from store/types
+  - Added `generateId` from lib/utils/ids
+  - Added `MonthYearPicker` component import
+  - Added `Building2` and `Sparkles` icon imports
+- **Two-Column Drag & Drop** - Fixed section placement between columns
+  - `frontend/components/customize/CustomizePrimitives.tsx` - Added `useDroppable` from @dnd-kit/core
+  - Columns now highlight when dragging over them
+- **PreviewPanel Early Render** - Guard against rendering before resume is ready
+  - Added check for `resume?.sections?.length` before PDF generation
+
+### Performance
+
+- **ResumeCard Extraction** - Isolated re-renders on dashboard
+  - Extracted to separate component to prevent full list re-renders
+  - Removed staggered animation delay from card list
+
 ## [1.0.3] - 2026-04-13
 
 ### Added

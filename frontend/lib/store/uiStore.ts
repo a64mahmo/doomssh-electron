@@ -12,6 +12,7 @@ export const useUIStore = create<UIStore>()((set) => ({
   updateStatus: 'idle',
   updateProgress: 0,
   updateVersion: null,
+  updateError: null,
 
   setActiveSection: (id) => set({ activeSection: id }),
   setShowAIPanel: (show) => set({ showAIPanel: show }),
@@ -24,4 +25,5 @@ export const useUIStore = create<UIStore>()((set) => ({
   setUpdateStatus: (status) => set({ updateStatus: status }),
   setUpdateProgress: (progress) => set({ updateProgress: progress }),
   setUpdateVersion: (version) => set({ updateVersion: version }),
+  setUpdateError: (error) => set({ updateError: error }),
 }));

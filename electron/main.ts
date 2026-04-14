@@ -190,18 +190,13 @@ const MIME: Record<string, string> = {
   txt:  'text/plain',
 }
 
-function serveFile(filePath: string): Response {
-  // fs is ASAR-aware; net.fetch('file://') is not — always use fs here
-  const data = fs.readFileSync(filePath)
-  const ext  = path.extname(filePath).slice(1).toLowerCase()
-  return new Response(data, {
-    headers: { 'Content-Type': MIME[ext] ?? 'application/octet-stream' },
-  })
-}
-
 // ── Custom Protocol ──────────────────────────────────────────────────────────
 function registerAppProtocol() {
   const outDir = path.join(projectRoot(), 'frontend', 'out')
+  
+  // Cache for file contents to avoid repeated disk reads
+  const fileCache = new Map<string, { data: Buffer; mtime: number }>()
+  const CACHE_TTL = 30000 // 30 seconds for dynamic content
 
   protocol.handle('app', (request) => {
     try {
@@ -224,7 +219,37 @@ function registerAppProtocol() {
         }
       }
 
-      return serveFile(fullPath)
+      // Use cached data if available and not stale
+      const stat = fs.statSync(fullPath)
+      const mtime = stat.mtimeMs
+      const cached = fileCache.get(fullPath)
+      
+      if (cached && cached.mtime === mtime && (Date.now() - cached.mtime < CACHE_TTL)) {
+        const ext = path.extname(fullPath).slice(1).toLowerCase()
+        const isStatic = ['css', 'js', 'woff', 'woff2', 'ttf', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'ico'].includes(ext)
+        const cacheHeader = isStatic ? 'public, max-age=31536000, immutable' : 'no-cache'
+        
+        return new Response(cached.data, {
+          headers: { 
+            'Content-Type': MIME[ext] ?? 'application/octet-stream',
+            'Cache-Control': cacheHeader,
+          },
+        })
+      }
+
+      const data = fs.readFileSync(fullPath)
+      fileCache.set(fullPath, { data, mtime })
+      
+      const ext = path.extname(fullPath).slice(1).toLowerCase()
+      const isStatic = ['css', 'js', 'woff', 'woff2', 'ttf', 'png', 'jpg', 'jpeg', 'gif', 'svg', 'ico'].includes(ext)
+      const cacheHeader = isStatic ? 'public, max-age=31536000, immutable' : 'no-cache'
+
+      return new Response(data, {
+        headers: { 
+          'Content-Type': MIME[ext] ?? 'application/octet-stream',
+          'Cache-Control': cacheHeader,
+        },
+      })
     } catch (err) {
       console.error('Protocol error:', err)
       return new Response('Not Found', { status: 404 })
@@ -514,7 +539,14 @@ autoUpdater.on('update-downloaded', (info: UpdateInfo) => {
 
 autoUpdater.on('error', (err: Error) => {
   console.error('[updater] error:', err)
-  mainWindow?.webContents.send('app:update-error', err.message)
+  // Send detailed error info to frontend for debugging
+  const debugInfo = {
+    message: err.message,
+    stack: err.stack,
+    name: err.name,
+    cause: (err as any).cause,
+  }
+  mainWindow?.webContents.send('app:update-error', JSON.stringify(debugInfo))
 })
 
 ipcMain.handle('get-app-version', () => app.getVersion())

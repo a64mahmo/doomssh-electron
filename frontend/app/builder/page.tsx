@@ -89,6 +89,7 @@ export default function BuilderDashboard() {
   const updateStatus = useUIStore(s => s.updateStatus)
   const updateProgress = useUIStore(s => s.updateProgress)
   const updateVersion = useUIStore(s => s.updateVersion)
+  const updateError = useUIStore(s => s.updateError)
 
   const [isMac, setIsMac] = useState(false)
 
@@ -422,6 +423,15 @@ export default function BuilderDashboard() {
                 <p className="text-[10px] text-muted-foreground font-medium flex items-center gap-1.5">
                   Your software is up to date.
                 </p>
+              )}
+
+              {updateStatus === 'error' && updateError && globalDebugMode && (
+                <div className="mt-2 p-2 rounded bg-destructive/10 border border-destructive/30">
+                  <p className="text-[10px] font-bold text-destructive mb-1">Update Failed</p>
+                  <pre className="text-[9px] text-destructive/80 whitespace-pre-wrap break-all max-h-24 overflow-y-auto">
+                    {updateError}
+                  </pre>
+                </div>
               )}
             </div>
 

@@ -410,6 +410,7 @@ export interface UIStore {
   updateStatus: UpdateStatus
   updateProgress: number
   updateVersion: string | null
+  updateError: string | null
   setActiveSection: (id: string | null) => void
   setShowAIPanel: (show: boolean) => void
   setPreviewZoom: (zoom: number) => void
@@ -421,6 +422,7 @@ export interface UIStore {
   setUpdateStatus: (status: UpdateStatus) => void
   setUpdateProgress: (progress: number) => void
   setUpdateVersion: (version: string | null) => void
+  setUpdateError: (error: string | null) => void
 }
 
 // ─── Default Values ───────────────────────────────────────────────────────────

@@ -1,6 +1,8 @@
 # DoomSSH
 
 > **The AI-Powered, Local-First, Privacy-Focused Resume Builder**
+> 
+> **Version 1.1.0**
 
 <div align="center">
 
