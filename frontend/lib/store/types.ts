@@ -60,7 +60,7 @@ export type NameSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL'
 export type ColorMode = 'basic' | 'multi' | 'image'
 export type ThemeColorStyle = 'basic' | 'advanced' | 'border'
 export type FontStyle = 'serif' | 'sans' | 'mono'
-export type SkillDisplayOption = 'grid' | 'level' | 'compact' | 'bubble'
+export type SkillDisplayOption = 'grid' | 'level' | 'compact' | 'bubble' | 'dots'
 export type EntryLayout = 'date-location-right' | 'date-location-left' | 'date-content-location' | 'full-width'
 export type ColumnWidthMode = 'auto' | 'manual'
 export type EducationOrder = 'degree-school' | 'school-degree'
@@ -280,6 +280,10 @@ export interface ResumeSettings {
 
   // Layout & Spacing
   columnLayout: ColumnLayout
+  headerLayout?: 'top' | 'sidebar'
+  sidebarTheme?: 'none' | 'accent' | 'custom'
+  sidebarBackgroundColor?: string
+  sidebarTextColor?: string
   columnReverse: boolean
   lineHeight: number        // e.g. 1.5
   marginHorizontal: number  // mm, e.g. 20
