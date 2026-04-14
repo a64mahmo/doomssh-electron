@@ -14,7 +14,7 @@ interface DebouncedInputProps {
 export function DebouncedInput({ 
   value, 
   onChange, 
-  debounceTime = 500,
+  debounceTime = 300,
   className,
   placeholder,
 }: DebouncedInputProps) {

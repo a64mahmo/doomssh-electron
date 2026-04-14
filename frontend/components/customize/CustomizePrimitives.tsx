@@ -9,6 +9,7 @@ import {
   verticalListSortingStrategy,
   useSortable,
 } from '@dnd-kit/sortable'
+import { useDroppable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 
 export const FONTS: FontOption[] = [
@@ -109,10 +110,17 @@ export function SortableSectionItem({ id, title }: { id: string; title: string }
 export function DroppableColumn({ id, title, items, resumeSections }: {
   id: string; title: string; items: string[]; resumeSections: { id: string; title: string }[]
 }) {
+  const { setNodeRef, isOver } = useDroppable({ id })
   return (
     <div className="flex-1 min-w-0">
       <p className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-widest mb-2 px-1">{title}</p>
-      <div className="min-h-[140px] p-2 rounded-xl bg-muted/30 border border-dashed border-border/60 space-y-1">
+      <div 
+        ref={setNodeRef}
+        className={cn(
+          "min-h-[140px] p-2 rounded-xl bg-muted/30 border border-dashed border-border/60 space-y-1 transition-colors",
+          isOver && "border-primary bg-primary/5"
+        )}
+      >
         <SortableContext items={items} strategy={verticalListSortingStrategy}>
           {items.map((sectionId) => {
             const sec = resumeSections.find(s => s.id === sectionId)

@@ -9,7 +9,7 @@ interface DebouncedRichTextAreaProps extends React.ComponentProps<typeof RichTex
 export function DebouncedRichTextArea({ 
   value, 
   onChange, 
-  debounceTime = 500, 
+  debounceTime = 300, 
   ...props 
 }: DebouncedRichTextAreaProps) {
   const [localValue, setLocalValue] = useState(value)

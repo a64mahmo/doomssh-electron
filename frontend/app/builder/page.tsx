@@ -329,68 +329,14 @@ export default function BuilderDashboard() {
               </motion.button>
 
               <AnimatePresence>
-                {resumes.map((resume, i) => (
-                  <motion.div
-                    key={resume.id}
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.04 }}
-                    whileHover={{ scale: 1.02 }}
-                    className="group relative aspect-[3/4] rounded-xl overflow-hidden cursor-pointer"
-                    onClick={() => router.push(`/builder/new?id=${resume.id}`)}
-                  >
-                    {/* Gradient bg */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${TEMPLATE_GRADIENT[resume.template] ?? 'from-slate-500 to-slate-700'} opacity-80`} />
-
-                    {/* Faux resume lines */}
-                    <div className="absolute inset-0 p-4 flex flex-col gap-2 pt-6">
-                      <div className="w-2/3 mx-auto h-2 rounded-full bg-white/40" />
-                      <div className="w-1/2 mx-auto h-1.5 rounded-full bg-white/25 mb-1" />
-                      {[...Array(8)].map((_, j) => (
-                        <div key={j} className="flex flex-col gap-1">
-                          <div className="h-1 rounded-full bg-white/20" style={{ width: `${50 + (j * 11) % 40}%` }} />
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Hover overlay */}
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span className="px-3 py-1.5 rounded-lg bg-white text-black text-xs font-semibold">Edit</span>
-                    </div>
-
-                    {/* Footer */}
-                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-                      <div className="flex items-end justify-between gap-1">
-                        <div className="min-w-0">
-                          <p className="text-white text-xs font-semibold truncate leading-tight">{resume.name}</p>
-                          <p className="text-white/45 text-[10px] mt-0.5 capitalize">{resume.template}</p>
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger
-                            className="shrink-0 w-6 h-6 rounded flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <MoreHorizontal size={13} />
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-44">
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); router.push(`/builder/new?id=${resume.id}`) }}>
-                              <Pencil size={13} className="mr-2" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDuplicate(resume.id) }}>
-                              <Copy size={13} className="mr-2" /> Duplicate
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={(e) => { e.stopPropagation(); handleDelete(resume.id) }}
-                            >
-                              <Trash2 size={13} className="mr-2" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                  </motion.div>
+                {resumes.map((resume) => (
+                  <ResumeCard 
+                    key={resume.id} 
+                    resume={resume} 
+                    onEdit={() => router.push(`/builder/new?id=${resume.id}`)}
+                    onDuplicate={() => handleDuplicate(resume.id)}
+                    onDelete={() => handleDelete(resume.id)}
+                  />
                 ))}
               </AnimatePresence>
             </div>
@@ -524,5 +470,75 @@ export default function BuilderDashboard() {
         </DialogContent>
       </Dialog>
     </div>
+  )
+}
+
+function ResumeCard({ 
+  resume, 
+  onEdit, 
+  onDuplicate, 
+  onDelete 
+}: { 
+  resume: Resume
+  onEdit: () => void
+  onDuplicate: () => void
+  onDelete: () => void
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.02 }}
+      className="group relative aspect-[3/4] rounded-xl overflow-hidden cursor-pointer"
+      onClick={onEdit}
+    >
+      <div className={`absolute inset-0 bg-gradient-to-br ${TEMPLATE_GRADIENT[resume.template] ?? 'from-slate-500 to-slate-700'} opacity-80`} />
+
+      <div className="absolute inset-0 p-4 flex flex-col gap-2 pt-6">
+        <div className="w-2/3 mx-auto h-2 rounded-full bg-white/40" />
+        <div className="w-1/2 mx-auto h-1.5 rounded-full bg-white/25 mb-1" />
+        {[...Array(8)].map((_, j) => (
+          <div key={j} className="flex flex-col gap-1">
+            <div className="h-1 rounded-full bg-white/20" style={{ width: `${50 + (j * 11) % 40}%` }} />
+          </div>
+        ))}
+      </div>
+
+      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+        <span className="px-3 py-1.5 rounded-lg bg-white text-black text-xs font-semibold">Edit</span>
+      </div>
+
+      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+        <div className="flex items-end justify-between gap-1">
+          <div className="min-w-0">
+            <p className="text-white text-xs font-semibold truncate leading-tight">{resume.name}</p>
+            <p className="text-white/45 text-[10px] mt-0.5 capitalize">{resume.template}</p>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="shrink-0 w-6 h-6 rounded flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal size={13} />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit() }}>
+                <Pencil size={13} className="mr-2" /> Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDuplicate() }}>
+                <Copy size={13} className="mr-2" /> Duplicate
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={(e) => { e.stopPropagation(); onDelete() }}
+              >
+                <Trash2 size={13} className="mr-2" /> Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </motion.div>
   )
 }

@@ -4,6 +4,8 @@ import { useUIStore } from '@/lib/store/uiStore';
 
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 let initialized = false;
+let lastSaveTime = 0;
+const SAVE_DEBOUNCE_MS = 1000; // Save at most once per second
 
 export function initPersistence() {
   if (initialized) return;
@@ -17,9 +19,14 @@ export function initPersistence() {
       if (saveTimeout) clearTimeout(saveTimeout);
 
       saveTimeout = setTimeout(async () => {
+        // Rate limit saves
+        const now = Date.now();
+        if (now - lastSaveTime < SAVE_DEBOUNCE_MS) return;
+        
         const { resume, markSaved } = useResumeStore.getState();
         if (resume) {
           try {
+            lastSaveTime = now;
             await saveResume(resume);
             markSaved();
           } catch (err) {
