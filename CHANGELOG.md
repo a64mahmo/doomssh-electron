@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-04-15
+
+### Added
+
+- **Interview Prep Suite** — Full interview preparation feature integrated into the Job Tracker.
+  - **AI Mock Interviewer** — Generates 8 role-specific interview questions (technical, behavioral, situational) using the job's title, company, and description as context via the existing Anthropic Claude integration.
+  - **STAR Method Builder** — Structured answer editor for behavioral questions with Situation, Task, Action, Result fields.
+  - **Company Research Vault** — Free-form notes area for storing company facts, values, culture, and interviewer backgrounds.
+  - **Cheat Sheet** — Numbered, inline-editable list of quick talking points for at-a-glance reference during remote interviews.
+  - **Post-Interview Reflections** — Structured form for logging what went well, what was difficult, and follow-up tasks after each interview round.
+  - **Dedicated full page** (`/builder/interview-prep`) with job selector sidebar and section tabs.
+  - **Dialog tab** — Interview Prep tab added to the Job Detail Dialog alongside Details, Contacts, and Timeline.
+- **API Key Guard for AI features** — `useAI` hook now exposes `hasApiKey` state. AI buttons are disabled with a tooltip when no API key is configured.
+- **Error toast colors** — Added `--destructive-foreground` CSS variable for both light and dark themes. Wired Sonner error toast to use theme-aware `--error-bg`, `--error-text`, `--error-border` variables.
+- **Design documentation** — `docs/interview-prep.md` covering architecture, data model, AI integration, and UI layout.
+
+### Changed
+
+- **Kanban drag-and-drop performance** — Replaced `useSortable` with `useDraggable` on cards (lighter, unidirectional). Removed `SortableContext` wrapper and `KeyboardSensor`. Switched collision detection from `closestCorners` to `closestCenter`. Cards are now fully draggable (no hidden grip handle).
+- **Kanban cursor behavior** — Hover shows pointer cursor, hold/drag shows grabbing hand.
+- **Text selection** — Disabled (`select-none`) on Job Tracker page, Interview Prep page, and Job Detail Dialog to prevent accidental selection during drag and click interactions.
+- **AI error logging** — Empty error messages now fall back to a descriptive message. Added `console.error('[AI]', msg)` for proper logging.
+
+### Fixed
+
+- **Error toast invisible in light mode** — Error notifications had white text on light backgrounds. Fixed by defining proper error color CSS variables for Sonner.
+- **Tooltip not appearing on disabled AI button** — Disabled buttons swallow pointer events. Wrapped with a `<span>` trigger so hover events fire on the tooltip.
+
 ## [1.4.0] - 2026-04-14
 
 ### Added

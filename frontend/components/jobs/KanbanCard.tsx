@@ -1,8 +1,7 @@
 'use client'
 
-import { useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import { GripVertical, Building2 } from 'lucide-react'
+import { useDraggable } from '@dnd-kit/core'
+import { Building2 } from 'lucide-react'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { cn, formatSalary } from '@/lib/utils'
@@ -30,17 +29,10 @@ export function KanbanCard({ job, onClick, isDragging }: KanbanCardProps) {
     attributes,
     listeners,
     setNodeRef,
-    transform,
-    transition,
-    isDragging: isSorting,
-  } = useSortable({ id: job.id, data: { type: 'job', job } })
+    isDragging: isActive,
+  } = useDraggable({ id: job.id, data: { type: 'job', job } })
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  }
-
-  const isActive = isDragging || isSorting
+  const dragging = isDragging || isActive
 
   const daysAgo = job.appliedDate
     ? dayjs(job.appliedDate).fromNow()
@@ -51,35 +43,27 @@ export function KanbanCard({ job, onClick, isDragging }: KanbanCardProps) {
   return (
     <div
       ref={setNodeRef}
-      style={style}
-      className={cn(isActive && 'opacity-40 z-50')}
+      {...attributes}
+      {...listeners}
+      className={cn(dragging && 'opacity-40 z-50')}
     >
       <Card
         size="sm"
         className={cn(
-          'cursor-pointer transition-all group',
-          isActive 
-            ? 'ring-2 ring-primary/50 shadow-lg scale-[1.02]' 
+          'cursor-pointer active:cursor-grabbing transition-shadow group',
+          dragging
+            ? 'ring-2 ring-primary/50 shadow-lg'
             : 'hover:ring-1 hover:ring-foreground/10 hover:shadow-md'
         )}
         onClick={onClick}
       >
         <CardHeader className="p-3 pb-0">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5 text-muted-foreground mb-0.5">
-                <Building2 size={11} />
-                <span className="text-[11px] font-medium truncate">{job.company || 'No company'}</span>
-              </div>
-              <p className="text-xs font-semibold text-foreground truncate">{job.role || 'No role'}</p>
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 text-muted-foreground mb-0.5">
+              <Building2 size={11} />
+              <span className="text-[11px] font-medium truncate">{job.company || 'No company'}</span>
             </div>
-            <button
-              className="shrink-0 opacity-0 group-hover:opacity-60 hover:!opacity-100 cursor-grab active:cursor-grabbing p-0.5 -mr-1 -mt-0.5"
-              {...attributes}
-              {...listeners}
-            >
-              <GripVertical size={12} />
-            </button>
+            <p className="text-xs font-semibold text-foreground truncate">{job.role || 'No role'}</p>
           </div>
         </CardHeader>
         <CardContent className="p-3 pt-2">

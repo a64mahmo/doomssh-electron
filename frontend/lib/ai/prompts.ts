@@ -47,6 +47,33 @@ Career Highlights: ${resumeData.highlights}
 Write in first person implied (no "I"), present tense. Make it specific and compelling.`
 }
 
+export const SYSTEM_INTERVIEW_COACH = `You are an expert interview coach with deep experience preparing candidates
+for technical and behavioral interviews at top companies. You generate realistic, role-specific
+interview questions and help candidates craft strong STAR-method answers.
+Always respond with just the content in the requested format, no preamble or explanation.`
+
+export function interviewQuestionsPrompt(
+  jobTitle: string,
+  company: string,
+  jobDescription: string,
+  resumeContext: string = '',
+): string {
+  return `Generate 8 interview questions for this role. Mix of categories:
+- 3 technical questions specific to the role
+- 3 behavioral questions (use STAR-method framing)
+- 2 situational/general questions
+
+Job Title: ${jobTitle}
+Company: ${company}
+Job Description: ${jobDescription}
+${resumeContext ? `\nCandidate Background: ${resumeContext}` : ''}
+
+Respond in JSON array format:
+[{"question": "...", "category": "technical|behavioral|situational|general"}]
+
+Make questions specific to the company and role, not generic.`
+}
+
 export function jobMatchPrompt(resumeText: string, jobDescription: string): string {
   return `Analyze this resume against the job description and provide:
 1. Match score (0-100)

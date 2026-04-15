@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, Kanban, Table2, BarChart3 } from 'lucide-react'
+import { ArrowLeft, Plus, Kanban, Table2, BarChart3, GraduationCap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { useJobStore } from '@/lib/store/jobStore'
@@ -41,7 +41,7 @@ export function JobsClient() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden bg-background overscroll-none">
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-background overscroll-none select-none">
       {/* Header */}
       <header
         className={cn(

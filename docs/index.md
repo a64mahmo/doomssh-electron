@@ -58,6 +58,7 @@ DoomSSH uses **Next.js 16**, which contains significant breaking changes compare
 
 -   [Architecture](./architecture.md) - System design and data flow.
 -   [Frontend Deep Dive](./frontend.md) - Components, hooks, state, and AI routes.
+-   [Interview Prep](./interview-prep.md) - Interview preparation suite design, data model, and AI integration.
 -   [Electron Integration](./electron.md) - Packaging and desktop-specific features.
 -   [Troubleshooting](./troubleshooting.md) - Solutions for common issues like high resource usage.
 

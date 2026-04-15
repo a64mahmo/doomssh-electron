@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import type { JobApplication, JobStore, JobStatus, JobContact, JobEvent } from '@/lib/store/jobTypes'
+import type { JobApplication, JobStore, JobStatus, JobContact, JobEvent, InterviewPrep } from '@/lib/store/jobTypes'
 import {
   JOB_STATUS_LABELS,
 } from '@/lib/store/jobTypes'
@@ -265,6 +265,17 @@ export const useJobStore = create<JobStore>()(
         const job = state.jobs.find((j) => j.id === jobId)
         if (!job) return
         job.events = job.events.filter((e) => e.id !== eventId)
+        job.updatedAt = Date.now()
+        state.isDirty = true
+        scheduleSave(get)
+      }),
+
+    updateInterviewPrep: (jobId, prep) =>
+      set((state) => {
+        const job = state.jobs.find((j) => j.id === jobId)
+        if (!job) return
+        const existing: InterviewPrep = job.interviewPrep ?? { questions: [], companyNotes: '', cheatSheet: [], reflections: [] }
+        job.interviewPrep = { ...existing, ...prep }
         job.updatedAt = Date.now()
         state.isDirty = true
         scheduleSave(get)

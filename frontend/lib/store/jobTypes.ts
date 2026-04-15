@@ -32,6 +32,32 @@ export type WorkMode = 'remote' | 'hybrid' | 'onsite' | ''
 
 export type JobEventType = 'status-change' | 'note' | 'interview' | 'follow-up' | 'deadline-passed' | 'deadline-change' | 'other'
 
+// ─── Interview Prep ─────────────────────────────────────────────────────────
+
+export type QuestionCategory = 'technical' | 'behavioral' | 'situational' | 'general'
+
+export interface InterviewQuestion {
+  id: string
+  question: string
+  category: QuestionCategory
+  answer: string            // user's drafted answer (plain text or STAR format)
+}
+
+export interface PostInterviewReflection {
+  id: string
+  date: string              // ISO date string
+  wentWell: string
+  wasDifficult: string
+  followUp: string          // e.g. thank-you notes, next steps
+}
+
+export interface InterviewPrep {
+  questions: InterviewQuestion[]
+  companyNotes: string
+  cheatSheet: string[]
+  reflections: PostInterviewReflection[]
+}
+
 // ─── Data Structures ─────────────────────────────────────────────────────────
 
 export interface JobContact {
@@ -76,6 +102,7 @@ export interface JobApplication {
   createdAt: number
   updatedAt: number
   archivedAt: number | null
+  interviewPrep?: InterviewPrep
 }
 
 // ─── Vault File ──────────────────────────────────────────────────────────────
@@ -112,6 +139,9 @@ export interface JobStore {
   // Events
   addEvent: (jobId: string, event: Omit<JobEvent, 'id'>) => void
   removeEvent: (jobId: string, eventId: string) => void
+
+  // Interview Prep
+  updateInterviewPrep: (jobId: string, prep: Partial<InterviewPrep>) => void
 
   // Persistence
   markSaved: () => void

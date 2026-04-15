@@ -238,10 +238,10 @@ export default function BuilderDashboard() {
             label="Job Tracker"
             onClick={() => router.push('/builder/jobs')}
           />
-          <NavItem 
-            icon={<MessageSquare size={18} />} 
-            label="Interview Prep" 
-            comingSoon 
+          <NavItem
+            icon={<MessageSquare size={18} />}
+            label="Interview Prep"
+            onClick={() => router.push('/builder/interview-prep')}
           />
         </nav>
 
