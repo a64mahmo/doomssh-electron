@@ -29,8 +29,11 @@ jobs:
           npm install
           npm run frontend:install
 
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
       - name: Run All Tests
-        run: npm run test:all
+        run: npm run test:all -- --project=chromium
 
       - name: Configure Git
         run: |
