@@ -51,10 +51,12 @@ export function InterviewPrepClient() {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
   const [activeSection, setActiveSection] = useState<'questions' | 'company' | 'cheatsheet' | 'reflections'>('questions')
   const [isMac, setIsMac] = useState(false)
+  const [isWin, setIsWin] = useState(false)
 
   useEffect(() => {
     if (window.electron) {
       setIsMac(window.electron.platform === 'darwin')
+      setIsWin(window.electron.platform === 'win32')
     }
     if (!isLoaded) loadJobs()
   }, [isLoaded, loadJobs])
@@ -100,7 +102,8 @@ export function InterviewPrepClient() {
       <aside className="w-72 border-r border-border flex flex-col shrink-0 bg-sidebar/50">
         <header
           className={cn(
-            'h-11 flex items-center gap-3 px-4 border-b border-border shrink-0 drag'
+            'h-11 flex items-center gap-3 px-4 border-b border-border shrink-0 drag',
+            isWin && 'win32-padding'
           )}
         >
           <h1 className="text-sm font-semibold tracking-tight no-drag">Interview Prep</h1>

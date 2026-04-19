@@ -76,6 +76,7 @@ export function Sidebar() {
   const [apiKey, setApiKey] = useState('')
   const [appVersion, setAppVersion] = useState('')
   const [isMac, setIsMac] = useState(false)
+  const [isWin, setIsWin] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
 
   const globalDebugMode = useUIStore(s => s.globalDebugMode)
@@ -95,6 +96,7 @@ export function Sidebar() {
         window.electron.getAppVersion().then(v => setAppVersion(v))
       }
       setIsMac(window.electron.platform === 'darwin')
+      setIsWin(window.electron.platform === 'win32')
     }
   }, [setGlobalDebugMode])
 
@@ -135,7 +137,8 @@ export function Sidebar() {
       >
         <div className={cn(
           'border-b border-border drag flex flex-col transition-all duration-300',
-          collapsed ? (isMac ? 'h-20' : 'h-11') : 'h-11'
+          collapsed ? (isMac ? 'h-20' : 'h-11') : 'h-11',
+          (isWin && !collapsed) && 'win32-padding'
         )}>
           {/* Top row: traffic lights on Mac, or just spacing */}
           <div className={cn('h-11 flex items-center justify-between px-3 shrink-0', isMac && 'pl-[72px]', (collapsed && !isMac) && 'justify-center px-0')}>

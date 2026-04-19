@@ -32,6 +32,7 @@ export function BuilderClient() {
   const [panel, setPanel] = useState<Panel>('content')
   const [sideW, setSideW] = useState(DEFAULT_W)
   const [isMac, setIsMac] = useState(false)
+  const [isWin, setIsWin] = useState(false)
   const dragging = useRef(false)
   const startX = useRef(0)
   const startW = useRef(DEFAULT_W)
@@ -39,6 +40,7 @@ export function BuilderClient() {
   useEffect(() => {
     if (window.electron) {
       setIsMac(window.electron.platform === 'darwin')
+      setIsWin(window.electron.platform === 'win32')
     }
 
     setResume(null)
@@ -110,7 +112,8 @@ export function BuilderClient() {
           {/* Sidebar Header - Handles Back and macOS spacing */}
           <header 
             className={cn(
-              "h-11 flex items-center px-3 border-b border-border shrink-0 drag"
+              "h-11 flex items-center px-3 border-b border-border shrink-0 drag",
+              isWin && "win32-padding"
             )}
           >
           </header>

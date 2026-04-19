@@ -141,7 +141,7 @@ async function createWindow(): Promise<void> {
     titleBarOverlay: process.platform === 'win32' ? {
       color: '#00000000',
       symbolColor: '#94a3b8',
-      height: 32
+      height: 44
     } : false,
     vibrancy: 'under-window', // macOS
     visualEffectState: 'active', // macOS
@@ -568,6 +568,16 @@ autoUpdater.on('error', (err: Error) => {
 })
 
 ipcMain.handle('get-app-version', () => app.getVersion())
+
+ipcMain.handle('update-window-controls', (_event, { color, symbolColor }: { color: string, symbolColor: string }) => {
+  if (mainWindow && process.platform === 'win32') {
+    mainWindow.setTitleBarOverlay({
+      color: color,
+      symbolColor: symbolColor,
+      height: 44
+    })
+  }
+})
 
 ipcMain.handle('check-for-updates', async () => {
   if (isDev) return { message: 'In development mode', status: 'dev' }

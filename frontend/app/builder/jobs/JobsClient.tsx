@@ -19,10 +19,12 @@ export function JobsClient() {
   const [isAddingNew, setIsAddingNew] = useState(false)
   const [initialStatus, setInitialStatus] = useState<any>(undefined)
   const [isMac, setIsMac] = useState(false)
+  const [isWin, setIsWin] = useState(false)
 
   useEffect(() => {
     if (window.electron) {
       setIsMac(window.electron.platform === 'darwin')
+      setIsWin(window.electron.platform === 'win32')
     }
     if (!isLoaded) loadJobs()
   }, [isLoaded, loadJobs])
@@ -45,7 +47,8 @@ export function JobsClient() {
       {/* Header */}
       <header
         className={cn(
-          'h-11 flex items-center justify-between px-4 border-b border-border shrink-0 drag bg-background'
+          'h-11 flex items-center justify-between px-4 border-b border-border shrink-0 drag bg-background',
+          isWin && 'win32-padding'
         )}
       >
         <div className="flex items-center gap-3 no-drag">

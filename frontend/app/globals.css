@@ -162,17 +162,8 @@ html, body {
 
 /* ── Windows Window Controls ──────────────────────────────────────────────── */
 
-.electron-win32 header.drag {
-  padding-right: 140px;
-}
-
-/* If we have split headers, only the right-most one needs the padding */
-.electron-win32 .flex-1 > header.drag {
-  padding-right: 140px;
-}
-
-.electron-win32 .shrink-0 > header.drag {
-  padding-right: 0;
+.electron-win32 .win32-padding {
+  padding-right: 138px;
 }
 
 .electron body {

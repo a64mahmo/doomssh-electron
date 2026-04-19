@@ -66,7 +66,7 @@ export default function ResumesDashboard() {
 
   return (
     <>
-      <header className="border-b border-border px-6 h-11 flex items-center justify-between shrink-0 bg-background drag">
+      <header className="border-b border-border px-6 h-11 flex items-center justify-between shrink-0 bg-background drag win32-padding">
         <div className="flex items-center gap-2.5 no-drag">
           <div className="w-5 h-5 rounded bg-foreground flex items-center justify-center shrink-0">
             <FileText size={10} className="text-background" />
