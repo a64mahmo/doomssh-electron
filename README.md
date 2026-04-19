@@ -25,6 +25,7 @@ Most modern resume builders lock your data behind a subscription or a cloud acco
 - **Advanced Layout Engine:** Viewport-fixed architecture with independent panel scrolling for a stable, professional desktop-app feel.
 - **Local-First Vault:** Your resumes are stored as plain JSON files in a Vault of your choice. No cloud, no tracking, no data harvesting.
 - **Native Cross-Platform Experience:** Optimized for both macOS and Windows, including native window controls and deep OS integration.
+- **Continuous CD Release:** Every merge to `main` automatically triggers a full software release. Bumps version (`patch` by default) and publishes platform-specific builds.
 - **Transparent Updates:** Built-in software update system with real-time download progress and manual check controls.
 - **Bug Mode & Diagnostics:** Built-in diagnostic system ("Bug Mode") to capture and display system errors for easier troubleshooting.
 - **Infinite Customization:** Dozens of professionally designed templates with deep control over typography, colors, layout mathematics, and section arrangements.

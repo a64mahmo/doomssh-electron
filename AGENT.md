@@ -53,6 +53,20 @@ As an AI agent, you are part of the core engineering team. You must adhere to th
     - Always use the `HeaderRendererPDF` component for document headers. Do not implement custom header logic in `CoverLetterPDF`.
     - Use `ContactLinePDF` for all contact information rendering to ensure consistent wrapping and delimiter logic.
 
+## 9. Unit Testing & Logic Validation
+- **Constraint:** Logic changes must be empirically verified before being committed.
+- **Mandate:** 
+    - Every change to a Headless Controller (`frontend/lib/renderers/`) or Store Action (`frontend/lib/store/`) **must** be accompanied by a new or updated Vitest unit test.
+    - Run `npm test --prefix frontend` to verify logic integrity after any data model or transformation change.
+
+## 10. Automated Release & Versioning
+- **Mechanism:** Merging a branch into `main` automatically triggers `.github/workflows/auto-version.yml`.
+- **Logic:**
+    - The workflow runs all tests (`npm run test:all`).
+    - It defaults to a `patch` version bump.
+    - To trigger a different bump, include `#minor` or `#major` in the commit message.
+    - Pushing a new tag (manually or via CI) triggers `.github/workflows/release.yml` for artifact building.
+
 ---
 
 ### Verification Checklist for AI Changes
@@ -63,5 +77,8 @@ As an AI agent, you are part of the core engineering team. You must adhere to th
 5. [ ] Did I avoid introducing node-only modules into the frontend bundle?
 6. [ ] Does the layout remain fixed to the viewport without global scrolling?
 7. [ ] Did I use shared PDF components (`HeaderRendererPDF`) for visual consistency?
+8. [ ] Did I add/update Vitest unit tests for any logic changes?
+9. [ ] Did I run `npm test --prefix frontend` and confirm all tests pass?
+10. [ ] If this is a release-ready merge, did I check if `#minor` or `#major` is required in the commit message?
 
 **Failure to follow these mandates will result in layout drift, state corruption, or build failures.**
