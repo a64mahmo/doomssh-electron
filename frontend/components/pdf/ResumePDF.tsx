@@ -1,12 +1,14 @@
 import React from 'react'
-import { Document, Page, View, Text, Image, Svg, Path, Circle, Rect, Line, G, Polyline } from '@react-pdf/renderer'
+import { Document, Page, View, Text, Image, Svg, Path, Circle, Rect, Line, Polyline } from '@react-pdf/renderer'
 import type { Style } from '@react-pdf/types'
-import type { Resume, SectionType, ResumeSection, SectionHeadingIcon, HeaderData } from '@/lib/store/types'
-import { buildCtx } from '@/lib/pdf/templateCtx'
+import type { Resume, SectionType, ResumeSection, SectionHeadingIcon, HeaderData, CoverLetterData } from '@/lib/store/types'
+import { buildCtx, type TemplateCtx } from '@/lib/pdf/templateCtx'
 import { registerFont } from './fonts'
 import { SectionRendererPDF, ContactLinePDF, hexA } from './sections'
-import { SECTION_ICONS, type SvgElement } from "@/lib/icons/sectionIcons";
-import { isLight } from '@/lib/pdf/styleUtils'
+import { SECTION_ICONS } from "@/lib/icons/sectionIcons";
+import { isLight, resolveColors } from '@/lib/pdf/styleUtils'
+import { renderMd } from './sections/shared'
+import { tokenizeMd } from '@/lib/utils/text'
 
 function SectionIcon({ 
   type, 
@@ -56,7 +58,7 @@ function SectionHeading({
 }: {
   title: string;
   type: SectionType;
-  ctx: ReturnType<typeof buildCtx>;
+  ctx: TemplateCtx;
   isSidebar?: boolean;
   isFirst?: boolean;
 }) {
@@ -80,7 +82,7 @@ function SectionHeading({
   const showIcon = s.sectionHeadingIcon !== 'none'
   const iconSize = Number(pt(hSize * 1.1 * (s.sectionHeadingIconSize || 1.0)).replace('pt', ''))
 
-  // Base container — always a full-width row, always left-justified
+  // Base container
   const base: Style = {
     width: '100%',
     flexDirection: 'row',
@@ -90,8 +92,7 @@ function SectionHeading({
     marginBottom: 8,
   }
 
-  // Decoration overrides
-  const pad = 4  // consistent vertical padding for all decorated styles
+  const pad = 4
 
   if (style === 'underline') {
     base.borderBottomWidth = thick
@@ -137,10 +138,6 @@ function SectionHeading({
     base.paddingBottom = 1
   }
 
-  // Text style — placed on the Text node itself so it's never inherited/overridden.
-  // lineHeight: 1 is critical: removes inherited line-height so the padding on the
-  // container is the only vertical spacing, keeping text visually centered in
-  // top-bottom / box / background decorations.
   const textStyle: Style = {
     fontSize,
     fontWeight: 'bold',
@@ -186,11 +183,319 @@ function SectionHeading({
   )
 }
 
+// ─── Cover Letter PDF ─────────────────────────────────────────────────────────
+
+function renderCoverLetterBodyPDF(md: string, ctx: TemplateCtx) {
+  const { base, lh, colors, bullet, pt, s } = ctx;
+  if (!md) return null;
+
+  // Split by double newline to get paragraphs
+  const blocks = md.split(/\n{2,}/);
+
+  return blocks.map((block, i) => {
+    const lines = block.split('\n');
+    const isList = lines.every(l => l.trim().startsWith('•') || l.trim().startsWith('- '));
+
+    if (isList) {
+      return (
+        <View key={i} style={{ marginBottom: '4mm', paddingLeft: 10 }}>
+          {lines.map((line, j) => (
+            <View key={j} style={{ flexDirection: 'row', marginBottom: 2 }}>
+              <Text style={{ fontSize: pt(base), lineHeight: lh, marginRight: 6, color: colors.text }}>
+                {bullet}
+              </Text>
+              <Text style={{ fontSize: pt(base), lineHeight: lh, flex: 1, color: colors.text }}>
+                {tokenizeMd(line.replace(/^[•-]\s*/, '')).map((tok, k) => (
+                  <Text key={k} style={{ fontWeight: tok.bold ? 'bold' : 'normal', fontStyle: tok.italic ? 'italic' : 'normal' }}>
+                    {tok.text}
+                  </Text>
+                ))}
+              </Text>
+            </View>
+          ))}
+        </View>
+      );
+    }
+
+    return (
+      <View key={i} style={{ marginBottom: '4mm' }}>
+        <Text style={{ fontSize: pt(base), lineHeight: lh, color: colors.text, textAlign: 'justify' }}>
+          {tokenizeMd(block).map((tok, k) => (
+            <Text key={k} style={{ fontWeight: tok.bold ? 'bold' : 'normal', fontStyle: tok.italic ? 'italic' : 'normal' }}>
+              {tok.text}
+            </Text>
+          ))}
+        </Text>
+      </View>
+    );
+  });
+}
+
+// ─── Shared Header Renderer ──────────────────────────────────────────────────
+
+function HeaderRendererPDF({ 
+  h, 
+  ctx,
+  isCoverLetter = false 
+}: { 
+  h?: HeaderData; 
+  ctx: TemplateCtx;
+  isCoverLetter?: boolean;
+}) {
+  const { colors, s, pt, base, nameSize } = ctx
+  const showPhoto = s.photoEnabled && h?.photo
+  const align = s.headerAlignment
+  const photoPos = s.photoPosition
+  
+  const photoSizeMap = { XS: 28, S: 36, M: 48, L: 64, XL: 80 }
+  const photoPx = photoSizeMap[s.photoSize] || 48
+  const photoBorderRadius = s.photoShape === 'circle' ? photoPx / 2 : s.photoShape === 'rounded' ? 6 : 0
+  const photoGap = s.photoGap || 12
+  const photoBorderWidth = s.photoBorderStyle === 'none' ? 0 
+    : s.photoBorderStyle === 'thin' ? 0.5 
+    : s.photoBorderStyle === 'medium' ? 1 
+    : 1.5
+    
+  const photoStyle: Style = { 
+    width: photoPx, 
+    height: photoPx, 
+    borderRadius: photoBorderRadius, 
+    objectFit: 'cover' as const,
+    borderWidth: photoBorderWidth,
+    borderColor: s.photoBorderColor || '#e5e7eb',
+  }
+
+  const isAdvanced = s.themeColorStyle === 'advanced'
+  const isLightBg = isAdvanced && isLight(colors.accent);
+  const headerTextColor = isAdvanced ? (isLightBg ? '#1a1a1a' : '#ffffff') : (s.applyAccentName ? colors.accent : colors.text);
+
+  const nameText = (textAlign: 'left' | 'center' | 'right') => (
+    <View style={{ alignItems: textAlign === 'center' ? 'center' : (textAlign === 'right' ? 'flex-end' : 'flex-start') }}>
+      <Text style={{ 
+        fontSize: pt(nameSize), 
+        fontWeight: 'bold', 
+        color: headerTextColor, 
+        lineHeight: 1.1, 
+        textAlign 
+      }}>
+        {h?.fullName || 'Your Name'}
+      </Text>
+      {h?.jobTitle && (
+        <Text style={{ 
+          fontSize: pt(base * 1.1), 
+          color: isAdvanced ? headerTextColor : (s.applyAccentJobTitle ? hexA(colors.accent, 0.7) : hexA(colors.text, 0.7)), 
+          marginTop: 4, 
+          textAlign,
+          textTransform: 'uppercase',
+          letterSpacing: 1.5,
+        }}>
+          {h.jobTitle}
+        </Text>
+      )}
+    </View>
+  )
+
+  const photoEl = showPhoto ? <Image src={h.photo!} style={photoStyle} /> : null
+
+  return (
+    <View style={{
+      backgroundColor: isAdvanced ? colors.accent : 'transparent',
+      color: headerTextColor,
+      marginLeft: isAdvanced ? `-${s.marginHorizontal}mm` : 0,
+      marginRight: isAdvanced ? `-${s.marginHorizontal}mm` : 0,
+      marginTop: isAdvanced ? `-${s.marginVertical}mm` : 0,
+      paddingLeft: isAdvanced ? `${s.marginHorizontal}mm` : 0,
+      paddingRight: isAdvanced ? `${s.marginHorizontal}mm` : 0,
+      paddingTop: isAdvanced ? `${s.marginVertical}mm` : 0,
+      paddingBottom: isAdvanced ? 15 : 0,
+      marginBottom: isCoverLetter ? 30 : 15,
+    }}>
+      {(() => {
+        if (align === "center") {
+          return (
+            <View style={{ width: "100%", marginBottom: 4, paddingBottom: 4, alignItems: "center", position: "relative" }}>
+              {photoPos === "beside" && photoEl && (
+                <View style={{ position: "absolute", left: 0, top: "50%", marginTop: -(photoPx / 2) }}>{photoEl}</View>
+              )}
+              <View style={{ alignItems: "center" }}>
+                {photoPos === "top" && photoEl && <View style={{ marginBottom: photoGap / 2 }}>{photoEl}</View>}
+                {nameText("center")}
+                {photoPos === "bottom" && photoEl && <View style={{ marginTop: photoGap / 2 }}>{photoEl}</View>}
+              </View>
+              <View style={{ marginTop: 8, width: "100%" }}>
+                <ContactLinePDF h={h!} ctx={ctx} textColorOverride={headerTextColor} />
+              </View>
+            </View>
+          );
+        }
+
+        const isRight = align === "right";
+        const isBeside = s.detailsPosition === "beside";
+        const photoAlignment = s.photoAlignment || 'left';
+        const photoVAlign = s.photoVerticalAlign || 'center';
+
+        if (isBeside) {
+          const photoOnRight = photoAlignment === 'right' || (photoAlignment === 'center' && isRight);
+          return (
+            <View style={{ marginBottom: 4, paddingBottom: 4, flexDirection: "row", alignItems: photoVAlign === 'top' ? 'flex-start' : photoVAlign === 'bottom' ? 'flex-end' : 'center', width: "100%" }}>
+              <View style={{ flexDirection: photoOnRight ? "row-reverse" : "row", alignItems: photoVAlign === 'top' ? 'flex-start' : photoVAlign === 'bottom' ? 'flex-end' : 'center', flex: 1 }}>
+                {!photoOnRight && photoEl && <View style={{ [isRight ? "marginLeft" : "marginRight"]: photoGap }}>{photoEl}</View>}
+                {nameText(isRight ? "right" : "left")}
+                {photoOnRight && photoEl && <View style={{ [isRight ? "marginLeft" : "marginRight"]: photoGap }}>{photoEl}</View>}
+              </View>
+              <View style={{ flex: 1, alignItems: s.detailsTextAlignment === "left" ? "flex-start" : s.detailsTextAlignment === "right" ? "flex-end" : "center" }}>
+                {h && <ContactLinePDF h={h} ctx={ctx} textColorOverride={headerTextColor} />}
+              </View>
+            </View>
+          );
+        }
+
+        const photoOnRight = photoAlignment === 'right' || (photoAlignment === 'center' && isRight);
+        return (
+          <View style={{ width: "100%", marginBottom: 4, paddingBottom: 4, flexDirection: photoOnRight ? "row-reverse" : "row", alignItems: photoVAlign === 'top' ? 'flex-start' : photoVAlign === 'bottom' ? 'flex-end' : 'center' }}>
+            {photoEl && <View style={{ [photoOnRight ? "marginLeft" : "marginRight"]: photoGap }}>{photoEl}</View>}
+            <View style={{ flex: 1, flexDirection: "column", alignItems: isRight ? "flex-end" : "flex-start" }}>
+              <View style={{ marginBottom: 8 }}>
+                {nameText(align)}
+              </View>
+              <ContactLinePDF h={h!} ctx={ctx} textColorOverride={headerTextColor} />
+            </View>
+          </View>
+        );
+      })()}
+    </View>
+  )
+}
+
+function CoverLetterPDF({ resume }: { resume: Resume }) {
+  const ctx = buildCtx(resume.settings)
+  const { colors, s, pt, base, lh } = ctx
+  const cl = resume.coverLetter as CoverLetterData
+  const header = resume.sections.find(sec => sec.type === 'header')?.items as HeaderData | undefined
+
+  const pageStyle: Style = {
+    fontFamily: s.fontFamily,
+    fontSize: pt(base),
+    lineHeight: lh,
+    backgroundColor: (s.themeColorStyle === 'advanced' && s.backgroundColor === '#ffffff') ? hexA(colors.accent, 0.02) : colors.background,
+    color: colors.text,
+    paddingLeft: `${s.marginHorizontal}mm`,
+    paddingRight: `${s.marginHorizontal}mm`,
+    paddingTop: `${s.marginVertical}mm`,
+    paddingBottom: `${s.marginVertical}mm`,
+    borderWidth: s.themeColorStyle === 'border' ? 12 : 0,
+    borderColor: colors.accent,
+    borderStyle: 'solid',
+  }
+
+  return (
+    <Document>
+      <Page size={s.paperSize === 'a4' ? 'A4' : 'LETTER'} style={pageStyle}>
+        
+        {/* ── Header Area ─────────────────────────────────────────── */}
+        <HeaderRendererPDF h={header} ctx={ctx} isCoverLetter />
+
+        {/* ── Content ─────────────────────────────────────────────── */}
+        <View style={{ flex: 1 }}>
+          {/* Date */}
+          {cl.date && (
+            <View style={{ 
+              marginBottom: 20,
+              alignItems: s.clDatePosition === 'right' ? 'flex-end' : 'flex-start'
+            }}>
+              <Text style={{ color: colors.text, opacity: 0.7, fontWeight: 'medium' }}>
+                {new Date(cl.date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+              </Text>
+            </View>
+          )}
+
+          {/* Recipient */}
+          {(cl.recipient.hrName || cl.recipient.company || cl.recipient.address) && (
+            <View style={{ marginBottom: 30 }}>
+              {cl.recipient.hrName && <Text style={{ fontWeight: 'bold', color: colors.text }}>{cl.recipient.hrName}</Text>}
+              {cl.recipient.company && <Text style={{ fontWeight: 'bold', opacity: 0.9 }}>{cl.recipient.company}</Text>}
+              {cl.recipient.address && <Text style={{ opacity: 0.8 }}>{cl.recipient.address}</Text>}
+            </View>
+          )}
+
+          {/* Body */}
+          <View style={{ color: colors.text }}>
+            {renderCoverLetterBodyPDF(cl.body || '', ctx)}
+          </View>
+
+          {/* Signature */}
+          <View style={{ 
+            marginTop: 40,
+            alignItems: s.clSignaturePosition === 'right' ? 'flex-end' : 'flex-start'
+          }} wrap={false}>
+            <Text style={{ opacity: 0.8 }}>Sincerely,</Text>
+            
+            {s.clShowSignatureLine && (
+              <View style={{ 
+                marginTop: 30, 
+                width: 150, 
+                borderTopWidth: 0.5, 
+                borderTopColor: hexA(colors.text, 0.2) 
+              }} />
+            )}
+
+            <View style={{ marginTop: s.clShowSignatureLine ? 8 : 40 }}>
+              {cl.signature.fullName && (
+                <Text style={{ fontWeight: 'bold', fontSize: pt(12), color: colors.text }}>
+                  {cl.signature.fullName}
+                </Text>
+              )}
+              {(cl.signature.place || cl.signature.date) && (
+                <Text style={{ fontSize: pt(9), opacity: 0.6, marginTop: 2 }}>
+                  {cl.signature.place}{cl.signature.place && cl.signature.date ? ', ' : ''}
+                  {cl.signature.date && new Date(cl.signature.date).toLocaleDateString()}
+                </Text>
+              )}
+            </View>
+          </View>
+        </View>
+
+        {/* ── Footer ─────────────────────────────────────────────── */}
+        {(s.footerPageNumbers || s.footerEmail || s.footerName) && (
+          <View fixed style={{
+            position: 'absolute',
+            bottom: `${s.marginVertical}mm`,
+            left: `${s.marginHorizontal}mm`,
+            right: `${s.marginHorizontal}mm`,
+            paddingTop: 10,
+            borderTopWidth: 0.5,
+            borderTopColor: hexA(colors.text, 0.1),
+            borderTopStyle: 'solid',
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontSize: pt(base * 0.75),
+            color: colors.subtitle,
+          }}>
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              {s.footerName  && <Text>{header?.fullName}</Text>}
+              {s.footerEmail && <Text>{header?.email}</Text>}
+            </View>
+            {s.footerPageNumbers && (
+              <Text render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
+            )}
+          </View>
+        )}
+      </Page>
+    </Document>
+  )
+}
+
 // ─── Document ─────────────────────────────────────────────────────────────────
 
 export function ResumePDF({ resume }: { resume: Resume }) {
-  // Register the font family being used before rendering
+  // Register fonts
   registerFont(resume.settings.fontFamily)
+
+  // Switch between Resume and Cover Letter
+  if (resume.kind === 'coverLetter') {
+    return <CoverLetterPDF resume={resume} />
+  }
 
   const ctx = buildCtx(resume.settings)
   const { colors, s, pt, base, lh, nameSize } = ctx
@@ -218,7 +523,7 @@ export function ResumePDF({ resume }: { resume: Resume }) {
 
   const visibleSections = resume.sections.filter(sec => sec.visible !== false && sec.type !== 'header')
 
-  // Column assignment — same logic as MasterTemplate
+  // Column assignment
   const sidebarTypes = ['skills', 'education', 'languages', 'certifications', 'awards', 'references']
   const mixMainTypes = ['summary', 'experience', 'projects', 'volunteering', 'publications', 'custom']
 
@@ -267,217 +572,19 @@ export function ResumePDF({ resume }: { resume: Resume }) {
       <Page size={s.paperSize === 'a4' ? 'A4' : 'LETTER'} style={pageStyle}>
 
         {/* ── Header ───────────────────────────────────────────────── */}
-        <View style={{
-          backgroundColor: s.themeColorStyle === 'advanced' ? colors.accent : 'transparent',
-          color: s.themeColorStyle === 'advanced' ? (isLight(colors.accent) ? '#1a1a1a' : '#ffffff') : colors.text,
-          marginLeft: s.themeColorStyle === 'advanced' ? `-${s.marginHorizontal}mm` : 0,
-          marginRight: s.themeColorStyle === 'advanced' ? `-${s.marginHorizontal}mm` : 0,
-          marginTop: s.themeColorStyle === 'advanced' ? `-${s.marginVertical}mm` : 0,
-          paddingLeft: s.themeColorStyle === 'advanced' ? `${s.marginHorizontal}mm` : 0,
-          paddingRight: s.themeColorStyle === 'advanced' ? `${s.marginHorizontal}mm` : 0,
-          paddingTop: s.themeColorStyle === 'advanced' ? `${s.marginVertical}mm` : 0,
-          paddingBottom: s.themeColorStyle === 'advanced' ? 15 : 0,
-          marginBottom: s.themeColorStyle === 'advanced' ? 15 : 0,
-        }}>
-          {(() => {
-            const showPhoto = s.photoEnabled && h?.photo
-            const align = s.headerAlignment
-            const photoPos = s.photoPosition
-            const isLightBg = s.themeColorStyle === 'advanced' && isLight(colors.accent);
-            const headerTextColor = s.themeColorStyle === 'advanced' ? (isLightBg ? '#1a1a1a' : '#ffffff') : (s.applyAccentName ? colors.accent : colors.text);
-
-            const nameText = (textAlign: 'left' | 'center' | 'right') => (
-              <View style={{ alignItems: textAlign === 'center' ? 'center' : (textAlign === 'right' ? 'flex-end' : 'flex-start') }}>
-                <Text style={{ 
-                  fontSize: pt(nameSize), 
-                  fontWeight: 'bold', 
-                  color: s.themeColorStyle === 'advanced' ? (isLightBg ? '#1a1a1a' : '#ffffff') : (s.applyAccentName ? colors.accent : colors.text), 
-                  lineHeight: 1.1, 
-                  letterSpacing: -0.5, 
-                  textAlign 
-                }}>
-                  {h?.fullName || 'Your Name'}
-                </Text>
-                {h?.jobTitle && (
-                  <Text style={{ 
-                    fontSize: pt(base * 1.1), 
-                    color: s.themeColorStyle === 'advanced' ? (isLightBg ? '#1a1a1a' : '#ffffff') : (s.applyAccentJobTitle ? hexA(colors.accent, 0.7) : hexA(colors.text, 0.7)), 
-                    marginTop: 4, 
-                    textAlign,
-                    textTransform: 'uppercase',
-                    letterSpacing: 2.5,
-                  }}>
-                    {h.jobTitle}
-                  </Text>
-                )}
-              </View>
-            )
-
-            const photoEl = showPhoto ? <Image src={h.photo!} style={photoStyle} /> : null
-
-            // Center Alignment
-            if (align === "center") {
-              const sizeMap = { XS: 28, S: 36, M: 48, L: 64, XL: 80 };
-              const photoPx = sizeMap[s.photoSize as keyof typeof sizeMap] || 48;
-
-              return (
-                <View
-                  style={{
-                    width: "100%",
-                    marginBottom: 4,
-                    paddingBottom: 4,
-                    alignItems: "center",
-                    position: "relative",
-                  }}
-                >
-                  {/* Photo on the side - absolutely positioned so it doesn't push the center */}
-                  {photoPos === "beside" && photoEl && (
-                    <View
-                      style={{
-                        position: "absolute",
-                        left: 0,
-                        top: "50%",
-                        marginTop: -(photoPx / 2),
-                      }}
-                    >
-                      {photoEl}
-                    </View>
-                  )}
-
-                  <View style={{ alignItems: "center" }}>
-                    {photoPos === "top" && photoEl && (
-                      <View style={{ marginBottom: photoGap / 2 }}>{photoEl}</View>
-                    )}
-                    {nameText("center")}
-                    {photoPos === "bottom" && photoEl && (
-                      <View style={{ marginTop: photoGap / 2 }}>{photoEl}</View>
-                    )}
-                  </View>
-
-                  <View style={{ marginTop: 8, width: "100%" }}>
-                    <ContactLinePDF h={h!} ctx={ctx} textColorOverride={headerTextColor} />
-                  </View>
-                </View>
-              );
-            }
-
-            // Left / Right Alignment
-            const isRight = align === "right";
-            const isBeside = s.detailsPosition === "beside";
-            const photoAlignment = s.photoAlignment || 'left';
-            const photoVAlign = s.photoVerticalAlign || 'center';
-
-            if (isBeside) {
-              const photoOnRight = photoAlignment === 'right' || (photoAlignment === 'center' && isRight);
-              return (
-                <View
-                  style={{
-                    marginBottom: 4,
-                    paddingBottom: 4,
-                    flexDirection: "row",
-                    alignItems: photoVAlign === 'top' ? 'flex-start' : photoVAlign === 'bottom' ? 'flex-end' : 'center',
-                    width: "100%",
-                  }}
-                >
-                  {/* Side A: Identity */}
-                  <View
-                    style={{
-                      flexDirection: photoOnRight ? "row-reverse" : "row",
-                      alignItems: photoVAlign === 'top' ? 'flex-start' : photoVAlign === 'bottom' ? 'flex-end' : 'center',
-                      flex: 1,
-                    }}
-                  >
-                    {!photoOnRight && photoEl && (
-                      <View style={{ [isRight ? "marginLeft" : "marginRight"]: photoGap }}>
-                        {photoEl}
-                      </View>
-                    )}
-                    {nameText(isRight ? "right" : "left")}
-                    {photoOnRight && photoEl && (
-                      <View style={{ [isRight ? "marginLeft" : "marginRight"]: photoGap }}>
-                        {photoEl}
-                      </View>
-                    )}
-                  </View>
-
-                  {/* Side B: Contacts */}
-                  <View
-                    style={{
-                      flex: 1,
-                      alignItems:
-                        s.detailsTextAlignment === "left"
-                          ? "flex-start"
-                          : s.detailsTextAlignment === "right"
-                            ? "flex-end"
-                            : "center",
-                    }}
-                  >
-                    {h && <ContactLinePDF h={h} ctx={ctx} textColorOverride={headerTextColor} />}
-                  </View>
-                </View>
-              );
-            }
-
-            // Below arrangement
-            const photoOnRight = photoAlignment === 'right' || (photoAlignment === 'center' && isRight);
-            return (
-              <View
-                style={{
-                  width: "100%",
-                  marginBottom: 4,
-                  paddingBottom: 4,
-                  flexDirection: photoOnRight ? "row-reverse" : "row",
-                  alignItems: photoVAlign === 'top' ? 'flex-start' : photoVAlign === 'bottom' ? 'flex-end' : 'center',
-                }}
-              >
-                {/* Photo Side */}
-                {photoEl && (
-                  <View style={{ [photoOnRight ? "marginLeft" : "marginRight"]: photoGap }}>
-                    {photoEl}
-                  </View>
-                )}
-
-                {/* Text Side (Identity + Contacts Stack) */}
-                <View
-                  style={{
-                    flex: 1,
-                    flexDirection: "column",
-                    alignItems: isRight ? "flex-end" : "flex-start",
-                  }}
-                >
-                  <View style={{ marginBottom: 8 }}>{nameText(align)}</View>
-                  <View
-                    style={{
-                      width: "100%",
-                      alignItems:
-                        s.detailsTextAlignment === "left"
-                          ? "flex-start"
-                          : s.detailsTextAlignment === "right"
-                            ? "flex-end"
-                            : "center",
-                    }}
-                  >
-                    {h && <ContactLinePDF h={h} ctx={ctx} textColorOverride={headerTextColor} />}
-                  </View>
-                </View>
-              </View>
-            );
-          })()}
-        </View>
+        <HeaderRendererPDF h={h} ctx={ctx} />
 
         {/* ── Body ─────────────────────────────────────────────────── */}
         <View style={{ flexDirection: s.columnReverse ? 'row-reverse' : 'row', flex: 1 }}>
           {(() => {
             const sidebarWidth = s.columnWidthMode === "manual" ? s.columnWidth : 32;
             const mainWidth = 100 - sidebarWidth;
-            
             const dividerColor = s.applyAccentDotsBarsBubbles ? colors.accent : (s.colorMode === 'basic' ? colors.text : colors.heading);
             const sidebarTint = s.applyAccentDotsBarsBubbles ? colors.accent : "transparent";
-            const sidebarBg = hexA(sidebarTint, 0.02); // very light tint
+            const sidebarBg = hexA(sidebarTint, 0.02);
 
             return (
               <>
-                {/* Main column */}
                 <View style={{
                   width: hasSidebar ? `${mainWidth}%` : '100%',
                   paddingRight: !s.columnReverse && hasSidebar ? 20 : 0,
@@ -503,7 +610,6 @@ export function ResumePDF({ resume }: { resume: Resume }) {
                   ))}
                 </View>
 
-                {/* Sidebar column */}
                 {hasSidebar && (
                   <View style={{
                     width: `${sidebarWidth}%`,
@@ -531,7 +637,7 @@ export function ResumePDF({ resume }: { resume: Resume }) {
           })()}
         </View>
 
-        {/* ── Footer (fixed on every page) ─────────────────────────── */}
+        {/* ── Footer ───────────────────────────────────────────────── */}
         {hasFooter && (
           <View fixed style={{
             position: 'absolute',
@@ -559,7 +665,6 @@ export function ResumePDF({ resume }: { resume: Resume }) {
             )}
           </View>
         )}
-
       </Page>
     </Document>
   )

@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { EditorPanel } from '@/components/editor/EditorPanel'
 import { PreviewPanel } from '@/components/preview/PreviewPanel'
 import { CustomizePanel } from '@/components/customize/CustomizePanel'
+import { CoverLetterEditorPanel } from '@/components/cover-letter/CoverLetterEditorPanel'
 import { useResumeStore } from '@/lib/store/resumeStore'
 import { getResume } from '@/lib/db/database'
 import { downloadResumePDF } from '@/lib/utils/export'
@@ -96,29 +97,22 @@ export function BuilderClient() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden bg-background overscroll-none" style={{ overscrollBehavior: 'none' }}>
+    <div className="flex-1 flex flex-col overflow-hidden bg-background overscroll-none" style={{ overscrollBehavior: 'none' }}>
 
       {/* ── Main ────────────────────────────────────────────────────── */}
       <div className="flex flex-1 min-h-0">
 
         {/* Left panel (Editor/Style) */}
         <div
-          className="shrink-0 flex flex-col bg-sidebar overflow-hidden relative border-r border-border"
+          className="shrink-0 flex flex-col bg-sidebar/50 overflow-hidden relative border-r border-border"
           style={{ width: sideW }}
         >
           {/* Sidebar Header - Handles Back and macOS spacing */}
           <header 
             className={cn(
-              "h-11 flex items-center px-3 border-b border-border shrink-0 drag",
-              isMac && "pl-[72px]"
+              "h-11 flex items-center px-3 border-b border-border shrink-0 drag"
             )}
           >
-            <button
-              onClick={() => router.push('/builder')}
-              className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors no-drag"
-            >
-              <ArrowLeft size={14} />
-            </button>
           </header>
 
           {/* Panel nav (Content/Style Tabs) */}
@@ -156,7 +150,7 @@ export function BuilderClient() {
                   exit={{ opacity: 0, x: -6 }}
                   transition={{ duration: 0.12 }}
                 >
-                  <EditorPanel />
+                  {resume.kind === 'coverLetter' ? <CoverLetterEditorPanel /> : <EditorPanel />}
                 </motion.div>
               ) : (
                 <motion.div

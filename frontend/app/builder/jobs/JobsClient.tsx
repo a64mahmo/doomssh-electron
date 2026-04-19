@@ -41,21 +41,14 @@ export function JobsClient() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden bg-background overscroll-none select-none">
+    <div className="flex-1 flex flex-col overflow-hidden bg-background overscroll-none select-none">
       {/* Header */}
       <header
         className={cn(
-          'h-11 flex items-center justify-between px-4 border-b border-border shrink-0 drag bg-sidebar',
-          isMac && 'pl-[72px]'
+          'h-11 flex items-center justify-between px-4 border-b border-border shrink-0 drag bg-background'
         )}
       >
         <div className="flex items-center gap-3 no-drag">
-          <button
-            onClick={() => router.push('/builder')}
-            className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-          >
-            <ArrowLeft size={14} />
-          </button>
           <h1 className="text-sm font-semibold tracking-tight">Job Tracker</h1>
         </div>
         <div className="no-drag">

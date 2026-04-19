@@ -11,6 +11,20 @@ The DoomSSH frontend is a sophisticated Next.js application designed for real-ti
 -   **@dnd-kit:** Powerful drag-and-drop functionality for reordering resume sections and list items.
 -   **Dexie.js:** IndexedDB wrapper for local-first persistence.
 
+## Navigation and Viewport Layout
+
+DoomSSH uses a "Fixed-Viewport" architecture to provide a stable, professional desktop experience.
+
+### Global Sidebar
+The `Sidebar` (`frontend/components/Sidebar.tsx`) is the primary navigation hub. It is:
+- **Collapsible:** Saves horizontal space for editing.
+- **Animated:** Uses `framer-motion` for smooth width transitions.
+- **Context-Aware:** Highlights the active route and provides tooltips when collapsed.
+- **Shared Settings:** Integrates the global settings dialog and theme switcher.
+
+### Fixed Layout Architecture
+The root builder layout (`frontend/app/builder/layout.tsx`) implements a `h-screen overflow-hidden` container. This prevents the browser's default global scrolling, ensuring that the sidebar and top headers remain anchored. Scrolling is localized to individual panels (Editor, Preview, etc.).
+
 ## Modular Component Architecture
 
 The frontend is organized into highly modularized directories to manage the complexity of dual rendering and deep customization.
@@ -20,7 +34,7 @@ The design and styling logic is decoupled into `frontend/components/customize/se
 
 ### Dual-Renderer Paths
 -   **Web Path:** `frontend/components/web/`. Contains the `MasterTemplate.tsx` and modular section renderers in `sections/`. This path is optimized for real-time reactivity and Tailwind-based styling.
--   **PDF Path:** `frontend/components/pdf/`. Mirrors the structure of the web path but uses `@react-pdf/renderer` primitives for high-precision vector output.
+-   **PDF Path:** `frontend/components/pdf/`. Mirrors the structure of the web path but uses `@react-pdf/renderer` primitives for high-precision vector output. Utilizes shared components like `HeaderRendererPDF` and `ContactLinePDF` to ensure Resumes and Cover Letters maintain identical branding logic.
 
 ## State Management
 

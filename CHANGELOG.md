@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-04-19
+
+### Added
+
+- **Unified Builder Experience** — A new, collapsible global sidebar providing instant access to all core modules (Resumes, Cover Letters, Job Tracker, and Interview Prep).
+- **Redesigned Cover Letter Suite** — Significant overhaul of the cover letter authoring experience.
+  - **Modern Editor** — Vertically scrollable, multi-section form with real-time word/character counters.
+  - **High-Fidelity PDF Preview** — Cover letters now use the same high-precision `@react-pdf` engine as resumes for 100% export parity.
+  - **Letterhead Sync** — Optional "Sync with Resume" toggle to automatically mirror contact details from your primary resume.
+  - **Advanced Layout Options** — Deep customization for date and signature positioning (Left/Right) and signature line visibility.
+- **Fixed-Viewport Architecture** — Switched to a professional "desktop-app" layout where the main interface is fixed to the window height, with independent scrolling for navigation, editing, and preview panels.
+- **New Regression Test Suite** — Automated Playwright tests for sidebar state, viewport integrity, and cross-page navigation.
+
+### Changed
+
+- **Consolidated PDF Engine** — Extracted shared rendering logic into a unified `HeaderRendererPDF` component, ensuring resumes and cover letters share identical branding, photo handling, and theme support.
+- **Theme Support for Cover Letters** — Cover letters now fully support "Advanced" (Banner) and "Border" theme color styles.
+- **Customization Panel Logic** — Filtered the Customize Panel to show only relevant sections when editing different document types.
+
+### Fixed
+
+- **macOS Navigation Overlap** — Resolved issue where macOS window controls overlapped with the sidebar toggle when collapsed.
+- **Global Scrollbar Bug** — Fixed a layout issue where the entire window could scroll, breaking the anchored header feel.
+- **Runtime Error in Customization** — Fixed "o.render is not a function" crash in the Header settings panel.
+- **Alignment Discrepancies** — Fixed a weird indentation in the PDF name renderer caused by negative letter spacing.
+
 ## [1.5.0] - 2026-04-15
 
 ### Added

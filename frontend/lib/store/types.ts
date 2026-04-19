@@ -368,20 +368,48 @@ export interface ResumeSettings {
   // Section Column Mapping (sectionId -> 'main' | 'sidebar')
   sectionColumns: Record<string, 'main' | 'sidebar'>
 
+  // Cover Letter Specific Styles
+  clDatePosition?: 'left' | 'right'
+  clSignaturePosition?: 'left' | 'right'
+  clShowSignatureLine?: boolean
+
   // Debug
   debugMode: boolean
 }
 
 // ─── Resume ───────────────────────────────────────────────────────────────────
 
+export interface CoverLetterRecipient {
+  hrName: string
+  company: string
+  address: string
+}
+
+export interface CoverLetterSignature {
+  fullName: string
+  place: string
+  date: string
+  image?: string // base64
+}
+
+export interface CoverLetterData {
+  syncWithResume: boolean
+  date: string
+  recipient: CoverLetterRecipient
+  body: string // markdown
+  signature: CoverLetterSignature
+}
+
 export interface Resume {
   id: string
   name: string
   createdAt: number
   updatedAt: number
+  kind?: 'resume' | 'coverLetter'
   template: TemplateId
   settings: ResumeSettings
   sections: ResumeSection[]
+  coverLetter?: CoverLetterData
 }
 
 // ─── Store Shape ──────────────────────────────────────────────────────────────
@@ -398,6 +426,7 @@ export interface ResumeStore {
   addSection: (type: SectionType) => void
   removeSection: (sectionId: string) => void
   toggleSectionVisibility: (sectionId: string) => void
+  updateCoverLetter: (updates: Partial<CoverLetterData>) => void
   markSaved: () => void
 }
 
@@ -528,6 +557,11 @@ export const DEFAULT_SETTINGS: ResumeSettings = {
   sectionSpacing: 1.0,
 
   sectionColumns: {},
+
+  // Cover Letter Specific Styles
+  clDatePosition: 'left',
+  clSignaturePosition: 'left',
+  clShowSignatureLine: true,
 
   // Debug
   debugMode: false,

@@ -95,21 +95,14 @@ export function InterviewPrepClient() {
   ]
 
   return (
-    <div className="fixed inset-0 flex overflow-hidden bg-background overscroll-none select-none">
+    <div className="flex-1 flex overflow-hidden bg-background overscroll-none select-none">
       {/* Left panel — Job selector */}
-      <aside className="w-72 border-r border-border flex flex-col shrink-0 bg-sidebar">
+      <aside className="w-72 border-r border-border flex flex-col shrink-0 bg-sidebar/50">
         <header
           className={cn(
-            'h-11 flex items-center gap-3 px-4 border-b border-border shrink-0 drag',
-            isMac && 'pl-[72px]'
+            'h-11 flex items-center gap-3 px-4 border-b border-border shrink-0 drag'
           )}
         >
-          <button
-            onClick={() => router.push('/builder')}
-            className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors no-drag"
-          >
-            <ArrowLeft size={14} />
-          </button>
           <h1 className="text-sm font-semibold tracking-tight no-drag">Interview Prep</h1>
         </header>
 

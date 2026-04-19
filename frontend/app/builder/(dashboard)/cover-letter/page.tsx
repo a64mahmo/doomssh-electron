@@ -1,0 +1,190 @@
+'use client'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import {
+  Plus, MoreHorizontal, Trash2, Pencil, FileText, Mail,
+} from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  getAllCoverLetters, createNewCoverLetter, saveResume, deleteResume,
+} from '@/lib/db/database'
+import type { Resume } from '@/lib/store/types'
+import { toast } from 'sonner'
+
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+
+export default function CoverLetterDashboard() {
+  const router = useRouter()
+  const [letters, setLetters] = useState<Resume[]>([])
+  const [loading, setLoading] = useState(true)
+
+  async function load() {
+    setLoading(true)
+    setLetters(await getAllCoverLetters())
+    setLoading(false)
+  }
+
+  useEffect(() => { load() }, [])
+
+  async function handleCreate() {
+    const letter = createNewCoverLetter()
+    await saveResume(letter)
+    router.push(`/builder/new?id=${letter.id}`)
+  }
+
+  async function handleDelete(id: string) {
+    try {
+      await deleteResume(id)
+      await load()
+      toast.success('Cover letter deleted')
+    } catch {
+      toast.error('Failed to delete')
+    }
+  }
+
+  return (
+    <>
+      <header className="border-b border-border px-6 h-11 flex items-center justify-between shrink-0 bg-background drag">
+        <div className="flex items-center gap-2.5 no-drag">
+          <div className="w-5 h-5 rounded bg-foreground flex items-center justify-center shrink-0">
+            <FileText size={10} className="text-background" />
+          </div>
+          <span className="font-bold text-sm tracking-tight">DoomSSH</span>
+        </div>
+        <div className="no-drag">
+          <Button
+            onClick={handleCreate}
+            size="sm"
+            className="h-7.5 bg-foreground text-background hover:bg-foreground/90 gap-1.5 font-semibold text-xs px-4 rounded-lg"
+          >
+            <Plus size={14} />
+            New Cover Letter
+          </Button>
+        </div>
+      </header>
+
+      <main className="flex-1 overflow-y-auto px-8 py-12">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-10">
+            <h1 className="text-2xl font-bold tracking-tight mb-1">My Cover Letters</h1>
+            <p className="text-muted-foreground text-sm">
+              {loading ? 'Loading…' : `${letters.length} cover letter${letters.length !== 1 ? 's' : ''}`}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <motion.button
+              onClick={handleCreate}
+              whileHover={{ scale: 1.02 }}
+              className="group aspect-[3/4] rounded-xl border border-dashed border-border hover:border-foreground/25 flex flex-col items-center justify-center gap-2.5 transition-colors"
+            >
+              <div className="w-9 h-9 rounded-full border border-border group-hover:border-foreground/25 flex items-center justify-center transition-colors">
+                <Plus size={16} className="text-muted-foreground group-hover:text-foreground transition-colors" />
+              </div>
+              <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors font-medium">New Cover Letter</span>
+            </motion.button>
+
+            <AnimatePresence>
+              {letters.map((letter) => (
+                <CoverLetterCard
+                  key={letter.id}
+                  letter={letter}
+                  onEdit={() => router.push(`/builder/new?id=${letter.id}`)}
+                  onDelete={() => handleDelete(letter.id)}
+                />
+              ))}
+            </AnimatePresence>
+          </div>
+        </div>
+      </main>
+    </>
+  )
+}
+
+function CoverLetterCard({ letter, onEdit, onDelete }: {
+  letter: Resume
+  onEdit: () => void
+  onDelete: () => void
+}) {
+  const cl = letter.coverLetter
+  const preview = (cl?.body || '').replace(/[*_•\-]/g, '').split('\n').filter(Boolean).slice(0, 6)
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.02 }}
+      className="group relative aspect-[3/4] rounded-xl overflow-hidden cursor-pointer bg-white"
+      onClick={onEdit}
+    >
+      {/* Paper background with letter preview */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white to-zinc-100" />
+      <div className="absolute inset-0 p-5 flex flex-col gap-2 text-[7px] leading-[1.35] text-zinc-700 font-serif">
+        <div className="flex flex-col gap-0.5 mb-1">
+          <div className="h-[6px] w-2/3 bg-zinc-800 rounded-sm" />
+          <div className="h-[3px] w-1/2 bg-zinc-400 rounded-sm" />
+        </div>
+        <div className="h-[2px] w-1/4 bg-zinc-300 rounded-sm my-1" />
+        <div className="flex flex-col gap-0.5 mb-1">
+          <div className="h-[3px] w-1/3 bg-zinc-400 rounded-sm" />
+          <div className="h-[3px] w-1/4 bg-zinc-400 rounded-sm" />
+        </div>
+        {preview.length > 0 ? (
+          preview.map((_, i) => (
+            <div key={i} className="h-[2px] bg-zinc-300 rounded-sm" style={{ width: `${75 + (i * 7) % 20}%` }} />
+          ))
+        ) : (
+          [...Array(8)].map((_, i) => (
+            <div key={i} className="h-[2px] bg-zinc-200 rounded-sm" style={{ width: `${60 + (i * 9) % 35}%` }} />
+          ))
+        )}
+      </div>
+
+      <div className="absolute top-3 right-3 w-7 h-7 rounded-md bg-foreground/90 flex items-center justify-center shadow-sm">
+        <Mail size={12} className="text-background" />
+      </div>
+
+      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+        <span className="px-3 py-1.5 rounded-lg bg-white text-black text-xs font-semibold">Edit</span>
+      </div>
+
+      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+        <div className="flex items-end justify-between gap-1">
+          <div className="min-w-0">
+            <p className="text-white text-xs font-semibold truncate leading-tight">{letter.name}</p>
+            <p className="text-white/45 text-[10px] mt-0.5">
+              {new Date(letter.updatedAt).toLocaleDateString()}
+            </p>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              className="shrink-0 w-6 h-6 rounded flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal size={13} />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit() }}>
+                <Pencil size={13} className="mr-2" /> Edit
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={(e) => { e.stopPropagation(); onDelete() }}
+              >
+                <Trash2 size={13} className="mr-2" /> Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </motion.div>
+  )
+}

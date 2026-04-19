@@ -281,7 +281,7 @@ describe('jobStore', () => {
 
     it('adds error to uiStore when save fails', async () => {
       const { saveAllJobs } = await import('@/lib/db/jobDatabase')
-      const { useUIStore } = await import('./uiStore')
+      const { useUIStore } = await import('@/lib/store/uiStore')
       useUIStore.getState().clearErrors()
       vi.mocked(saveAllJobs).mockRejectedValueOnce(new Error('Write Error'))
       
