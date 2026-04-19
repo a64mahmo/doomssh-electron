@@ -1,14 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
-import BuilderDashboard from '@/app/builder/page'
+import { Sidebar } from '@/components/Sidebar'
 import { useUIStore } from '@/lib/store/uiStore'
-import { getAllResumes } from '@/lib/db/database'
+import { TooltipProvider } from '@/components/ui/tooltip'
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: vi.fn(),
   }),
+  usePathname: () => '/builder',
 }))
 
 // Mock next-themes
@@ -19,21 +20,8 @@ vi.mock('next-themes', () => ({
   }),
 }))
 
-// Mock database
-vi.mock('@/lib/db/database', () => ({
-  getAllResumes: vi.fn(),
-  deleteResume: vi.fn(),
-  duplicateResume: vi.fn(),
-  createNewResume: vi.fn(),
-  saveResume: vi.fn(),
-}))
-
-describe('BuilderDashboard Settings & Bug Mode', () => {
+describe('Sidebar Settings & Bug Mode', () => {
   const mockElectron = {
-    vault: {
-      getPath: vi.fn().mockResolvedValue('/mock/vault'),
-      setPath: vi.fn().mockResolvedValue('/mock/vault'),
-    },
     getApiKey: vi.fn().mockResolvedValue('sk-test-key'),
     getDebugMode: vi.fn().mockResolvedValue(true),
     setDebugMode: vi.fn().mockResolvedValue(undefined),
@@ -54,14 +42,9 @@ describe('BuilderDashboard Settings & Bug Mode', () => {
     vi.clearAllMocks()
     global.window.electron = mockElectron as any
     useUIStore.getState().setGlobalDebugMode(false)
-    vi.mocked(getAllResumes).mockResolvedValue([])
   })
 
   async function openSettings() {
-    await waitFor(() => {
-      expect(screen.queryByText(/My Resumes/i)).toBeTruthy()
-    })
-    
     const settingsBtn = screen.getByText(/Settings/i)
     await act(async () => {
       fireEvent.click(settingsBtn)
@@ -70,7 +53,11 @@ describe('BuilderDashboard Settings & Bug Mode', () => {
 
   it('should load Bug Mode state from electron on mount', async () => {
     await act(async () => {
-      render(<BuilderDashboard />)
+      render(
+        <TooltipProvider>
+          <Sidebar />
+        </TooltipProvider>
+      )
     })
 
     await waitFor(() => {
@@ -82,7 +69,11 @@ describe('BuilderDashboard Settings & Bug Mode', () => {
 
   it('should persist Bug Mode state to electron when saving settings', async () => {
     await act(async () => {
-      render(<BuilderDashboard />)
+      render(
+        <TooltipProvider>
+          <Sidebar />
+        </TooltipProvider>
+      )
     })
 
     await openSettings()
@@ -108,7 +99,11 @@ describe('BuilderDashboard Settings & Bug Mode', () => {
 
   it('should show the bug mode description in settings', async () => {
     await act(async () => {
-      render(<BuilderDashboard />)
+      render(
+        <TooltipProvider>
+          <Sidebar />
+        </TooltipProvider>
+      )
     })
     await openSettings()
     

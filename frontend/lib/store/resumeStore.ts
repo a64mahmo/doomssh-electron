@@ -64,6 +64,11 @@ export const useResumeStore = create<ResumeStore>()(
         }
 
         state.resume.settings = newSettings
+        
+        // If they adjust settings manually, it's now a custom template
+        if (state.resume.template !== 'custom') {
+          state.resume.template = 'custom'
+        }
         state.isDirty = true
       }),
 

@@ -29,6 +29,7 @@ describe('useAI hook', () => {
   it('should add an error to uiStore when Electron IPC fails', async () => {
     // Mock window.electron
     const mockElectron = {
+      getApiKey: vi.fn().mockResolvedValue('test-key'),
       aiStream: vi.fn((id, messages, maxTokens, onChunk, onDone, onError) => {
         setTimeout(() => onError('IPC Connection Lost'), 0)
         return () => {}

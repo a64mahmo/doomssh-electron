@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
-import BuilderDashboard from '@/app/builder/page'
+import BuilderDashboard from '@/app/builder/(dashboard)/page'
 import { getAllResumes, deleteResume, createNewResume, saveResume } from '@/lib/db/database'
 import { toast } from 'sonner'
 
