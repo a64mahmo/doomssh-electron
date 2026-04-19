@@ -67,6 +67,13 @@ As an AI agent, you are part of the core engineering team. You must adhere to th
     - To trigger a different bump, include `#minor` or `#major` in the commit message.
     - Pushing a new tag (manually or via CI) triggers `.github/workflows/release.yml` for artifact building.
 
+## 11. Mandatory Documentation & Audit Trail
+- **Constraint:** Every significant feature, architectural change, or UI overhaul must be documented.
+- **Mandate:** 
+    - **Changelog:** Always add a new entry to `CHANGELOG.md` under the appropriate version heading (or create a new one if bumping version).
+    - **README:** Update the feature list or technology stack in `README.md` if the change affects high-level capabilities.
+    - **Docs:** If the internal logic or component structure changes, update the relevant files in `/docs` (e.g., `frontend.md`, `architecture.md`).
+
 ---
 
 ### Verification Checklist for AI Changes
@@ -80,5 +87,6 @@ As an AI agent, you are part of the core engineering team. You must adhere to th
 8. [ ] Did I add/update Vitest unit tests for any logic changes?
 9. [ ] Did I run `npm test --prefix frontend` and confirm all tests pass?
 10. [ ] If this is a release-ready merge, did I check if `#minor` or `#major` is required in the commit message?
+11. [ ] **Documentation:** Did I update `CHANGELOG.md`, `README.md`, and relevant files in `/docs`?
 
 **Failure to follow these mandates will result in layout drift, state corruption, or build failures.**
