@@ -7,7 +7,51 @@ import { DEFAULT_SETTINGS, DEFAULT_HEADER, SECTION_LABELS } from '@/lib/store/ty
 
 export async function getAllResumes(): Promise<Resume[]> {
   if (!window.electron) return []
-  return (await window.electron.vault.list()) as Resume[]
+  const all = (await window.electron.vault.list()) as Resume[]
+  return all.filter(r => r.kind !== 'coverLetter')
+}
+
+export async function getAllCoverLetters(): Promise<Resume[]> {
+  if (!window.electron) return []
+  const all = (await window.electron.vault.list()) as Resume[]
+  return all.filter(r => r.kind === 'coverLetter')
+}
+
+export function createNewCoverLetter(name: string = 'Untitled Cover Letter'): Resume {
+  const now = Date.now()
+  return {
+    id: generateId(),
+    name,
+    createdAt: now,
+    updatedAt: now,
+    kind: 'coverLetter',
+    template: 'modern',
+    settings: { ...DEFAULT_SETTINGS },
+    sections: [
+      {
+        id: generateId(),
+        type: 'header',
+        title: SECTION_LABELS.header,
+        visible: true,
+        items: { ...DEFAULT_HEADER },
+      },
+    ],
+    coverLetter: {
+      syncWithResume: true,
+      date: new Date().toISOString().slice(0, 10),
+      recipient: {
+        hrName: 'Hiring Manager',
+        company: 'Target Company Name',
+        address: '123 Business Rd.\nCity, State 12345',
+      },
+      body: 'Dear Hiring Manager,\n\nI am writing to express my strong interest in the [Job Title] position at [Company Name]. With a background in [Your Field] and a proven track record of [Key Achievement], I am confident that I can bring significant value to your team.\n\nIn my previous role at [Previous Company], I successfully [Achievement 1] and [Achievement 2]. These experiences have equipped me with the skills necessary to excel in this role, specifically in [Skill 1] and [Skill 2].\n\nI have followed [Company Name] for some time and am impressed by your recent [Company Achievement/Value]. I am eager to contribute my expertise to help your team achieve its goals.\n\nThank you for your time and consideration. I look forward to the possibility of discussing my application with you further.\n\nSincerely,\n',
+      signature: {
+        fullName: 'Your Name',
+        place: 'City, Country',
+        date: new Date().toISOString().slice(0, 10),
+      },
+    },
+  }
 }
 
 export async function getResume(id: string): Promise<Resume | undefined> {

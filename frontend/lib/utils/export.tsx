@@ -1,7 +1,8 @@
 import type { Resume } from '@/lib/store/types'
 
 export async function downloadResumePDF(resume: Resume): Promise<void> {
-  const fileName = `${resume.name.replace(/\s+/g, '_')}_Resume.pdf`
+  const isCL = resume.kind === 'coverLetter'
+  const fileName = `${resume.name.replace(/\s+/g, '_')}_${isCL ? 'Cover_Letter' : 'Resume'}.pdf`
 
   try {
     const [{ pdf }, { ResumePDF }] = await Promise.all([

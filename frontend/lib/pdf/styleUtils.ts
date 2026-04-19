@@ -45,9 +45,19 @@ export interface ResolvedColors {
   date: string
   background: string
   accent: string
+  sidebarBg: string
+  sidebarText: string
 }
 
 export function resolveColors(s: ResumeSettings): ResolvedColors {
+  let sidebarBg = s.backgroundColor
+  if (s.sidebarTheme === 'accent') {
+    sidebarBg = s.accentColor
+  } else if (s.sidebarTheme === 'custom' && s.sidebarBackgroundColor) {
+    sidebarBg = s.sidebarBackgroundColor
+  }
+  const sidebarText = textColorsForBg(sidebarBg).textColor
+
   if (s.colorMode === 'multi' || s.colorMode === 'image') {
     return {
       text: s.textColor,
@@ -56,6 +66,8 @@ export function resolveColors(s: ResumeSettings): ResolvedColors {
       date: s.dateColor,
       background: s.backgroundColor,
       accent: s.accentColor,
+      sidebarBg,
+      sidebarText,
     }
   }
   // basic mode
@@ -66,6 +78,8 @@ export function resolveColors(s: ResumeSettings): ResolvedColors {
     date: s.dateColor,
     background: s.backgroundColor,
     accent: s.accentColor,
+    sidebarBg,
+    sidebarText,
   }
 }
 

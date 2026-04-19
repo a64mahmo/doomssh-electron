@@ -1,6 +1,6 @@
 'use client'
-import { useState, useCallback } from 'react'
-import { bulletPrompt, improvePrompt, summaryPrompt } from '@/lib/ai/prompts'
+import { useState, useCallback, useEffect } from 'react'
+import { bulletPrompt, improvePrompt, summaryPrompt, interviewQuestionsPrompt, SYSTEM_INTERVIEW_COACH } from '@/lib/ai/prompts'
 import { useUIStore } from '@/lib/store/uiStore'
 
 // Detect Electron renderer — window.electron is injected by preload.ts
@@ -20,6 +20,7 @@ interface ElectronBridge {
     onDone: () => void,
     onError: (message: string) => void,
   ) => () => void
+  getApiKey: () => Promise<string | null>
 }
 
 let reqCounter = 0
@@ -32,6 +33,17 @@ interface UseAIOptions {
 export function useAI({ onChunk }: UseAIOptions = {}) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [hasApiKey, setHasApiKey] = useState<boolean>(true) // optimistic default
+
+  // Check API key availability on mount
+  useEffect(() => {
+    const electron = getElectron()
+    if (electron) {
+      electron.getApiKey().then(key => setHasApiKey(!!key))
+    } else {
+      setHasApiKey(false)
+    }
+  }, [])
 
   // ── IPC path (Electron) ────────────────────────────────────────────────────
   const streamViaIPC = useCallback(
@@ -100,10 +112,12 @@ export function useAI({ onChunk }: UseAIOptions = {}) {
           ? await streamViaIPC(messages, maxTokens)
           : await streamViaHTTP(httpEndpoint, httpBody)
       } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Unknown error'
+        const raw = err instanceof Error ? err.message : String(err)
+        const msg = raw.trim() || 'No API key configured. Add your Anthropic API key in Settings.'
         setError(msg)
+        console.error('[AI]', msg)
         useUIStore.getState().addError(`AI Error: ${msg}`)
-        throw err
+        throw new Error(msg)
       } finally {
         setLoading(false)
       }
@@ -138,5 +152,17 @@ export function useAI({ onChunk }: UseAIOptions = {}) {
     [run],
   )
 
-  return { loading, error, generateBullets, improveText, generateSummary }
+  const generateInterviewQuestions = useCallback(
+    (jobTitle: string, company: string, jobDescription: string, resumeContext?: string) =>
+      run(
+        [
+          { role: 'user', content: interviewQuestionsPrompt(jobTitle, company, jobDescription, resumeContext) },
+        ],
+        '/api/ai/interview', { jobTitle, company, jobDescription, resumeContext },
+        2048,
+      ),
+    [run],
+  )
+
+  return { loading, error, hasApiKey, generateBullets, improveText, generateSummary, generateInterviewQuestions }
 }

@@ -37,12 +37,22 @@ DoomSSH has two "realities":
 
 ---
 
-## 6. Pre-Flight Checklist for AI Edits
+## 7. Mandatory Documentation & Audit Trail
+- **Mandate:** AI Agents must maintain the project's documentation. 
+- **Action:** After every feature implementation or bug fix:
+    1. Add an entry to `CHANGELOG.md`.
+    2. Update `README.md` if high-level features or tech stack changed.
+    3. Update files in `docs/` if architectural or internal logic changed.
+
+---
+
+## Pre-Flight Checklist for AI Edits
 Before declaring a task complete, verify the following:
 1. [ ] **Types:** Are all new data structures reflected in `types.ts`?
 2. [ ] **Persistence:** Does the change correctly trigger the auto-save debouncer?
 3. [ ] **Mirroring:** Is the visual change identical in both the Preview and the PDF export?
-4. [ ] **Fidelity:** Did I avoid using CSS shorthand properties that `@react-pdf` doesn't support (e.g., `border: 1px solid red`)?
-5. [ ] **Security:** Did I avoid leaking any logic into the frontend that belongs in the Electron main process?
+4. [ ] **Fidelity:** Did I avoid using CSS shorthand properties that `@react-pdf` doesn't support?
+5. [ ] **Security:** Did I avoid leaking logic into the frontend that belongs in the Electron main process?
+6. [ ] **Documentation:** Have I updated `CHANGELOG.md`, `README.md`, and relevant `/docs`?
 
 **Any deviation from this protocol will lead to technical debt and layout desynchronization.**

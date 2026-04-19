@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import { useJobStore } from '@/lib/store/jobStore'
 import { JobForm } from './JobForm'
 import { TimelineView } from './TimelineView'
+import { InterviewPrepTab } from './InterviewPrepTab'
 import type { JobApplication, JobContact, JobEvent, JobStatus } from '@/lib/store/jobTypes'
 import { JOB_STATUS_CONFIG } from '@/lib/store/jobTypes'
 import { generateId } from '@/lib/utils/ids'
@@ -129,7 +130,7 @@ export function JobDetailDialog({ jobId, mode = 'edit', initialStatus, onClose }
 
   return (
     <Dialog open={!!jobId || mode === 'create'} onOpenChange={(open) => { if (!open) handleClose() }}>
-      <DialogContent className="sm:max-w-2xl h-[95vh] sm:h-fit sm:max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden border-none shadow-2xl">
+      <DialogContent className="sm:max-w-2xl h-[95vh] sm:h-fit sm:max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden border-none shadow-2xl select-none">
         {/* Header */}
         <div className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 bg-gradient-to-b from-muted/50 to-transparent shrink-0">
           <DialogHeader>
@@ -199,13 +200,22 @@ export function JobDetailDialog({ jobId, mode = 'edit', initialStatus, onClose }
                   <Badge variant="secondary" className="ml-2 text-[9px] h-4 px-1 bg-muted/50">{job.contacts.length}</Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger 
-                value="timeline" 
+              <TabsTrigger
+                value="timeline"
                 className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest py-3 px-0 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-primary rounded-none"
               >
                 Timeline
                 {job.events.length > 0 && (
                   <Badge variant="secondary" className="ml-2 text-[9px] h-4 px-1 bg-muted/50">{job.events.length}</Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger
+                value="interview"
+                className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest py-3 px-0 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-primary rounded-none"
+              >
+                Interview Prep
+                {(job.interviewPrep?.questions?.length ?? 0) > 0 && (
+                  <Badge variant="secondary" className="ml-2 text-[9px] h-4 px-1 bg-muted/50">{job.interviewPrep!.questions.length}</Badge>
                 )}
               </TabsTrigger>
             </TabsList>
@@ -240,8 +250,8 @@ export function JobDetailDialog({ jobId, mode = 'edit', initialStatus, onClose }
               </div>
             </TabsContent>
 
-            <TabsContent 
-              value="timeline" 
+            <TabsContent
+              value="timeline"
               className="flex-1 min-h-0 m-0 outline-none overflow-y-auto scroll-smooth"
             >
               <div className="px-6 sm:px-8 py-6 sm:py-8">
@@ -249,6 +259,18 @@ export function JobDetailDialog({ jobId, mode = 'edit', initialStatus, onClose }
                   events={job.events}
                   onAddEvent={addEventToDraft}
                   onRemoveEvent={removeEventFromDraft}
+                />
+              </div>
+            </TabsContent>
+
+            <TabsContent
+              value="interview"
+              className="flex-1 min-h-0 m-0 outline-none overflow-y-auto scroll-smooth"
+            >
+              <div className="px-6 sm:px-8 py-6 sm:py-8">
+                <InterviewPrepTab
+                  job={job}
+                  onUpdate={updateDraft}
                 />
               </div>
             </TabsContent>

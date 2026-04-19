@@ -20,11 +20,12 @@
 
 Most modern resume builders lock your data behind a subscription or a cloud account. DoomSSH flips the script. It is a professional-grade desktop application designed for engineers and creatives who value privacy, performance, and data ownership.
 
-- **Local-First:** Your resumes are stored as plain JSON files in a Vault of your choice. No cloud, no tracking, no data harvesting.
-- **AI-Native:** Powered by Anthropic Claude. Generate high-impact bullet points and summaries directly within the app, with keys stored securely in your OS keychain.
-- **Headless-Sync Renderer:** Experience a what-you-see-is-what-you-get workflow. Our custom headless architecture ensures that the logic driving the HTML preview and the PDF export is perfectly synchronized.
-- **Job Application Tracker:** Manage your entire career pipeline with a built-in tracker featuring staged creation, contact management, precision salary tracking, and automated activity timelines.
+- **Unified Builder Experience:** A modern, collapsible sidebar provides instant access to your Resumes, Cover Letters, Job Tracker, and Interview Prep from a single interface.
+- **Headless-Sync Engine:** Shared rendering logic between resumes and cover letters ensures 100% visual parity between the editor and exported PDF.
+- **Advanced Layout Engine:** Viewport-fixed architecture with independent panel scrolling for a stable, professional desktop-app feel.
+- **Local-First Vault:** Your resumes are stored as plain JSON files in a Vault of your choice. No cloud, no tracking, no data harvesting.
 - **Native Cross-Platform Experience:** Optimized for both macOS and Windows, including native window controls and deep OS integration.
+- **Continuous CD Release:** Every merge to `main` automatically triggers a full software release. Bumps version (`patch` by default) and publishes platform-specific builds.
 - **Transparent Updates:** Built-in software update system with real-time download progress and manual check controls.
 - **Bug Mode & Diagnostics:** Built-in diagnostic system ("Bug Mode") to capture and display system errors for easier troubleshooting.
 - **Infinite Customization:** Dozens of professionally designed templates with deep control over typography, colors, layout mathematics, and section arrangements.

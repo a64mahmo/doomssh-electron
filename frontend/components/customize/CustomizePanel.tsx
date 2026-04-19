@@ -48,6 +48,14 @@ type PanelSectionId = typeof PANEL_SECTIONS[number]['id']
 
 export function CustomizePanel() {
   const { resume, updateSettings, setResume } = useResume()
+  
+  const isCoverLetter = resume?.kind === 'coverLetter'
+  
+  const filteredSections = useMemo(() => {
+    if (!isCoverLetter) return PANEL_SECTIONS
+    return PANEL_SECTIONS.filter(s => ['templates', 'layout', 'typography', 'colors', 'header'].includes(s.id))
+  }, [isCoverLetter])
+
   const [activeSection, setActiveSection] = useState<PanelSectionId>('templates')
   const [dragActiveId, setDragActiveId] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -101,7 +109,7 @@ export function CustomizePanel() {
     <div className="flex h-full overflow-hidden bg-background">
       {/* -- Icon Nav ------------------------------------------------ */}
       <nav className="w-12 border-r border-border flex flex-col items-center py-3 gap-1 shrink-0 bg-sidebar">
-        {PANEL_SECTIONS.map((section) => {
+        {filteredSections.map((section) => {
           const Icon = section.icon
           const active = activeSection === section.id
           return (
@@ -180,7 +188,7 @@ export function CustomizePanel() {
                   <TypographySection s={s} upd={upd} />
                 )}
 
-                {activeSection === 'entry' && (
+                {activeSection === 'entry' && !isCoverLetter && (
                   <EntrySection s={s} upd={upd} />
                 )}
 
@@ -189,10 +197,10 @@ export function CustomizePanel() {
                 )}
 
                 {activeSection === 'header' && (
-                  <HeaderSection s={s} upd={upd} />
+                  <HeaderSection s={s} upd={upd} sections={sections} />
                 )}
 
-                {activeSection === 'sections' && (
+                {activeSection === 'sections' && !isCoverLetter && (
                   <SectionsSection s={s} upd={upd} />
                 )}
               </motion.div>

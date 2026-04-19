@@ -64,11 +64,6 @@ export const useResumeStore = create<ResumeStore>()(
         }
 
         state.resume.settings = newSettings
-        
-        // If they adjust settings manually, it's now a custom template
-        if (state.resume.template !== 'custom') {
-          state.resume.template = 'custom'
-        }
         state.isDirty = true
       }),
 
@@ -131,6 +126,20 @@ export const useResumeStore = create<ResumeStore>()(
           section.visible = !section.visible
           state.isDirty = true
         }
+      }),
+
+    updateCoverLetter: (updates) =>
+      set((state) => {
+        if (!state.resume) return
+        const current = state.resume.coverLetter ?? {
+          syncWithResume: false,
+          date: '',
+          recipient: { hrName: '', company: '', address: '' },
+          body: '',
+          signature: { fullName: '', place: '', date: '' },
+        }
+        state.resume.coverLetter = { ...current, ...updates }
+        state.isDirty = true
       }),
 
     markSaved: () => set({ isDirty: false }),

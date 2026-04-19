@@ -2,10 +2,25 @@
 
 import { useEffect } from 'react'
 import { toast } from 'sonner'
+import { useTheme } from 'next-themes'
 import { useUIStore } from '@/lib/store/uiStore'
 
 export function ElectronProvider() {
   const { setUpdateStatus, setUpdateProgress, setUpdateVersion, setUpdateError, globalDebugMode } = useUIStore()
+  const { theme, resolvedTheme } = useTheme()
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.electron || window.electron.platform !== 'win32') return
+
+    const isDark = (theme === 'system' ? resolvedTheme : theme) === 'dark'
+    
+    // symbolColor: #94a3b8 is muted-foreground in oklch
+    // color: #00000000 is transparent
+    window.electron.updateWindowControls({
+      color: '#00000000',
+      symbolColor: isDark ? '#94a3b8' : '#64748b'
+    })
+  }, [theme, resolvedTheme])
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.electron) return

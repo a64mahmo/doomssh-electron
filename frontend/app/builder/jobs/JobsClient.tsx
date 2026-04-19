@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, Kanban, Table2, BarChart3 } from 'lucide-react'
+import { ArrowLeft, Plus, Kanban, Table2, BarChart3, GraduationCap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { useJobStore } from '@/lib/store/jobStore'
@@ -19,10 +19,12 @@ export function JobsClient() {
   const [isAddingNew, setIsAddingNew] = useState(false)
   const [initialStatus, setInitialStatus] = useState<any>(undefined)
   const [isMac, setIsMac] = useState(false)
+  const [isWin, setIsWin] = useState(false)
 
   useEffect(() => {
     if (window.electron) {
       setIsMac(window.electron.platform === 'darwin')
+      setIsWin(window.electron.platform === 'win32')
     }
     if (!isLoaded) loadJobs()
   }, [isLoaded, loadJobs])
@@ -41,21 +43,15 @@ export function JobsClient() {
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden bg-background overscroll-none">
+    <div className="flex-1 flex flex-col overflow-hidden bg-background overscroll-none select-none">
       {/* Header */}
       <header
         className={cn(
-          'h-11 flex items-center justify-between px-4 border-b border-border shrink-0 drag bg-sidebar',
-          isMac && 'pl-[72px]'
+          'h-11 flex items-center justify-between px-4 border-b border-border shrink-0 drag bg-background',
+          isWin && 'win32-padding'
         )}
       >
         <div className="flex items-center gap-3 no-drag">
-          <button
-            onClick={() => router.push('/builder')}
-            className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-          >
-            <ArrowLeft size={14} />
-          </button>
           <h1 className="text-sm font-semibold tracking-tight">Job Tracker</h1>
         </div>
         <div className="no-drag">

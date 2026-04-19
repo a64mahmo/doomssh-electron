@@ -4,16 +4,13 @@ import { useState } from 'react'
 import {
   DndContext,
   DragOverlay,
-  closestCorners,
+  closestCenter,
   PointerSensor,
   useSensor,
   useSensors,
-  KeyboardSensor,
   type DragStartEvent,
   type DragEndEvent,
-  type DragOverEvent,
 } from '@dnd-kit/core'
-import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible'
@@ -41,7 +38,6 @@ export function KanbanBoard({ onSelectJob, onAddJob }: KanbanBoardProps) {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
   const activeJobs = jobs.filter((j) => !j.archivedAt && ACTIVE_STATUSES.includes(j.status))
@@ -56,10 +52,6 @@ export function KanbanBoard({ onSelectJob, onAddJob }: KanbanBoardProps) {
   function handleDragStart(event: DragStartEvent) {
     const job = jobs.find((j) => j.id === event.active.id)
     if (job) setActiveJob(job)
-  }
-
-  function handleDragOver(event: DragOverEvent) {
-    // Visual feedback handled by useDroppable isOver
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -88,9 +80,8 @@ export function KanbanBoard({ onSelectJob, onAddJob }: KanbanBoardProps) {
         <ScrollArea className="h-full overflow-x-auto">
           <DndContext
             sensors={sensors}
-            collisionDetection={closestCorners}
+            collisionDetection={closestCenter}
             onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
             <div className="flex gap-3 p-4 h-full min-w-max">

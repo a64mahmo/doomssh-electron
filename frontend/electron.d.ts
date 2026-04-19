@@ -2,6 +2,7 @@
 interface ElectronAPI {
   platform: string
   getAppVersion: () => Promise<string>
+  updateWindowControls: (args: { color: string; symbolColor: string }) => Promise<void>
 
   // API key
   setApiKey: (key: string) => Promise<void>
