@@ -171,8 +171,8 @@ export function CustomizePanel() {
                 )}
 
                 {activeSection === 'layout' && (
-                  <LayoutSection 
-                    s={s} 
+                  <LayoutSection
+                    s={s}
                     upd={upd}
                     sensors={sensors}
                     handleDragOver={handleDragOver}
@@ -181,6 +181,7 @@ export function CustomizePanel() {
                     mainIds={mainIds}
                     sidebarIds={sidebarIds}
                     sections={sections}
+                    isCoverLetter={isCoverLetter}
                   />
                 )}
 

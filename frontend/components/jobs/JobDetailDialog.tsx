@@ -43,6 +43,7 @@ const DEFAULT_JOB = (status: JobStatus = 'wishlist'): JobApplication => ({
   salaryMax: null,
   salaryCurrency: 'USD',
   resumeId: null,
+  coverLetterId: null,
   coverLetter: '',
   notes: '',
   contacts: [],

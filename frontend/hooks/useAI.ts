@@ -1,6 +1,10 @@
 'use client'
 import { useState, useCallback, useEffect } from 'react'
-import { bulletPrompt, improvePrompt, summaryPrompt, interviewQuestionsPrompt, SYSTEM_INTERVIEW_COACH } from '@/lib/ai/prompts'
+import {
+  bulletPrompt, improvePrompt, summaryPrompt, interviewQuestionsPrompt, SYSTEM_INTERVIEW_COACH,
+  coverLetterGeneratePrompt, coverLetterImprovePrompt, coverLetterTonePrompt, coverLetterShortenPrompt,
+  type CoverLetterGenInput,
+} from '@/lib/ai/prompts'
 import { useUIStore } from '@/lib/store/uiStore'
 
 // Detect Electron renderer — window.electron is injected by preload.ts
@@ -164,5 +168,45 @@ export function useAI({ onChunk }: UseAIOptions = {}) {
     [run],
   )
 
-  return { loading, error, hasApiKey, generateBullets, improveText, generateSummary, generateInterviewQuestions }
+  const generateCoverLetter = useCallback(
+    (input: CoverLetterGenInput) =>
+      run(
+        [{ role: 'user', content: coverLetterGeneratePrompt(input) }],
+        '/api/ai/cover-letter', { ...input, op: 'generate' }, 1536,
+      ),
+    [run],
+  )
+
+  const improveCoverLetter = useCallback(
+    (body: string, context?: string) =>
+      run(
+        [{ role: 'user', content: coverLetterImprovePrompt(body, context) }],
+        '/api/ai/cover-letter', { body, context, op: 'improve' }, 1536,
+      ),
+    [run],
+  )
+
+  const rewriteCoverLetterTone = useCallback(
+    (body: string, tone: string) =>
+      run(
+        [{ role: 'user', content: coverLetterTonePrompt(body, tone) }],
+        '/api/ai/cover-letter', { body, tone, op: 'tone' }, 1536,
+      ),
+    [run],
+  )
+
+  const shortenCoverLetter = useCallback(
+    (body: string) =>
+      run(
+        [{ role: 'user', content: coverLetterShortenPrompt(body) }],
+        '/api/ai/cover-letter', { body, op: 'shorten' }, 1024,
+      ),
+    [run],
+  )
+
+  return {
+    loading, error, hasApiKey,
+    generateBullets, improveText, generateSummary, generateInterviewQuestions,
+    generateCoverLetter, improveCoverLetter, rewriteCoverLetterTone, shortenCoverLetter,
+  }
 }

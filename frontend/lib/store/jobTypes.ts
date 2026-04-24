@@ -103,6 +103,7 @@ export interface JobApplication {
   salaryMax: number | null;
   salaryCurrency: string;
   resumeId: string | null;
+  coverLetterId: string | null;
   coverLetter: string;
   notes: string;
   contacts: JobContact[];

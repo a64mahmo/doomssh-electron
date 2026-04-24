@@ -312,6 +312,156 @@ function SectionHeading({
   );
 }
 
+function CoverLetterBody({ resume, ctx }: { resume: Resume; ctx: ReturnType<typeof buildCtx> }) {
+  const { colors, base, lh, pt, s } = ctx;
+  const cl = resume.coverLetter;
+  if (!cl || !cl.body) return null;
+
+  const paraSpacing = s.clParagraphSpacing ?? 1.0;
+  const paragraphMargin = `${(4 * paraSpacing).toFixed(2)}mm`;
+  const bodyAlign = (s.clBodyAlign ?? 'left') as 'left' | 'justify';
+  const indent = s.clFirstLineIndent ? '1.5em' : 0;
+
+  const blocks = cl.body.split(/\n{2,}/);
+
+  return (
+    <div style={{ color: colors.text, display: 'flex', flexDirection: 'column', flex: 1 }}>
+      {/* Date */}
+      {(s.clShowDate ?? true) && cl.date && (
+        <div style={{
+          marginBottom: '20pt',
+          textAlign: s.clDatePosition === 'right' ? 'right' : 'left',
+          color: s.applyAccentDates ? colors.accent : colors.text,
+          opacity: s.applyAccentDates ? 1 : 0.7,
+          fontWeight: 500,
+        }}>
+          {new Date(cl.date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+        </div>
+      )}
+
+      {/* Recipient */}
+      {(s.clShowRecipient ?? true) && (cl.recipient.hrName || cl.recipient.company || cl.recipient.address) && (
+        <div style={{ marginBottom: '30pt' }}>
+          {cl.recipient.hrName && (
+            <div style={{
+              fontWeight: 'bold',
+              color: s.applyAccentName ? colors.accent : colors.text,
+            }}>
+              {cl.recipient.hrName}
+            </div>
+          )}
+          {cl.recipient.company && (
+            <div style={{
+              fontWeight: 'bold',
+              color: s.applyAccentEntrySubtitle ? colors.accent : colors.text,
+              opacity: s.applyAccentEntrySubtitle ? 1 : 0.9,
+            }}>
+              {cl.recipient.company}
+            </div>
+          )}
+          {cl.recipient.address && (
+            <div style={{ 
+              color: colors.subtitle, 
+              opacity: 0.95,
+              whiteSpace: 'pre-line'
+            }}>
+              {cl.recipient.address}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Body Content */}
+      <div style={{ textAlign: bodyAlign }}>
+        {blocks.map((block, i) => {
+          const lines = block.split('\n');
+          const isList = lines.every(l => l.trim().startsWith('•') || l.trim().startsWith('- '));
+
+          if (isList) {
+            return (
+              <ul key={i} style={{ 
+                marginBottom: paragraphMargin, 
+                paddingLeft: '1.2em',
+                listStyleType: 'disc'
+              }}>
+                {lines.map((line, j) => (
+                  <li key={j} style={{ marginBottom: '2pt' }}>
+                    {line.replace(/^[•-]\s*/, '')}
+                  </li>
+                ))}
+              </ul>
+            );
+          }
+
+          return (
+            <p key={i} style={{ 
+              marginBottom: paragraphMargin,
+              textIndent: indent,
+              lineHeight: lh,
+            }}>
+              {block}
+            </p>
+          );
+        })}
+      </div>
+
+      {/* Signature */}
+      <div style={{
+        marginTop: '40pt',
+        textAlign: s.clSignaturePosition === 'right' ? 'right' : 'left',
+      }}>
+        {(s.clShowAutoSignOff ?? true) && (
+          <div style={{ color: colors.text, opacity: 0.8, marginBottom: '30pt' }}>Sincerely,</div>
+        )}
+
+        {s.clShowSignatureLine && (
+          <div style={{
+            width: '150pt',
+            borderTop: `0.5pt solid ${s.applyAccentHeadingLine ? colors.accent : colors.text}`,
+            opacity: s.applyAccentHeadingLine ? 1 : 0.2,
+            marginLeft: s.clSignaturePosition === 'right' ? 'auto' : 0,
+            marginBottom: '8pt',
+          }} />
+        )}
+
+        <div style={{ marginTop: s.clShowSignatureLine ? '8pt' : '20pt' }}>
+          {cl.signature.image && (
+            <div style={{ 
+              marginBottom: '10pt',
+              textAlign: s.clSignaturePosition === 'right' ? 'right' : 'left' 
+            }}>
+              <img 
+                src={cl.signature.image} 
+                alt="Signature" 
+                style={{ 
+                  height: s.clSignatureSize === 'sm' ? '30pt' : s.clSignatureSize === 'lg' ? '70pt' : '50pt',
+                  maxWidth: '200pt',
+                  objectFit: 'contain'
+                }} 
+              />
+            </div>
+          )}
+          {cl.signature.fullName && (
+            <div style={{
+              fontWeight: 'bold',
+              fontSize: pt(12),
+              color: s.applyAccentName ? colors.accent : colors.text,
+            }}>
+              {cl.signature.fullName}
+            </div>
+          )}
+          {(cl.signature.place || cl.signature.date) && (
+            <div style={{ fontSize: pt(9), color: colors.subtitle, opacity: 0.8, marginTop: '2pt' }}>
+              {cl.signature.place}{cl.signature.place && cl.signature.date ? ', ' : ''}
+              {cl.signature.date && new Date(cl.signature.date).toLocaleDateString()}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function MasterTemplate({
   resume,
   pads,
@@ -393,6 +543,139 @@ export function MasterTemplate({
 
   const dividerColor = s.applyAccentDotsBarsBubbles ? colors.accent : (s.colorMode === 'basic' ? colors.text : colors.heading);
   const sidebarTint = s.applyAccentDotsBarsBubbles ? colors.accent : "transparent";
+
+  if (resume.kind === 'coverLetter') {
+    return (
+      <div
+        style={{
+          width: s.paperSize === "a4" ? "210mm" : "216mm",
+          minHeight: isMeasurement ? "auto" : (s.paperSize === "a4" ? "297mm" : "279mm"),
+          fontFamily: font,
+          fontSize: pt(base),
+          lineHeight: lh,
+          boxSizing: "border-box",
+          backgroundColor: (s.themeColorStyle === 'advanced' && s.backgroundColor === '#ffffff') ? `${colors.accent}05` : colors.background,
+          color: colors.text,
+          display: "flex",
+          flexDirection: "column",
+          paddingLeft: padH,
+          paddingRight: padH,
+          paddingTop: padV,
+          paddingBottom: padV,
+          border: s.themeColorStyle === 'border' ? `12pt solid ${colors.accent}` : 'none',
+          position: 'relative',
+        }}
+      >
+        {fontHref && <link rel="stylesheet" href={fontHref} />}
+        {!hideHeader && (s.clShowLetterhead ?? true) && (
+          <div style={{ marginBottom: '30pt' }}>
+            {/* Header logic reused from MasterTemplate's main block */}
+            {(() => {
+              const align = s.headerAlignment;
+              const showPhoto = s.photoEnabled && h?.photo;
+              const sizeMap = { XS: 28, S: 36, M: 48, L: 64, XL: 80 };
+              const photoPx = sizeMap[s.photoSize] || 48;
+              const photoBr = s.photoShape === "circle" ? "50%" : s.photoShape === "rounded" ? "6pt" : "0";
+              const photoPos = s.photoPosition;
+              const isRight = align === "right";
+              const isCenter = align === "center";
+              const photoGap = s.photoGap || 12;
+
+              const isLightBg = s.themeColorStyle === 'advanced' && isLight(colors.accent);
+              const advancedTextColor = isLightBg ? '#1a1a1a' : '#ffffff';
+
+              const borderWidth = s.photoBorderStyle === 'none' ? 0 
+                : s.photoBorderStyle === 'thin' ? 0.5 
+                : s.photoBorderStyle === 'medium' ? 1 
+                : 1.5;
+
+              const photoEl = showPhoto ? (
+                <img
+                  src={h!.photo}
+                  alt={h?.fullName || "Profile"}
+                  style={{
+                    width: `${photoPx}pt`,
+                    height: `${photoPx}pt`,
+                    borderRadius: photoBr,
+                    objectFit: "cover",
+                    flexShrink: 0,
+                    borderWidth: `${borderWidth}pt`,
+                    borderColor: s.photoBorderColor || '#e5e7eb',
+                    borderStyle: 'solid',
+                  }}
+                />
+              ) : null;
+
+              const nameEl = (
+                <div className={cn("flex flex-col", isCenter ? "items-center text-center" : isRight ? "items-end text-right" : "items-start text-left")}>
+                  <h1 className="m-0 font-bold tracking-tight print:text-black" style={{ fontSize: pt(nameSize), color: s.themeColorStyle === 'advanced' ? advancedTextColor : (s.applyAccentName ? colors.accent : colors.text), lineHeight: 1.1 }}>
+                    {h?.fullName || "Your Name"}
+                  </h1>
+                  {h?.jobTitle && (
+                    <div className="mt-1 font-medium uppercase tracking-[0.2em] opacity-70 print:text-black print:opacity-100" style={{ fontSize: pt(base * 1.1), color: s.themeColorStyle === 'advanced' ? advancedTextColor : (s.applyAccentJobTitle ? colors.accent : colors.text) }}>
+                      {h.jobTitle}
+                    </div>
+                  )}
+                </div>
+              );
+
+              const contactTextColor = s.themeColorStyle === 'advanced' ? advancedTextColor : (s.applyAccentName ? colors.accent : colors.text);
+              if (isCenter) {
+                return (
+                  <div className="flex flex-col items-center text-center pb-1 mb-1 w-full" style={{ color: s.themeColorStyle === 'advanced' ? advancedTextColor : colors.text }}>
+                    <div className="flex items-center justify-center w-full relative">
+                      {photoPos === "beside" && photoEl && <div className="absolute left-0 top-1/2 -translate-y-1/2">{photoEl}</div>}
+                      <div className="flex flex-col items-center">
+                        {photoPos === "top" && photoEl && <div style={{ marginBottom: `${photoGap / 2}pt` }}>{photoEl}</div>}
+                        {nameEl}
+                        {photoPos === "bottom" && photoEl && <div style={{ marginTop: `${photoGap / 2}pt` }}>{photoEl}</div>}
+                      </div>
+                    </div>
+                    <div className="mt-2 flex justify-center w-full">
+                      <ContactLine h={h!} ctx={ctx} textColorOverride={contactTextColor} />
+                    </div>
+                  </div>
+                );
+              }
+              const isBeside = s.detailsPosition === "beside";
+              const photoAlignment = s.photoAlignment || 'left';
+              const photoVAlign = s.photoVerticalAlign || 'center';
+              const vAlignClass = photoVAlign === 'top' ? 'items-start' : photoVAlign === 'bottom' ? 'items-end' : 'items-center';
+              if (isBeside) {
+                const photoOnRight = photoAlignment === 'right' || (photoAlignment === 'center' && isRight);
+                return (
+                  <div className="grid grid-cols-2 pb-1 mb-1 gap-x-6 w-full" style={{ color: s.themeColorStyle === 'advanced' ? advancedTextColor : colors.text }}>
+                    <div className={cn("flex min-w-0 gap-x-6", vAlignClass, isRight ? "justify-end" : "justify-start", photoOnRight ? "flex-row-reverse" : "flex-row")}>
+                      {!photoOnRight && photoEl}
+                      <div className={cn("flex flex-col", isRight ? "items-end text-right" : "items-start text-left")}>{nameEl}</div>
+                      {photoOnRight && photoEl}
+                    </div>
+                    <div className={cn("flex min-w-0", vAlignClass, s.detailsTextAlignment === "left" ? "justify-start" : s.detailsTextAlignment === "right" ? "justify-end" : "justify-center")}>
+                      <ContactLine h={h!} ctx={ctx} textColorOverride={contactTextColor} />
+                    </div>
+                  </div>
+                );
+              }
+              const photoOnRight = photoAlignment === 'right' || (photoAlignment === 'center' && isRight);
+              return (
+                <div className={cn("flex pb-1 mb-1 w-full", photoOnRight ? "flex-row-reverse" : "flex-row", vAlignClass)} style={{ color: s.themeColorStyle === 'advanced' ? advancedTextColor : colors.text }}>
+                  {photoEl && <div style={{ marginRight: !photoOnRight ? `${photoGap}pt` : 0, marginLeft: photoOnRight ? `${photoGap}pt` : 0 }}>{photoEl}</div>}
+                  <div className={cn("flex flex-col flex-1 min-w-0 gap-y-2", isRight ? "items-end text-right" : "items-start text-left")}>
+                    {nameEl}
+                    <div className={cn("w-full", s.detailsTextAlignment === "right" ? "text-right flex justify-end" : s.detailsTextAlignment === "center" ? "text-center flex justify-center" : "text-left flex justify-start")}>
+                      <ContactLine h={h!} ctx={ctx} textColorOverride={contactTextColor} />
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+        <CoverLetterBody resume={resume} ctx={ctx} />
+        {!hideFooter && <TemplateFooter resume={resume} />}
+      </div>
+    );
+  }
 
   return (
     <div

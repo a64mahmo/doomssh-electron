@@ -189,7 +189,11 @@ function renderCoverLetterBodyPDF(md: string, ctx: TemplateCtx) {
   const { base, lh, colors, bullet, pt, s } = ctx;
   if (!md) return null;
 
-  // Split by double newline to get paragraphs
+  const paraSpacing = s.clParagraphSpacing ?? 1.0;
+  const paragraphMargin = `${(4 * paraSpacing).toFixed(2)}mm`;
+  const bodyAlign = (s.clBodyAlign ?? 'left') as 'left' | 'justify';
+  const indent = s.clFirstLineIndent ? 18 : 0;
+
   const blocks = md.split(/\n{2,}/);
 
   return blocks.map((block, i) => {
@@ -198,7 +202,7 @@ function renderCoverLetterBodyPDF(md: string, ctx: TemplateCtx) {
 
     if (isList) {
       return (
-        <View key={i} style={{ marginBottom: '4mm', paddingLeft: 10 }}>
+        <View key={i} style={{ marginBottom: paragraphMargin, paddingLeft: 10 }}>
           {lines.map((line, j) => (
             <View key={j} style={{ flexDirection: 'row', marginBottom: 2 }}>
               <Text style={{ fontSize: pt(base), lineHeight: lh, marginRight: 6, color: colors.text }}>
@@ -218,8 +222,8 @@ function renderCoverLetterBodyPDF(md: string, ctx: TemplateCtx) {
     }
 
     return (
-      <View key={i} style={{ marginBottom: '4mm' }}>
-        <Text style={{ fontSize: pt(base), lineHeight: lh, color: colors.text, textAlign: 'justify' }}>
+      <View key={i} style={{ marginBottom: paragraphMargin }}>
+        <Text style={{ fontSize: pt(base), lineHeight: lh, color: colors.text, textAlign: bodyAlign, textIndent: indent }}>
           {tokenizeMd(block).map((tok, k) => (
             <Text key={k} style={{ fontWeight: tok.bold ? 'bold' : 'normal', fontStyle: tok.italic ? 'italic' : 'normal' }}>
               {tok.text}
@@ -393,28 +397,47 @@ function CoverLetterPDF({ resume }: { resume: Resume }) {
       <Page size={s.paperSize === 'a4' ? 'A4' : 'LETTER'} style={pageStyle}>
         
         {/* ── Header Area ─────────────────────────────────────────── */}
-        <HeaderRendererPDF h={header} ctx={ctx} isCoverLetter />
+        {(s.clShowLetterhead ?? true) && <HeaderRendererPDF h={header} ctx={ctx} isCoverLetter />}
 
         {/* ── Content ─────────────────────────────────────────────── */}
         <View style={{ flex: 1 }}>
           {/* Date */}
-          {cl.date && (
-            <View style={{ 
+          {(s.clShowDate ?? true) && cl.date && (
+            <View style={{
               marginBottom: 20,
               alignItems: s.clDatePosition === 'right' ? 'flex-end' : 'flex-start'
             }}>
-              <Text style={{ color: colors.text, opacity: 0.7, fontWeight: 'medium' }}>
+              <Text style={{
+                color: s.applyAccentDates ? colors.accent : colors.text,
+                opacity: s.applyAccentDates ? 1 : 0.7,
+                fontWeight: 'medium',
+              }}>
                 {new Date(cl.date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
               </Text>
             </View>
           )}
 
           {/* Recipient */}
-          {(cl.recipient.hrName || cl.recipient.company || cl.recipient.address) && (
+          {(s.clShowRecipient ?? true) && (cl.recipient.hrName || cl.recipient.company || cl.recipient.address) && (
             <View style={{ marginBottom: 30 }}>
-              {cl.recipient.hrName && <Text style={{ fontWeight: 'bold', color: colors.text }}>{cl.recipient.hrName}</Text>}
-              {cl.recipient.company && <Text style={{ fontWeight: 'bold', opacity: 0.9 }}>{cl.recipient.company}</Text>}
-              {cl.recipient.address && <Text style={{ opacity: 0.8 }}>{cl.recipient.address}</Text>}
+              {cl.recipient.hrName && (
+                <Text style={{
+                  fontWeight: 'bold',
+                  color: s.applyAccentName ? colors.accent : colors.text,
+                }}>
+                  {cl.recipient.hrName}
+                </Text>
+              )}
+              {cl.recipient.company && (
+                <Text style={{
+                  fontWeight: 'bold',
+                  color: s.applyAccentEntrySubtitle ? colors.accent : colors.text,
+                  opacity: s.applyAccentEntrySubtitle ? 1 : 0.9,
+                }}>
+                  {cl.recipient.company}
+                </Text>
+              )}
+              {cl.recipient.address && <Text style={{ color: colors.subtitle, opacity: 0.95 }}>{cl.recipient.address}</Text>}
             </View>
           )}
 
@@ -424,29 +447,50 @@ function CoverLetterPDF({ resume }: { resume: Resume }) {
           </View>
 
           {/* Signature */}
-          <View style={{ 
+          <View style={{
             marginTop: 40,
             alignItems: s.clSignaturePosition === 'right' ? 'flex-end' : 'flex-start'
           }} wrap={false}>
-            <Text style={{ opacity: 0.8 }}>Sincerely,</Text>
-            
+            {(s.clShowAutoSignOff ?? true) && (
+              <Text style={{ color: colors.text, opacity: 0.8 }}>Sincerely,</Text>
+            )}
+
             {s.clShowSignatureLine && (
-              <View style={{ 
-                marginTop: 30, 
-                width: 150, 
-                borderTopWidth: 0.5, 
-                borderTopColor: hexA(colors.text, 0.2) 
+              <View style={{
+                marginTop: 30,
+                width: 150,
+                borderTopWidth: 0.5,
+                borderTopColor: s.applyAccentHeadingLine ? colors.accent : hexA(colors.text, 0.2),
               }} />
             )}
 
-            <View style={{ marginTop: s.clShowSignatureLine ? 8 : 40 }}>
+            <View style={{ marginTop: s.clShowSignatureLine ? 8 : 20 }}>
+              {cl.signature.image && (
+                <View style={{ 
+                  marginBottom: 10,
+                  alignItems: s.clSignaturePosition === 'right' ? 'flex-end' : 'flex-start' 
+                }}>
+                  <Image 
+                    src={cl.signature.image} 
+                    style={{ 
+                      height: s.clSignatureSize === 'sm' ? 30 : s.clSignatureSize === 'lg' ? 70 : 50,
+                      maxWidth: 200,
+                      objectFit: 'contain'
+                    }} 
+                  />
+                </View>
+              )}
               {cl.signature.fullName && (
-                <Text style={{ fontWeight: 'bold', fontSize: pt(12), color: colors.text }}>
+                <Text style={{
+                  fontWeight: 'bold',
+                  fontSize: pt(12),
+                  color: s.applyAccentName ? colors.accent : colors.text,
+                }}>
                   {cl.signature.fullName}
                 </Text>
               )}
               {(cl.signature.place || cl.signature.date) && (
-                <Text style={{ fontSize: pt(9), opacity: 0.6, marginTop: 2 }}>
+                <Text style={{ fontSize: pt(9), color: colors.subtitle, opacity: 0.8, marginTop: 2 }}>
                   {cl.signature.place}{cl.signature.place && cl.signature.date ? ', ' : ''}
                   {cl.signature.date && new Date(cl.signature.date).toLocaleDateString()}
                 </Text>

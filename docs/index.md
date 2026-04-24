@@ -64,6 +64,23 @@ DoomSSH uses **Next.js 16**, which contains significant breaking changes compare
 
 ---
 
+## Recent Updates (v1.7.0)
+
+-   **Cover Letter Workshop Redesign:**
+    *   Completely overhauled the editing experience with a focus on modularity and AI-first workflows.
+    *   Replaced the monolithic editor panel with a structured, multi-card workshop using the unified sidebar navigation.
+    *   Implemented a "Magic Draft" empty state that proactive prompts for AI generation based on job context.
+-   **Visual Signature Engine:**
+    *   Added support for uploading and scaling handwritten signature images (PNG/JPEG/WEBP).
+    *   Implemented a new DOM-based renderer for cover letters in `MasterTemplate.tsx` to ensure perfect visual parity with PDF output.
+-   **Intelligent Syncing & Tracking:**
+    *   Redesigned the Resume Sync UI with "Source Profile" cards and template-specific visual indicators.
+    *   Integrated cover letter linking into the Job Tracker, allowing users to track master workshop documents per application.
+-   **Technical Polish:**
+    *   Unified design tokens and components across all dashboards.
+    *   Enhanced the test suite with specialized unit and E2E coverage for the Cover Letter module.
+    *   Resolved nested button hydration errors and accent color application on signature lines.
+
 ## Recent Updates (v0.3.0)
 
 -   **Bug Mode & Global Diagnostics:**

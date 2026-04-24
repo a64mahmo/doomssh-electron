@@ -5,8 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.6.0] - 2026-04-19
+## [1.7.0] - 2026-04-23
 
+### Added
+
+- **Cover Letter Builder Redesign** — Completely overhauled the editing experience with a focus on modularity and AI-first workflows.
+  - **Card-Based Workshop** — Replaced the monolithic editor panel with a structured, multi-card layout (`TargetJobCard`, `LetterheadCard`, `RecipientCard`, `EditorCard`, `SignatureCard`).
+  - **Magic AI Draft** — New prominent AI drafting interface that activates when the letter is empty, using job and profile context.
+  - **Smart Sync Indicators** — Enhanced visual cues for synced data, including lock icons and distinct background shifts for auto-filled fields.
+  - **Refined Assistant UI** — Moved AI actions into a dedicated "AI Assistant" toolbar for easier access to generation, improvement, and tone-shifting tools.
+  - **Improved Input Feedback** — Added specialized formatting and layout for date, recipient, and signature fields to improve clarity.
+- **Visual Signature Engine** — Integrated support for uploading and scaling handwritten signature images (PNG/JPEG/WEBP) with perfect parity between web preview and PDF export.
+
+### Fixed
+
+- **Nested Button Error** — Resolved a React hydration error where `<button>` tags were nested inside the AI Assistant dropdown trigger.
+- **Signature Accent Color** — Fixed a bug where the signature divider line didn't respect the chosen accent color.
+- **Dropdown UUID Glitch** — Ensured that sync dropdowns correctly display document/job names instead of raw IDs during load states.
+- **Web Preview Parity** — Implemented a dedicated DOM-based cover letter renderer to ensure "Body" customization settings (alignment, spacing, indent) are reflected in real-time.
+- **Local Font Bundling** — Downloaded and bundled all 9 professional font families locally for 100% offline support and improved privacy. Replaced Google Fonts and remote CDNs with local `.woff` files.
+
+## [1.6.0] - 2026-04-19
 ### Added
 
 - **Unified Builder Experience** — A new, collapsible global sidebar providing instant access to all core modules (Resumes, Cover Letters, Job Tracker, and Interview Prep).

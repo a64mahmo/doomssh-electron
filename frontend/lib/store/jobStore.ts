@@ -93,6 +93,7 @@ export const useJobStore = create<JobStore>()(
         salaryMax: null,
         salaryCurrency: "CAD",
         resumeId: null,
+        coverLetterId: null,
         coverLetter: "",
         notes: "",
         contacts: [],

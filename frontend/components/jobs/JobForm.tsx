@@ -18,7 +18,7 @@ import {
   WORK_MODE_LABELS,
 } from '@/lib/store/jobTypes'
 import type { Resume } from '@/lib/store/types'
-import { getAllResumes } from '@/lib/db/database'
+import { getAllResumes, getAllCoverLetters } from '@/lib/db/database'
 import { FieldLabel, ControlGroup } from '@/components/editor/EditorPrimitives'
 import { 
   Building2, 
@@ -31,7 +31,10 @@ import {
   Layers,
   Zap,
   Globe,
-  Monitor
+  Monitor,
+  Mail,
+  StickyNote,
+  PencilLine
 } from 'lucide-react'
 
 interface JobFormProps {
@@ -61,13 +64,15 @@ function Field({
   )
 }
 
-const inputStyles = "w-full h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20"
+const inputStyles = "w-full h-9 text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20 rounded-lg transition-all hover:bg-muted/30 focus:bg-background"
 
 export function JobForm({ job, onUpdate }: JobFormProps) {
   const [resumes, setResumes] = useState<Resume[]>([])
+  const [letters, setLetters] = useState<Resume[]>([])
 
   useEffect(() => {
     getAllResumes().then(setResumes)
+    getAllCoverLetters().then(setLetters)
   }, [])
 
   return (
@@ -181,10 +186,10 @@ export function JobForm({ job, onUpdate }: JobFormProps) {
                 {job.resumeId ? (resumes.find(r => r.id === job.resumeId)?.name || 'Loading...') : 'None'}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="rounded-xl shadow-xl">
               <SelectItem value="">None</SelectItem>
               {resumes.map((r) => (
-                <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                <SelectItem key={r.id} value={r.id} className="text-xs py-2">{r.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -235,22 +240,41 @@ export function JobForm({ job, onUpdate }: JobFormProps) {
 
       {/* Notes & Documents */}
       <ControlGroup title="Notes & Documents">
-        <Field label="Application Notes">
+        <Field label="Application Notes" icon={StickyNote}>
           <Textarea
             value={job.notes}
             onChange={(e) => onUpdate({ notes: e.target.value })}
             placeholder="Any notes about this application..."
-            className="min-h-[100px] text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20 resize-none py-3"
+            className="min-h-[100px] text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20 rounded-xl resize-none py-3 px-4 transition-all hover:bg-muted/30 focus:bg-background"
           />
         </Field>
-        <Field label="Cover Letter">
-          <Textarea
-            value={job.coverLetter}
-            onChange={(e) => onUpdate({ coverLetter: e.target.value })}
-            placeholder="Paste or write your cover letter..."
-            className="min-h-[150px] text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20 resize-none py-3"
-          />
-        </Field>
+
+        <div className="pt-2 space-y-4">
+          <Field label="Linked Cover Letter" icon={Mail}>
+            <Select value={job.coverLetterId ?? ''} onValueChange={(v) => onUpdate({ coverLetterId: v || null })}>
+              <SelectTrigger className={inputStyles}>
+                <SelectValue>
+                  {job.coverLetterId ? (letters.find(l => l.id === job.coverLetterId)?.name || 'Loading...') : 'None'}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="rounded-xl shadow-xl">
+                <SelectItem value="">None</SelectItem>
+                {letters.map((l) => (
+                  <SelectItem key={l.id} value={l.id} className="text-xs py-2">{l.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+
+          <Field label="Draft/Personalized Content" icon={PencilLine}>
+            <Textarea
+              value={job.coverLetter}
+              onChange={(e) => onUpdate({ coverLetter: e.target.value })}
+              placeholder="Paste or write specific details for this application..."
+              className="min-h-[180px] text-xs bg-muted/20 border-border/50 focus-visible:ring-primary/20 rounded-xl resize-none py-3 px-4 transition-all hover:bg-muted/30 focus:bg-background"
+            />
+          </Field>
+        </div>
       </ControlGroup>
     </div>
   )

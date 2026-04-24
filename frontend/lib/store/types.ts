@@ -372,6 +372,14 @@ export interface ResumeSettings {
   clDatePosition?: 'left' | 'right'
   clSignaturePosition?: 'left' | 'right'
   clShowSignatureLine?: boolean
+  clShowDate?: boolean
+  clShowRecipient?: boolean
+  clShowLetterhead?: boolean
+  clShowAutoSignOff?: boolean
+  clParagraphSpacing?: number
+  clBodyAlign?: 'left' | 'justify'
+  clFirstLineIndent?: boolean
+  clSignatureSize?: 'sm' | 'md' | 'lg'
 
   // Debug
   debugMode: boolean
@@ -389,7 +397,7 @@ export interface CoverLetterSignature {
   fullName: string
   place: string
   date: string
-  image?: string // base64
+  image?: string // dataURL
 }
 
 export interface CoverLetterData {
@@ -398,6 +406,8 @@ export interface CoverLetterData {
   recipient: CoverLetterRecipient
   body: string // markdown
   signature: CoverLetterSignature
+  linkedJobId?: string | null
+  linkedResumeId?: string | null
 }
 
 export interface Resume {
@@ -562,6 +572,13 @@ export const DEFAULT_SETTINGS: ResumeSettings = {
   clDatePosition: 'left',
   clSignaturePosition: 'left',
   clShowSignatureLine: true,
+  clShowDate: true,
+  clShowRecipient: true,
+  clShowLetterhead: true,
+  clShowAutoSignOff: true,
+  clParagraphSpacing: 1.0,
+  clBodyAlign: 'left',
+  clFirstLineIndent: false,
 
   // Debug
   debugMode: false,

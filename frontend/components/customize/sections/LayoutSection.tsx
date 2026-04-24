@@ -19,6 +19,7 @@ import {
 } from '@/components/editor/EditorPrimitives'
 import {
   AlignLeft,
+  AlignJustify,
   Columns,
   Layout as LayoutIcon,
   GripVertical,
@@ -27,6 +28,12 @@ import {
   PanelRight,
   Square,
   RectangleHorizontal,
+  User,
+  Calendar,
+  Building,
+  PenLine,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 import {
   DndContext,
@@ -48,6 +55,7 @@ interface LayoutSectionProps {
   mainIds: string[]
   sidebarIds: string[]
   sections: ResumeSection[]
+  isCoverLetter?: boolean
 }
 
 export function LayoutSection({
@@ -60,9 +68,16 @@ export function LayoutSection({
   mainIds,
   sidebarIds,
   sections,
+  isCoverLetter = false,
 }: LayoutSectionProps) {
   const accent = s.accentColor || '#3b82f6'
-  const isCoverLetter = sections.length <= 1 // Simplistic check or pass kind prop
+
+  const CL_BLOCKS = [
+    { id: 'clShowLetterhead',  label: 'Personal Letterhead', icon: User },
+    { id: 'clShowDate',        label: 'Date & Location',     icon: Calendar },
+    { id: 'clShowRecipient',   label: 'Recipient Details',   icon: Building },
+    { id: 'clShowAutoSignOff', label: 'Auto "Sincerely"',    icon: PenLine },
+  ] as const
 
   return (
     <>
@@ -116,36 +131,157 @@ export function LayoutSection({
       <Separator className="opacity-30" />
 
       {isCoverLetter ? (
-        <ControlGroup title="Cover Letter Layout">
-          <div>
-            <FieldLabel>Date Position</FieldLabel>
-            <SegmentGroup
-              value={s.clDatePosition || 'left'}
-              onChange={(v) => upd({ clDatePosition: v as 'left' | 'right' })}
-              options={[
-                { value: 'left', label: 'Left', render: () => <span>Left</span> },
-                { value: 'right', label: 'Right', render: () => <span>Right</span> },
-              ]}
-            />
-          </div>
-          <div>
-            <FieldLabel>Signature Position</FieldLabel>
-            <SegmentGroup
-              value={s.clSignaturePosition || 'left'}
-              onChange={(v) => upd({ clSignaturePosition: v as 'left' | 'right' })}
-              options={[
-                { value: 'left', label: 'Left', render: () => <span>Left</span> },
-                { value: 'right', label: 'Right', render: () => <span>Right</span> },
-              ]}
-            />
-          </div>
-          <ToggleRow
-            id="cl-sig-line"
-            label="Show Signature Line"
-            checked={s.clShowSignatureLine}
-            onCheckedChange={(v) => upd({ clShowSignatureLine: v })}
-          />
-        </ControlGroup>
+        <>
+          <ControlGroup title="Visible Blocks">
+            <div className="grid grid-cols-1 gap-2">
+              {CL_BLOCKS.map((block) => {
+                const isActive = (s as any)[block.id] ?? true
+                const Icon = block.icon
+                return (
+                  <button
+                    key={block.id}
+                    onClick={() => upd({ [block.id]: !isActive })}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-all duration-200 group text-left",
+                      isActive 
+                        ? "bg-card border-border/60 shadow-sm hover:border-foreground/20" 
+                        : "bg-muted/10 border-transparent opacity-50 grayscale hover:opacity-70"
+                    )}
+                  >
+                    <div className={cn(
+                      "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors shadow-inner",
+                      isActive ? "bg-muted text-foreground" : "bg-muted/50 text-muted-foreground"
+                    )}>
+                      <Icon size={14} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={cn(
+                        "text-[11px] font-bold truncate leading-tight transition-colors",
+                        isActive ? "text-foreground" : "text-muted-foreground"
+                      )}>
+                        {block.label}
+                      </p>
+                    </div>
+                    <div className="shrink-0 transition-transform group-active:scale-90">
+                      {isActive ? (
+                        <Eye size={14} className="text-primary/60" />
+                      ) : (
+                        <EyeOff size={14} className="text-muted-foreground/40" />
+                      )}
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </ControlGroup>
+
+          <Separator className="opacity-30" />
+
+          <ControlGroup title="Body Typography">
+            <div className="space-y-6">
+              <div>
+                <FieldLabel>Text Alignment</FieldLabel>
+                <VisualSegmentGroup
+                  value={s.clBodyAlign || 'left'}
+                  onChange={(v) => upd({ clBodyAlign: v as 'left' | 'justify' })}
+                  columns={2}
+                  options={[
+                    { 
+                      value: 'left', 
+                      label: 'Left', 
+                      render: () => (
+                        <div className="flex flex-col items-center gap-1">
+                          <AlignLeft size={16} />
+                          <span className="text-[9px] uppercase tracking-tighter font-bold">Standard</span>
+                        </div>
+                      ) 
+                    },
+                    { 
+                      value: 'justify', 
+                      label: 'Justify', 
+                      render: () => (
+                        <div className="flex flex-col items-center gap-1">
+                          <AlignJustify size={16} />
+                          <span className="text-[9px] uppercase tracking-tighter font-bold">Justified</span>
+                        </div>
+                      ) 
+                    },
+                  ]}
+                />
+              </div>
+
+              <SliderRow
+                label="Paragraph Spacing" 
+                value={s.clParagraphSpacing ?? 1.0}
+                min={0.5} max={2.5} step={0.1}
+                onChange={(v) => upd({ clParagraphSpacing: v })}
+                description="Adjust vertical space between blocks"
+              />
+
+              <div className="pt-2">
+                <ToggleRow
+                  id="cl-first-line-indent"
+                  label="Indent First Line"
+                  description="Classic typewriter style indentation"
+                  checked={s.clFirstLineIndent ?? false}
+                  onCheckedChange={(v) => upd({ clFirstLineIndent: v })}
+                />
+              </div>
+            </div>
+          </ControlGroup>
+
+          <Separator className="opacity-30" />
+
+          <ControlGroup title="Date & Signature Placement">
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <FieldLabel>Date Position</FieldLabel>
+                  <SegmentGroup
+                    value={s.clDatePosition || 'left'}
+                    onChange={(v) => upd({ clDatePosition: v as 'left' | 'right' })}
+                    options={[
+                      { value: 'left', label: 'Left', render: () => <PanelLeft size={14} /> },
+                      { value: 'right', label: 'Right', render: () => <PanelRight size={14} /> },
+                    ]}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <FieldLabel>Signature Side</FieldLabel>
+                  <SegmentGroup
+                    value={s.clSignaturePosition || 'left'}
+                    onChange={(v) => upd({ clSignaturePosition: v as 'left' | 'right' })}
+                    options={[
+                      { value: 'left', label: 'Left', render: () => <PanelLeft size={14} /> },
+                      { value: 'right', label: 'Right', render: () => <PanelRight size={14} /> },
+                    ]}
+                  />
+                </div>
+              </div>
+
+              <ToggleRow
+                id="cl-sig-line"
+                label="Signature Divider"
+                description="Add a thin line above your name"
+                checked={s.clShowSignatureLine ?? true}
+                onCheckedChange={(v) => upd({ clShowSignatureLine: v })}
+              />
+
+              <div className="space-y-2">
+                <FieldLabel>Signature Scale</FieldLabel>
+                <SegmentGroup
+                  value={s.clSignatureSize || 'md'}
+                  onChange={(v) => upd({ clSignatureSize: v as 'sm' | 'md' | 'lg' })}
+                  options={[
+                    { value: 'sm', label: 'S', render: () => <span className="text-[10px] font-bold">SM</span> },
+                    { value: 'md', label: 'M', render: () => <span className="text-[10px] font-bold">MD</span> },
+                    { value: 'lg', label: 'L', render: () => <span className="text-[10px] font-bold">LG</span> },
+                  ]}
+                />
+              </div>
+            </div>
+          </ControlGroup>
+        </>
       ) : (
         <ControlGroup title="Resume Structure">
           <div>

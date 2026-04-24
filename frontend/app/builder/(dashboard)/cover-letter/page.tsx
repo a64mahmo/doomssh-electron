@@ -20,6 +20,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 
+const TEMPLATE_GRADIENT: Record<string, string> = {
+  modern:  'from-violet-500 to-indigo-600',
+  classic: 'from-slate-500 to-slate-700',
+  minimal: 'from-zinc-400 to-zinc-600',
+  crisp:   'from-sky-500 to-blue-600',
+  tokyo:   'from-rose-500 to-pink-600',
+  elite:   'from-emerald-600 to-teal-800',
+}
+
 export default function CoverLetterDashboard() {
   const router = useRouter()
   const [letters, setLetters] = useState<Resume[]>([])
@@ -54,7 +63,7 @@ export default function CoverLetterDashboard() {
       <header className="border-b border-border px-6 h-11 flex items-center justify-between shrink-0 bg-background drag win32-padding">
         <div className="flex items-center gap-2.5 no-drag">
           <div className="w-5 h-5 rounded bg-foreground flex items-center justify-center shrink-0">
-            <FileText size={10} className="text-background" />
+            <Mail size={10} className="text-background" />
           </div>
           <span className="font-bold text-sm tracking-tight">DoomSSH</span>
         </div>
@@ -113,42 +122,30 @@ function CoverLetterCard({ letter, onEdit, onDelete }: {
   onEdit: () => void
   onDelete: () => void
 }) {
-  const cl = letter.coverLetter
-  const preview = (cl?.body || '').replace(/[*_•\-]/g, '').split('\n').filter(Boolean).slice(0, 6)
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.02 }}
-      className="group relative aspect-[3/4] rounded-xl overflow-hidden cursor-pointer bg-white"
+      className="group relative aspect-[3/4] rounded-xl overflow-hidden cursor-pointer"
       onClick={onEdit}
     >
-      {/* Paper background with letter preview */}
-      <div className="absolute inset-0 bg-gradient-to-br from-white to-zinc-100" />
-      <div className="absolute inset-0 p-5 flex flex-col gap-2 text-[7px] leading-[1.35] text-zinc-700 font-serif">
-        <div className="flex flex-col gap-0.5 mb-1">
-          <div className="h-[6px] w-2/3 bg-zinc-800 rounded-sm" />
-          <div className="h-[3px] w-1/2 bg-zinc-400 rounded-sm" />
-        </div>
-        <div className="h-[2px] w-1/4 bg-zinc-300 rounded-sm my-1" />
-        <div className="flex flex-col gap-0.5 mb-1">
-          <div className="h-[3px] w-1/3 bg-zinc-400 rounded-sm" />
-          <div className="h-[3px] w-1/4 bg-zinc-400 rounded-sm" />
-        </div>
-        {preview.length > 0 ? (
-          preview.map((_, i) => (
-            <div key={i} className="h-[2px] bg-zinc-300 rounded-sm" style={{ width: `${75 + (i * 7) % 20}%` }} />
-          ))
-        ) : (
-          [...Array(8)].map((_, i) => (
-            <div key={i} className="h-[2px] bg-zinc-200 rounded-sm" style={{ width: `${60 + (i * 9) % 35}%` }} />
-          ))
-        )}
-      </div>
+      <div className={`absolute inset-0 bg-gradient-to-br ${TEMPLATE_GRADIENT[letter.template] ?? 'from-slate-500 to-slate-700'} opacity-80`} />
 
-      <div className="absolute top-3 right-3 w-7 h-7 rounded-md bg-foreground/90 flex items-center justify-center shadow-sm">
-        <Mail size={12} className="text-background" />
+      <div className="absolute inset-0 p-4 flex flex-col gap-2 pt-6">
+        {/* Paper-like header skeleton */}
+        <div className="w-2/3 mx-auto h-2 rounded-full bg-white/40" />
+        <div className="w-1/2 mx-auto h-1.5 rounded-full bg-white/25 mb-1" />
+        
+        {/* Paragraph-like skeleton */}
+        <div className="space-y-1.5 mt-2">
+          {[...Array(6)].map((_, j) => (
+            <div key={j} className="h-1 rounded-full bg-white/20" style={{ width: `${75 + (j * 13) % 25}%` }} />
+          ))}
+        </div>
+        
+        {/* Bottom sign-off skeleton */}
+        <div className="mt-auto w-1/4 h-1.5 rounded-full bg-white/25" />
       </div>
 
       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -159,9 +156,7 @@ function CoverLetterCard({ letter, onEdit, onDelete }: {
         <div className="flex items-end justify-between gap-1">
           <div className="min-w-0">
             <p className="text-white text-xs font-semibold truncate leading-tight">{letter.name}</p>
-            <p className="text-white/45 text-[10px] mt-0.5">
-              {new Date(letter.updatedAt).toLocaleDateString()}
-            </p>
+            <p className="text-white/45 text-[10px] mt-0.5 capitalize">{letter.template}</p>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger
