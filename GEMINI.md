@@ -5,9 +5,9 @@ As a Gemini-powered engineering agent, you are expected to operate at a "Super S
 ---
 
 ## 1. The Single Source of Truth (SSOT)
-The entire application is driven by the state tree defined in `frontend/lib/store/types.ts`.
-- **Constraint:** Do not create shadow interfaces or redundant types.
-- **Action:** If you are adding a new feature (e.g., "Job Tracker"), start by defining its schema in `types.ts` and updating the `Resume` or creating a new domain-specific interface.
+The core data structures (Resume, Jobs) are defined in `frontend/lib/shared/types.ts`. Store-specific logic and UI state are defined in `frontend/lib/store/types.ts`.
+- **Constraint:** Do not create shadow interfaces or redundant types in Electron or separate frontend files.
+- **Action:** If you are adding a new feature (e.g., "Job Tracker"), start by defining its schema in `frontend/lib/shared/types.ts` and then update the stores.
 
 ## 2. State Mutation & Persistence Patterns
 We use **Zustand + Immer**. This requires a specific mental model for async operations.

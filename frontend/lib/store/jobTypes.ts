@@ -1,128 +1,19 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// SINGLE SOURCE OF TRUTH — all TypeScript types for the job tracker
-// Never define job-related types anywhere else. Import from here.
+// SINGLE SOURCE OF TRUTH — Store-specific types for the job tracker
+// Core data types are imported from @/lib/shared/types
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type JobStatus =
-  | "wishlist"
-  | "applied"
-  | "phone-screen"
-  | "technical"
-  | "onsite"
-  | "offer"
-  | "accepted"
-  | "rejected"
-  | "withdrawn"
-  | "ghosted";
+import type {
+  JobApplication,
+  JobStatus,
+  JobContact,
+  JobEvent,
+  InterviewPrep,
+  JobSource,
+  JobPriority,
+} from '@/lib/shared/types'
 
-export type JobSource =
-  | "linkedin"
-  | "indeed"
-  | "glassdoor"
-  | "company-website"
-  | "referral"
-  | "recruiter"
-  | "angellist"
-  | "hacker-news"
-  | "other";
-
-export type JobPriority = "low" | "medium" | "high";
-
-export type WorkMode = "remote" | "hybrid" | "onsite" | "";
-
-export type JobEventType =
-  | "status-change"
-  | "note"
-  | "interview"
-  | "follow-up"
-  | "deadline-passed"
-  | "deadline-change"
-  | "other";
-
-// ─── Interview Prep ─────────────────────────────────────────────────────────
-
-export type QuestionCategory =
-  | "technical"
-  | "behavioral"
-  | "situational"
-  | "general";
-
-export interface InterviewQuestion {
-  id: string;
-  question: string;
-  category: QuestionCategory;
-  answer: string; // user's drafted answer (plain text or STAR format)
-}
-
-export interface PostInterviewReflection {
-  id: string;
-  date: string; // ISO date string
-  wentWell: string;
-  wasDifficult: string;
-  followUp: string; // e.g. thank-you notes, next steps
-}
-
-export interface InterviewPrep {
-  questions: InterviewQuestion[];
-  companyNotes: string;
-  cheatSheet: string[];
-  reflections: PostInterviewReflection[];
-}
-
-// ─── Data Structures ─────────────────────────────────────────────────────────
-
-export interface JobContact {
-  id: string;
-  name: string;
-  role: string;
-  email: string;
-  phone: string;
-  linkedin: string;
-  notes: string;
-}
-
-export interface JobEvent {
-  id: string;
-  type: JobEventType;
-  date: string; // ISO date string
-  title: string;
-  description: string;
-}
-
-export interface JobApplication {
-  id: string;
-  company: string;
-  role: string;
-  status: JobStatus;
-  priority: JobPriority;
-  url: string;
-  source: JobSource;
-  location: string;
-  workMode: WorkMode;
-  salaryMin: number | null;
-  salaryMax: number | null;
-  salaryCurrency: string;
-  resumeId: string | null;
-  coverLetterId: string | null;
-  coverLetter: string;
-  notes: string;
-  contacts: JobContact[];
-  events: JobEvent[];
-  appliedDate: string | null;
-  responseDate: string | null;
-  deadlineDate: string | null;
-  createdAt: number;
-  updatedAt: number;
-  archivedAt: number | null;
-  interviewPrep?: InterviewPrep;
-}
-
-// ─── Vault File ──────────────────────────────────────────────────────────────
-
-export interface JobsVaultFile {
-  version: 1;
-  jobs: JobApplication[];
-}
+export * from '@/lib/shared/types'
 
 // ─── Store Shape ─────────────────────────────────────────────────────────────
 

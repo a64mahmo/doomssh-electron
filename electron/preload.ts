@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import type { Resume, JobsVaultFile } from '../frontend/lib/shared/types'
 
 contextBridge.exposeInMainWorld('electron', {
   platform: process.platform,
@@ -54,12 +55,12 @@ contextBridge.exposeInMainWorld('electron', {
   vault: {
     getPath: (): Promise<string | null>    => ipcRenderer.invoke('vault:get'),
     setPath: (): Promise<string | null>    => ipcRenderer.invoke('vault:set'),
-    list:    (): Promise<unknown[]>        => ipcRenderer.invoke('resume:list'),
-    read:    (id: string): Promise<unknown | null> => ipcRenderer.invoke('resume:read', id),
-    write:   (resume: unknown): Promise<void>      => ipcRenderer.invoke('resume:write', resume),
+    list:    (): Promise<Resume[]>        => ipcRenderer.invoke('resume:list'),
+    read:    (id: string): Promise<Resume | null> => ipcRenderer.invoke('resume:read', id),
+    write:   (resume: Resume): Promise<void>      => ipcRenderer.invoke('resume:write', resume),
     delete:  (id: string): Promise<void>           => ipcRenderer.invoke('resume:delete', id),
-    readJobs:  (): Promise<unknown | null>         => ipcRenderer.invoke('jobs:read'),
-    writeJobs: (data: unknown): Promise<void>      => ipcRenderer.invoke('jobs:write', data),
+    readJobs:  (): Promise<JobsVaultFile | null>   => ipcRenderer.invoke('jobs:read'),
+    writeJobs: (data: JobsVaultFile): Promise<void>      => ipcRenderer.invoke('jobs:write', data),
   },
 
   // ── AI streaming ───────────────────────────────────────────────────────────

@@ -3,7 +3,8 @@ import { spawn, type ChildProcess } from 'child_process'
 import path from 'path'
 import fs from 'fs'
 import Anthropic from '@anthropic-ai/sdk'
-import { autoUpdater, UpdateInfo } from 'electron-updater'
+import { autoUpdater, type UpdateInfo } from 'electron-updater'
+import type { Resume, JobApplication, JobsVaultFile } from '../frontend/lib/shared/types'
 
 // ── Auto Update Config ────────────────────────────────────────────────────────
 autoUpdater.logger = console
@@ -318,7 +319,7 @@ ipcMain.handle('resume:list', async () => {
     )
     
     const result = resumes
-      .filter((r): r is any => r !== null)
+      .filter((r): r is Resume => r !== null)
       .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
     
     return result
@@ -328,20 +329,20 @@ ipcMain.handle('resume:list', async () => {
   }
 })
 
-ipcMain.handle('resume:read', async (_event, id: string) => {
+ipcMain.handle('resume:read', async (_event, id: string): Promise<Resume | null> => {
   const dir = await readVaultDir()
   if (!dir) return null
   try { 
     const filePath = vaultFile(dir, id)
     const content = await fsp.readFile(filePath, 'utf8')
-    return JSON.parse(content)
+    return JSON.parse(content) as Resume
   } catch (err) { 
     console.error(`[electron] failed to read resume ${id}:`, err)
     return null 
   }
 })
 
-ipcMain.handle('resume:write', async (_event, resume: { id: string; [key: string]: unknown }) => {
+ipcMain.handle('resume:write', async (_event, resume: Resume) => {
   const dir = await readVaultDir()
   if (!dir) throw new Error('No vault set')
   const filePath = vaultFile(dir, resume.id)
@@ -374,20 +375,20 @@ ipcMain.handle('resume:delete', async (_event, id: string) => {
 })
 
 // ── IPC: Jobs ────────────────────────────────────────────────────────────────
-ipcMain.handle('jobs:read', async () => {
+ipcMain.handle('jobs:read', async (): Promise<JobsVaultFile | null> => {
   const dir = await readVaultDir()
   if (!dir) return null
   try { 
     const filePath = path.join(dir, '_jobs.json')
     if (!fs.existsSync(filePath)) return null
-    return JSON.parse(await fsp.readFile(filePath, 'utf8')) 
+    return JSON.parse(await fsp.readFile(filePath, 'utf8')) as JobsVaultFile
   } catch (err) { 
     console.error('[electron] failed to read jobs:', err)
     return null 
   }
 })
 
-ipcMain.handle('jobs:write', async (_event, data: { version: number; jobs: unknown[] }) => {
+ipcMain.handle('jobs:write', async (_event, data: JobsVaultFile) => {
   const dir = await readVaultDir()
   if (!dir) throw new Error('No vault set')
   const filePath = path.join(dir, '_jobs.json')

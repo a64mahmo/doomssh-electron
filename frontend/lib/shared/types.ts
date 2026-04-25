@@ -1,10 +1,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// SHARED TYPES — Common types used by both Electron (main) and Frontend (renderer)
+// SHARED TYPES — Common data structures used by Electron and Frontend
 // ─────────────────────────────────────────────────────────────────────────────
 
-export interface UpdateInfo {
-  version: string
-}
+// ─── Resume Unions ───────────────────────────────────────────────────────────
 
 export type SectionType =
   | 'header'
@@ -28,7 +26,6 @@ export type TemplateId =
   | 'crisp'
   | 'tokyo'
   | 'elite'
-  | 'mono'
   | 'blocks'
   | 'dublin'
   | 'london'
@@ -64,14 +61,17 @@ export type NameSize = 'XS' | 'S' | 'M' | 'L' | 'XL' | 'XXL'
 export type ColorMode = 'basic' | 'multi' | 'image'
 export type ThemeColorStyle = 'basic' | 'advanced' | 'border'
 export type FontStyle = 'serif' | 'sans' | 'mono'
-export type SkillDisplayOption = 'grid' | 'level' | 'compact' | 'bubble'
+export type SkillDisplayOption = 'grid' | 'level' | 'compact' | 'bubble' | 'dots'
 export type EntryLayout = 'date-location-right' | 'date-location-left' | 'date-content-location' | 'full-width'
 export type ColumnWidthMode = 'auto' | 'manual'
 export type EducationOrder = 'degree-school' | 'school-degree'
 export type ExperienceOrder = 'title-employer' | 'employer-title'
-export type PhotoSize = 'S' | 'M'
-export type PhotoShape = 'circle' | 'rounded'
+export type PhotoSize = 'XS' | 'S' | 'M' | 'L' | 'XL'
+export type PhotoShape = 'circle' | 'rounded' | 'square'
 export type PhotoPosition = 'beside' | 'top' | 'bottom'
+export type PhotoAlignment = 'left' | 'center' | 'right'
+export type PhotoVerticalAlign = 'top' | 'center' | 'bottom'
+export type PhotoBorderStyle = 'none' | 'thin' | 'medium' | 'thick'
 export type DetailsArrangement = 'column' | 'wrap' | 'grid'
 export type DetailsPosition = 'beside' | 'below'
 export type DetailsTextAlignment = 'left' | 'right' | 'center'
@@ -85,7 +85,7 @@ export type ContactIconStyle =
   | 'rounded-outline'
   | 'square-outline'
 
-// ─── Section Item Types ───────────────────────────────────────────────────────
+// ─── Resume Section Items ─────────────────────────────────────────────────────
 
 export interface HeaderData {
   fullName: string
@@ -237,8 +237,6 @@ export interface CustomItem {
   description: string
 }
 
-// ─── Section Item Union ───────────────────────────────────────────────────────
-
 export type AnySectionItems =
   | HeaderData
   | SummaryItem
@@ -254,8 +252,6 @@ export type AnySectionItems =
   | ReferenceItem[]
   | CustomItem[]
 
-// ─── Section ─────────────────────────────────────────────────────────────────
-
 export interface ResumeSection<T = AnySectionItems> {
   id: string
   type: SectionType
@@ -264,31 +260,35 @@ export interface ResumeSection<T = AnySectionItems> {
   items: T
 }
 
-// ─── Resume Settings ──────────────────────────────────────────────────────────
+// ─── Resume Settings & Main ──────────────────────────────────────────────────
 
 export interface ResumeSettings {
   // Basics
   accentColor: string
   fontFamily: FontOption
-  fontSize: number          // pt, e.g. 10.5
+  fontSize: number
   paperSize: PaperSize
   dateFormat: DateFormat
   showSectionLabels: boolean
   photoEnabled: boolean
   photoSize: PhotoSize
   photoShape: PhotoShape
-  language: string          // e.g. 'en-GB'
+  language: string
 
   // Layout & Spacing
   columnLayout: ColumnLayout
+  headerLayout?: 'top' | 'sidebar'
+  sidebarTheme?: 'none' | 'accent' | 'custom'
+  sidebarBackgroundColor?: string
+  sidebarTextColor?: string
   columnReverse: boolean
-  lineHeight: number        // e.g. 1.5
-  marginHorizontal: number  // mm, e.g. 20
-  marginVertical: number    // mm, e.g. 10
-  entrySpacing: number      // multiplier 0.8-1.4
+  lineHeight: number
+  marginHorizontal: number
+  marginVertical: number
+  entrySpacing: number
   entryLayout: EntryLayout
   columnWidthMode: ColumnWidthMode
-  columnWidth: number       // percentage for manual mode
+  columnWidth: number
   titleSize: 'S' | 'M' | 'L'
   subtitleStyle: SubtitleStyle
   subtitlePlacement: SubtitlePlacement
@@ -321,7 +321,7 @@ export interface ResumeSettings {
   sectionHeadingIcon: SectionHeadingIcon
   sectionHeadingStyle: SectionHeadingStyle
   sectionHeadingIconStyle: SectionHeadingIconStyle
-  sectionHeadingIconSize: number // multiplier e.g. 1.0
+  sectionHeadingIconSize: number
   sectionHeadingLineThickness: number
   linkUnderline: boolean
   linkBlue: boolean
@@ -332,6 +332,11 @@ export interface ResumeSettings {
   nameSize: NameSize
   nameBold: boolean
   photoPosition: PhotoPosition
+  photoAlignment: PhotoAlignment
+  photoVerticalAlign: PhotoVerticalAlign
+  photoBorderStyle: PhotoBorderStyle
+  photoBorderColor: string
+  photoGap: number
   detailsArrangement: DetailsArrangement
   detailsPosition: DetailsPosition
   detailsTextAlignment: DetailsTextAlignment
@@ -354,26 +359,127 @@ export interface ResumeSettings {
   // Entry title styling
   titleBold: boolean
 
-  // Section spacing (multiplier on top of entry spacing)
+  // Section spacing
   sectionSpacing: number
 
-  // Section Column Mapping (sectionId -> 'main' | 'sidebar')
+  // Section Column Mapping
   sectionColumns: Record<string, 'main' | 'sidebar'>
+
+  // Cover Letter Specific Styles
+  clDatePosition?: 'left' | 'right'
+  clSignaturePosition?: 'left' | 'right'
+  clShowSignatureLine?: boolean
+  clShowDate?: boolean
+  clShowRecipient?: boolean
+  clShowLetterhead?: boolean
+  clShowAutoSignOff?: boolean
+  clParagraphSpacing?: number
+  clBodyAlign?: 'left' | 'justify'
+  clFirstLineIndent?: boolean
+  clSignatureSize?: 'sm' | 'md' | 'lg'
+
+  // Debug
+  debugMode: boolean
 }
 
-// ─── Resume ───────────────────────────────────────────────────────────────────
+export interface CoverLetterRecipient {
+  hrName: string
+  company: string
+  address: string
+}
+
+export interface CoverLetterSignature {
+  fullName: string
+  place: string
+  date: string
+  image?: string // dataURL
+}
+
+export interface CoverLetterData {
+  syncWithResume: boolean
+  date: string
+  recipient: CoverLetterRecipient
+  body: string // markdown
+  signature: CoverLetterSignature
+  linkedJobId?: string | null
+  linkedResumeId?: string | null
+}
 
 export interface Resume {
   id: string
   name: string
   createdAt: number
   updatedAt: number
+  kind?: 'resume' | 'coverLetter'
   template: TemplateId
   settings: ResumeSettings
   sections: ResumeSection[]
+  coverLetter?: CoverLetterData
 }
 
-// ─── Jobs ─────────────────────────────────────────────────────────────────────
+// ─── Jobs Unions ─────────────────────────────────────────────────────────────
+
+export type JobStatus =
+  | 'wishlist'
+  | 'applied'
+  | 'phone-screen'
+  | 'technical'
+  | 'onsite'
+  | 'offer'
+  | 'accepted'
+  | 'rejected'
+  | 'withdrawn'
+  | 'ghosted'
+
+export type JobSource =
+  | 'linkedin'
+  | 'indeed'
+  | 'glassdoor'
+  | 'company-website'
+  | 'referral'
+  | 'recruiter'
+  | 'angellist'
+  | 'hacker-news'
+  | 'other'
+
+export type JobPriority = 'low' | 'medium' | 'high'
+
+export type WorkMode = 'remote' | 'hybrid' | 'onsite' | ''
+
+export type JobEventType =
+  | 'status-change'
+  | 'note'
+  | 'interview'
+  | 'follow-up'
+  | 'deadline-passed'
+  | 'deadline-change'
+  | 'other'
+
+export type QuestionCategory = 'technical' | 'behavioral' | 'situational' | 'general'
+
+// ─── Jobs Data Structures ─────────────────────────────────────────────────────
+
+export interface InterviewQuestion {
+  id: string
+  question: string
+  category: QuestionCategory
+  answer: string
+}
+
+export interface PostInterviewReflection {
+  id: string
+  date: string
+  wentWell: string
+  wasDifficult: string
+  followUp: string
+}
+
+export interface InterviewPrep {
+  questions: InterviewQuestion[]
+  companyNotes: string
+  cheatSheet: string[]
+  reflections: PostInterviewReflection[]
+}
 
 export interface JobContact {
   id: string
@@ -387,7 +493,7 @@ export interface JobContact {
 
 export interface JobEvent {
   id: string
-  type: string
+  type: JobEventType
   date: string
   title: string
   description: string
@@ -397,16 +503,17 @@ export interface JobApplication {
   id: string
   company: string
   role: string
-  status: string
-  priority: string
+  status: JobStatus
+  priority: JobPriority
   url: string
-  source: string
+  source: JobSource
   location: string
-  workMode: string
+  workMode: WorkMode
   salaryMin: number | null
   salaryMax: number | null
   salaryCurrency: string
   resumeId: string | null
+  coverLetterId: string | null
   coverLetter: string
   notes: string
   contacts: JobContact[]
@@ -417,9 +524,16 @@ export interface JobApplication {
   createdAt: number
   updatedAt: number
   archivedAt: number | null
+  interviewPrep?: InterviewPrep
 }
 
 export interface JobsVaultFile {
-  version: number
+  version: 1
   jobs: JobApplication[]
+}
+
+// ─── Misc ───────────────────────────────────────────────────────────────────
+
+export interface UpdateInfo {
+  version: string
 }

@@ -1,6 +1,6 @@
 "use strict";
 // ─────────────────────────────────────────────────────────────────────────────
-// SHARED TYPES — Common types used by both Electron (main) and Frontend (renderer)
+// SHARED TYPES — Common data structures used by Electron and Frontend
 // ─────────────────────────────────────────────────────────────────────────────
 Object.defineProperty(exports, "__esModule", { value: true });
 //# sourceMappingURL=types.js.map
