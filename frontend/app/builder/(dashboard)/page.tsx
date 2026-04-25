@@ -9,6 +9,7 @@ import { getAllResumes, deleteResume, duplicateResume, createNewResume, saveResu
 import { generateId } from '@/lib/utils/ids'
 import type { Resume } from '@/lib/store/types'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -32,8 +33,12 @@ export default function ResumesDashboard() {
   const router = useRouter()
   const [resumes, setResumes] = useState<Resume[]>([])
   const [loading, setLoading] = useState(true)
+  const [isWin, setIsWin] = useState(false)
 
   useEffect(() => {
+    if (window.electron) {
+      setIsWin(window.electron.platform === 'win32')
+    }
     getAllResumes().then((existing) => {
       setResumes(existing)
       setLoading(false)
@@ -66,7 +71,10 @@ export default function ResumesDashboard() {
 
   return (
     <>
-      <header className="border-b border-border px-6 h-11 flex items-center justify-between shrink-0 bg-background drag win32-padding">
+      <header className={cn(
+        "border-b border-border px-6 h-11 flex items-center justify-between shrink-0 bg-background drag",
+        isWin && "win32-padding"
+      )}>
         <div className="flex items-center gap-2.5 no-drag">
           <div className="w-5 h-5 rounded bg-foreground flex items-center justify-center shrink-0">
             <FileText size={10} className="text-background" />

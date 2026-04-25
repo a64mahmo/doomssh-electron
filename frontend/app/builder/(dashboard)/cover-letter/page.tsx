@@ -10,6 +10,7 @@ import {
 } from '@/lib/db/database'
 import type { Resume } from '@/lib/store/types'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -33,8 +34,12 @@ export default function CoverLetterDashboard() {
   const router = useRouter()
   const [letters, setLetters] = useState<Resume[]>([])
   const [loading, setLoading] = useState(true)
+  const [isWin, setIsWin] = useState(false)
 
   async function load() {
+    if (window.electron) {
+      setIsWin(window.electron.platform === 'win32')
+    }
     setLoading(true)
     setLetters(await getAllCoverLetters())
     setLoading(false)
@@ -60,7 +65,10 @@ export default function CoverLetterDashboard() {
 
   return (
     <>
-      <header className="border-b border-border px-6 h-11 flex items-center justify-between shrink-0 bg-background drag win32-padding">
+      <header className={cn(
+        "border-b border-border px-6 h-11 flex items-center justify-between shrink-0 bg-background drag",
+        isWin && "win32-padding"
+      )}>
         <div className="flex items-center gap-2.5 no-drag">
           <div className="w-5 h-5 rounded bg-foreground flex items-center justify-center shrink-0">
             <Mail size={10} className="text-background" />

@@ -575,7 +575,7 @@ ipcMain.handle('update-window-controls', (_event, { color, symbolColor }: { colo
     mainWindow.setTitleBarOverlay({
       color: color,
       symbolColor: symbolColor,
-      height: 44
+      height: 40
     })
   }
 })

@@ -18,7 +18,7 @@ export function ElectronProvider() {
     // color: #00000000 is transparent
     window.electron.updateWindowControls({
       color: '#00000000',
-      symbolColor: isDark ? '#94a3b8' : '#64748b'
+      symbolColor: isDark ? '#ffffff' : '#000000'
     })
   }, [theme, resolvedTheme])
 

@@ -137,8 +137,7 @@ export function Sidebar() {
       >
         <div className={cn(
           'border-b border-border drag flex flex-col transition-all duration-300',
-          collapsed ? (isMac ? 'h-20' : 'h-11') : 'h-11',
-          (isWin && !collapsed) && 'win32-padding'
+          collapsed ? (isMac ? 'h-20' : 'h-11') : 'h-11'
         )}>
           {/* Top row: traffic lights on Mac, or just spacing */}
           <div className={cn('h-11 flex items-center justify-between px-3 shrink-0', isMac && 'pl-[72px]', (collapsed && !isMac) && 'justify-center px-0')}>

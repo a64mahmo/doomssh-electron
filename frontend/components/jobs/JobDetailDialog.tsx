@@ -20,6 +20,8 @@ import type { JobApplication, JobContact, JobEvent, JobStatus } from '@/lib/stor
 import { JOB_STATUS_CONFIG } from '@/lib/store/jobTypes'
 import { generateId } from '@/lib/utils/ids'
 
+import { toast } from 'sonner'
+
 interface JobDetailDialogProps {
   jobId: string | null
   mode?: 'edit' | 'create'
@@ -66,7 +68,7 @@ export function JobDetailDialog({ jobId, mode = 'edit', initialStatus, onClose }
   // Initialize draft when entering create mode or when switching jobs
   useEffect(() => {
     if (mode === 'create') {
-      if (!draftJob || activeJobId !== 'new') {
+      if (activeJobId !== 'new') {
         setDraftJob(DEFAULT_JOB(initialStatus || 'wishlist'))
         setActiveJobId('new')
       }
@@ -79,7 +81,7 @@ export function JobDetailDialog({ jobId, mode = 'edit', initialStatus, onClose }
       setDraftJob(null)
       setActiveJobId(null)
     }
-  }, [jobId, storeJob, mode, initialStatus, activeJobId, draftJob])
+  }, [jobId, storeJob, mode, initialStatus, activeJobId])
 
   // Clear draft when closing
   const handleClose = () => {
@@ -97,7 +99,7 @@ export function JobDetailDialog({ jobId, mode = 'edit', initialStatus, onClose }
     if (!draftJob) return
 
     if (!draftJob.company.trim()) {
-      alert('Please enter a company name')
+      toast.error('Please enter a company name')
       return
     }
 
@@ -131,7 +133,7 @@ export function JobDetailDialog({ jobId, mode = 'edit', initialStatus, onClose }
 
   return (
     <Dialog open={!!jobId || mode === 'create'} onOpenChange={(open) => { if (!open) handleClose() }}>
-      <DialogContent className="sm:max-w-2xl h-[95vh] sm:h-fit sm:max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden border-none shadow-2xl select-none">
+      <DialogContent className="sm:max-w-2xl h-[95vh] sm:h-fit sm:max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden border-none shadow-2xl">
         {/* Header */}
         <div className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 bg-gradient-to-b from-muted/50 to-transparent shrink-0">
           <DialogHeader>

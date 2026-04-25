@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
+import { subscribeWithSelector } from "zustand/middleware";
 import type {
   JobApplication,
   JobStore,
@@ -15,31 +16,9 @@ import {
 } from "@/lib/db/jobDatabase";
 import { generateId } from "@/lib/utils/ids";
 
-import { useUIStore } from "@/lib/store/uiStore";
-
-let saveTimeout: ReturnType<typeof setTimeout> | null = null;
-
-function scheduleSave(
-  getState: () => { jobs: JobApplication[]; markSaved: () => void },
-) {
-  if (saveTimeout) clearTimeout(saveTimeout);
-  saveTimeout = setTimeout(async () => {
-    try {
-      await dbSaveAllJobs(getState().jobs);
-      getState().markSaved();
-    } catch (err) {
-      console.error("Failed to save jobs:", err);
-      useUIStore
-        .getState()
-        .addError(
-          `Job Persistence Error: ${err instanceof Error ? err.message : String(err)}`,
-        );
-    }
-  }, 500);
-}
-
 export const useJobStore = create<JobStore>()(
-  immer((set, get) => ({
+  subscribeWithSelector(
+    immer((set, get) => ({
     jobs: [],
     isLoaded: false,
     isDirty: false,
@@ -130,7 +109,6 @@ export const useJobStore = create<JobStore>()(
       set((state) => {
         state.jobs.unshift(job);
         state.isDirty = true;
-        scheduleSave(get);
       });
     },
 
@@ -196,14 +174,12 @@ export const useJobStore = create<JobStore>()(
         }
 
         state.isDirty = true;
-        scheduleSave(get);
       }),
 
     deleteJob: (jobId) =>
       set((state) => {
         state.jobs = state.jobs.filter((j) => j.id !== jobId);
         state.isDirty = true;
-        scheduleSave(get);
       }),
 
     archiveJob: (jobId) =>
@@ -213,7 +189,6 @@ export const useJobStore = create<JobStore>()(
         job.archivedAt = Date.now();
         job.updatedAt = Date.now();
         state.isDirty = true;
-        scheduleSave(get);
       }),
 
     moveJob: (jobId, newStatus: JobStatus) =>
@@ -242,7 +217,6 @@ export const useJobStore = create<JobStore>()(
           job.responseDate = new Date().toISOString().split("T")[0];
         }
         state.isDirty = true;
-        scheduleSave(get);
       }),
 
     addContact: (jobId, contact) =>
@@ -252,7 +226,6 @@ export const useJobStore = create<JobStore>()(
         job.contacts.push({ ...contact, id: generateId() });
         job.updatedAt = Date.now();
         state.isDirty = true;
-        scheduleSave(get);
       }),
 
     updateContact: (jobId, contactId, updates) =>
@@ -264,7 +237,6 @@ export const useJobStore = create<JobStore>()(
         Object.assign(contact, updates);
         job.updatedAt = Date.now();
         state.isDirty = true;
-        scheduleSave(get);
       }),
 
     removeContact: (jobId, contactId) =>
@@ -274,7 +246,6 @@ export const useJobStore = create<JobStore>()(
         job.contacts = job.contacts.filter((c) => c.id !== contactId);
         job.updatedAt = Date.now();
         state.isDirty = true;
-        scheduleSave(get);
       }),
 
     addEvent: (jobId, event) =>
@@ -284,7 +255,6 @@ export const useJobStore = create<JobStore>()(
         job.events.push({ ...event, id: generateId() });
         job.updatedAt = Date.now();
         state.isDirty = true;
-        scheduleSave(get);
       }),
 
     removeEvent: (jobId, eventId) =>
@@ -294,7 +264,6 @@ export const useJobStore = create<JobStore>()(
         job.events = job.events.filter((e) => e.id !== eventId);
         job.updatedAt = Date.now();
         state.isDirty = true;
-        scheduleSave(get);
       }),
 
     updateInterviewPrep: (jobId, prep) =>
@@ -310,9 +279,9 @@ export const useJobStore = create<JobStore>()(
         job.interviewPrep = { ...existing, ...prep };
         job.updatedAt = Date.now();
         state.isDirty = true;
-        scheduleSave(get);
       }),
 
     markSaved: () => set({ isDirty: false }),
-  })),
+    }))
+  )
 );
