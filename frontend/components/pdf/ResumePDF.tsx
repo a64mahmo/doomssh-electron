@@ -80,7 +80,13 @@ function SectionHeading({
   const lineColor = s.applyAccentHeadingLine ? colors.accent : (s.colorMode === 'basic' ? colors.text : colors.heading);
 
   const showIcon = s.sectionHeadingIcon !== 'none'
-  const iconSize = Number(pt(hSize * 1.1 * (s.sectionHeadingIconSize || 1.0)).replace('pt', ''))
+  // Knockout draws the glyph inside a filled chip at 75% scale, so it needs a
+  // larger floor than the inline styles or the icon turns into a dark smudge.
+  const minIconSize = s.sectionHeadingIcon === 'knockout' ? 9 : 7
+  const iconSize = Math.max(
+    minIconSize,
+    Number(pt(hSize * 1.1 * (s.sectionHeadingIconSize || 1.0)).replace('pt', '')),
+  )
 
   // Base container
   const base: Style = {
@@ -149,8 +155,13 @@ function SectionHeading({
     flex: 1,
   }
 
+  // wrap={false} keeps the heading's own rules from splitting across a page
+  // break (a 'top-bottom' heading used to leave its top rule stranded at the
+  // foot of the page). It does not prevent a heading landing last on a page:
+  // minPresenceAhead is ignored this deep in the tree, and hoisting it to the
+  // section wrapper pushes whole sections onto the next page instead.
   return (
-    <View style={base}>
+    <View style={base} wrap={false}>
       {showIcon && (() => {
         const mode = s.sectionHeadingIcon
         const isKnockout = mode === 'knockout'
@@ -624,8 +635,16 @@ export function ResumePDF({ resume }: { resume: Resume }) {
             const sidebarWidth = s.columnWidthMode === "manual" ? s.columnWidth : 32;
             const mainWidth = 100 - sidebarWidth;
             const dividerColor = s.applyAccentDotsBarsBubbles ? colors.accent : (s.colorMode === 'basic' ? colors.text : colors.heading);
-            const sidebarTint = s.applyAccentDotsBarsBubbles ? colors.accent : "transparent";
-            const sidebarBg = hexA(sidebarTint, 0.02);
+            // sidebarTheme picks the panel colour; resolveColors already folded
+            // 'accent'/'custom' into colors.sidebarBg. A dark pick is applied as a
+            // tint rather than a solid fill so the body text stays legible — the
+            // sidebar sections render in the normal text colour.
+            const sidebarThemed =
+              s.sidebarTheme === 'accent' ||
+              (s.sidebarTheme === 'custom' && !!s.sidebarBackgroundColor);
+            const sidebarBg = sidebarThemed
+              ? (isLight(colors.sidebarBg) ? colors.sidebarBg : hexA(colors.sidebarBg, 0.1))
+              : hexA(s.applyAccentDotsBarsBubbles ? colors.accent : 'transparent', 0.02);
 
             return (
               <>

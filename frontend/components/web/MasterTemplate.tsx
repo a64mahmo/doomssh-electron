@@ -266,7 +266,9 @@ function SectionHeading({
         (() => {
           const mode = s.sectionHeadingIcon;
           const isKnockout = mode === "knockout";
-          const boxSize = hSize * 1.1 * iconSizeMultiplier;
+          // Knockout renders the glyph at 75% inside a filled chip, so it needs a
+          // bigger floor than the inline styles or it turns into a dark smudge.
+          const boxSize = Math.max(isKnockout ? 9 : 7, hSize * 1.1 * iconSizeMultiplier);
           const knockoutText = isLight(headingColor) ? '#1a1a1a' : colors.background;
           return (
             <div
@@ -293,7 +295,7 @@ function SectionHeading({
                   ? React.createElement(
                       SECTION_ICONS[type].lucide,
                       {
-                        size: pt(hSize * 0.75 * iconSizeMultiplier),
+                        size: pt(boxSize * 0.68),
                         strokeWidth: mode === "filled" ? 1.2 : 1.5,
                         fill: mode === "filled" ? "currentColor" : "none",
                         stroke:
@@ -543,6 +545,14 @@ export function MasterTemplate({
 
   const dividerColor = s.applyAccentDotsBarsBubbles ? colors.accent : (s.colorMode === 'basic' ? colors.text : colors.heading);
   const sidebarTint = s.applyAccentDotsBarsBubbles ? colors.accent : "transparent";
+  // Mirrors components/pdf/ResumePDF.tsx — honour sidebarTheme, tinting a dark
+  // pick instead of filling it so the sidebar text stays legible.
+  const sidebarThemed =
+    s.sidebarTheme === "accent" ||
+    (s.sidebarTheme === "custom" && !!s.sidebarBackgroundColor);
+  const sidebarFill = sidebarThemed
+    ? (isLight(colors.sidebarBg) ? colors.sidebarBg : `${colors.sidebarBg}1a`)
+    : `${sidebarTint}05`;
 
   if (resume.kind === 'coverLetter') {
     return (
@@ -945,8 +955,8 @@ export function MasterTemplate({
           background:
             s.columnLayout !== "one"
               ? s.columnReverse
-                ? `linear-gradient(to left, transparent ${mainWidth}%, ${sidebarTint}05 ${mainWidth}%)`
-                : `linear-gradient(to right, transparent ${mainWidth}%, ${sidebarTint}05 ${mainWidth}%)`
+                ? `linear-gradient(to left, transparent ${mainWidth}%, ${sidebarFill} ${mainWidth}%)`
+                : `linear-gradient(to right, transparent ${mainWidth}%, ${sidebarFill} ${mainWidth}%)`
               : "transparent",
         }}
       >

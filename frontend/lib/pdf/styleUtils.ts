@@ -1,5 +1,5 @@
 // Shared template utilities — pure functions, no framework dependency
-import type { ResumeSettings, FontOption, NameSize, SectionHeadingSize, ListStyle } from '@/lib/store/types'
+import type { ResumeSettings, FontOption, NameSize, SectionHeadingSize, ListStyle, ProficiencyLevel } from '@/lib/store/types'
 
 export const A4 = { width: 595.28, height: 841.89 }
 export const LETTER = { width: 612, height: 792 }
@@ -36,6 +36,24 @@ export function headingFontSize(size: SectionHeadingSize): number {
 const BULLET_CHAR: Record<ListStyle, string> = { bullet: '•', dash: '—', hyphen: '-' }
 export function bulletChar(style: ListStyle): string {
   return BULLET_CHAR[style] ?? '•'
+}
+
+// ── Skill proficiency ─────────────────────────────────────────────────────────
+
+export const LEVEL_ORDER: ProficiencyLevel[] = ['beginner', 'elementary', 'intermediate', 'advanced', 'expert']
+
+export const LEVEL_LABELS: Record<ProficiencyLevel, string> = {
+  beginner:     'Beginner',
+  elementary:   'Elementary',
+  intermediate: 'Intermediate',
+  advanced:     'Advanced',
+  expert:       'Expert',
+}
+
+/** Proficiency → number of filled dots (1-5). Unknown levels read as mid. */
+export function levelScore(level?: string): number {
+  const i = LEVEL_ORDER.indexOf(level as ProficiencyLevel)
+  return i === -1 ? 3 : i + 1
 }
 
 export interface ResolvedColors {

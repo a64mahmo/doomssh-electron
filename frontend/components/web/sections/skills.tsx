@@ -1,9 +1,12 @@
 import React from "react";
 import type { SectionProps } from "./shared";
 import { getSectionViewModel } from "@/lib/renderers";
-import { isLight } from "@/lib/pdf/styleUtils";
+// Never import from components/pdf here: that pulls @react-pdf/renderer into the
+// builder bundle, which PreviewPanel deliberately loads lazily.
+import { isLight, LEVEL_ORDER, LEVEL_LABELS, levelScore } from "@/lib/pdf/styleUtils";
+import type { ProficiencyLevel } from "@/lib/store/types";
 
-export function SkillsSection({ section, ctx, renderHeading }: SectionProps) {
+export function SkillsSection({ section, ctx, renderHeading, isSidebar = false }: SectionProps) {
   const viewModel = getSectionViewModel(section, {
     settings: ctx.s,
     helpers: {
@@ -19,18 +22,44 @@ export function SkillsSection({ section, ctx, renderHeading }: SectionProps) {
   
   const bubbleBg = s.applyAccentDotsBarsBubbles ? colors.accent : colors.text;
   const bubbleText = isLight(bubbleBg) ? '#1a1a1a' : colors.background;
+  const dotColor = s.applyAccentDotsBarsBubbles ? colors.accent : colors.text;
+  const dotSize = Math.max(3, base * 0.42);
 
   return (
     <div>
       {renderHeading(viewModel.title)}
-      {display === "compact" && (
-        <div style={{ fontSize: `${base}pt`, lineHeight: lh, color: colors.text }}>
-          {viewModel.items.map((sk: any) => sk.name).join(" · ")}
-        </div>
-      )}
+      {display === "compact" &&
+        (() => {
+          const items = viewModel.items as any[];
+          // Mirrors components/pdf/sections/skills.tsx — categorised skills get a
+          // line each so the groups stay legible instead of collapsing into a
+          // single · -joined run-on.
+          const hasCategories = items.some((sk) => sk.category);
+          if (!hasCategories) {
+            return (
+              <div style={{ fontSize: `${base}pt`, lineHeight: lh, color: colors.text }}>
+                {items.map((sk) => sk.name).join(" · ")}
+              </div>
+            );
+          }
+          return items.map((sk) => (
+            <div
+              key={sk.id}
+              style={{ fontSize: `${base * 0.95}pt`, lineHeight: lh, color: colors.text, marginBottom: "2pt" }}
+            >
+              {sk.category && (
+                <span style={{ fontWeight: 700, color: s.applyAccentEntrySubtitle ? colors.accent : colors.text }}>
+                  {sk.category}:{" "}
+                </span>
+              )}
+              {sk.name}
+            </div>
+          ));
+        })()}
       {display === "grid" &&
         (() => {
-          const cols = s.skillColumns ?? 3;
+          // The sidebar is ~32% of the page — multi-column skills wrap to garbage there.
+          const cols = isSidebar ? 1 : (s.skillColumns ?? 3);
           return (
             <div
               style={{
@@ -74,9 +103,43 @@ export function SkillsSection({ section, ctx, renderHeading }: SectionProps) {
                     color: colors.subtitle,
                   }}
                 >
-                  {sk.level}
+                  {LEVEL_LABELS[sk.level as ProficiencyLevel] ?? sk.level}
                 </div>
               )}
+            </div>
+          ))}
+        </div>
+      )}
+      {display === "dots" && (
+        <div>
+          {viewModel.items.map((sk: any) => (
+            <div
+              key={sk.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "2pt",
+              }}
+            >
+              <div style={{ fontSize: `${base * 0.9}pt`, lineHeight: lh, color: colors.text, marginRight: "8pt" }}>
+                {sk.category ? `${sk.category}: ` : ""}
+                {sk.name}
+              </div>
+              <div style={{ display: "flex", flexShrink: 0, gap: "2pt" }}>
+                {LEVEL_ORDER.map((_, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      width: `${dotSize}pt`,
+                      height: `${dotSize}pt`,
+                      borderRadius: "50%",
+                      backgroundColor: dotColor,
+                      opacity: i < levelScore(sk.level) ? 1 : 0.2,
+                    }}
+                  />
+                ))}
+              </div>
             </div>
           ))}
         </div>
