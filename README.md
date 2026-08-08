@@ -10,7 +10,6 @@
 [![Electron](https://img.shields.io/badge/Electron-34-47848F?logo=electron&logoColor=white)](https://www.electronjs.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![AI](https://img.shields.io/badge/AI-Anthropic_Claude-D97757?logo=anthropic&logoColor=white)](https://www.anthropic.com/)
 
 </div>
 
