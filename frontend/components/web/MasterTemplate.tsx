@@ -699,6 +699,10 @@ export function MasterTemplate({
         fontFamily: font,
         fontSize: pt(base),
         lineHeight: lh,
+        // A token longer than its column (a URL, a long compound name) would
+        // otherwise escape the page. CSS can break it without inserting a
+        // hyphen, unlike the PDF renderer — see components/pdf/fonts.ts.
+        overflowWrap: "anywhere",
         boxSizing: "border-box",
         backgroundColor: (s.themeColorStyle === 'advanced' && s.backgroundColor === '#ffffff') ? `${colors.accent}05` : colors.background,
         color: colors.text,

@@ -112,6 +112,9 @@ export function SkillsSectionPDF({ section, ctx, renderHeading, isSidebar = fals
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
           {viewModel.items.map((sk: any) => (
             <Text key={sk.id} style={{
+              // Without a ceiling a long skill string renders as one pill wider
+              // than the column and the text spills outside its own background.
+              maxWidth: '100%',
               fontSize: ctx.pt(base * 0.85),
               backgroundColor: bubbleBg,
               color: bubbleText,

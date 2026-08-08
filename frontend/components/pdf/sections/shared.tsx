@@ -7,6 +7,14 @@ import { BsIconPDF } from '@/lib/icons/BsIconPDF'
 
 export type HeadingFn = (title: string) => React.ReactNode
 
+/**
+ * Cap on the date/location column of an entry. Without it that column is sized
+ * to its widest content, so a long location ("Kitchener–Waterloo–Cambridge
+ * Regional Municipality, Ontario") starves the title column and the job title
+ * wraps one word per line.
+ */
+const META_MAX_WIDTH = '34%'
+
 export interface SectionPDFProps {
   section: ResumeSection
   ctx: TemplateCtx
@@ -146,7 +154,7 @@ export function Entry({
               <Text style={{ ...subStyle, marginTop: 1, lineHeight: lh }}>{subtitle}</Text>
             )}
           </View>
-          <View style={{ alignItems: 'flex-end', marginTop: 2 }}>
+          <View style={{ alignItems: 'flex-end', marginTop: 2, maxWidth: META_MAX_WIDTH, flexShrink: 1 }}>
             {DateElement}
             {LocationElement}
           </View>
@@ -159,7 +167,7 @@ export function Entry({
               <Text style={{ ...subStyle, marginTop: 1, lineHeight: lh, textAlign: 'right' }}>{subtitle}</Text>
             )}
           </View>
-          <View style={{ alignItems: 'flex-start', marginTop: 2 }}>
+          <View style={{ alignItems: 'flex-start', marginTop: 2, maxWidth: META_MAX_WIDTH, flexShrink: 1 }}>
             {DateElement}
             {LocationElement}
           </View>
