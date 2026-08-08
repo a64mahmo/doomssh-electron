@@ -27,6 +27,8 @@ Font.register = ((opts: any) => {
 
 const outDir = process.argv[2] || path.join(process.cwd(), '.template-renders')
 const stress = process.argv.includes('--stress')
+// No preset sets headerLayout, so this is the only way to exercise that path.
+const headerSidebar = process.argv.includes('--header-sidebar')
 fs.mkdirSync(outDir, { recursive: true })
 
 /**
@@ -68,7 +70,11 @@ async function main() {
   for (const id of ids) {
     const resume = stress ? stressify(createSampleResume()) : createSampleResume()
     resume.template = id
-    resume.settings = { ...resume.settings, ...getTemplateSettings(id) }
+    resume.settings = {
+      ...resume.settings,
+      ...getTemplateSettings(id),
+      ...(headerSidebar ? { headerLayout: 'sidebar' as const } : {}),
+    }
     const file = path.join(outDir, `${id}.pdf`)
     try {
       await renderToFile(<ResumePDF resume={resume} />, file)

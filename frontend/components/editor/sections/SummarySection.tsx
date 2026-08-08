@@ -1,6 +1,6 @@
 'use client'
 import { useSection } from '@/hooks/useResume'
-import { DebouncedRichTextArea } from '@/components/ui/debounced-rich-text-area'
+import { DebouncedRichTextArea } from '@/components/ui/rich-text-area'
 import type { SummaryItem } from '@/lib/store/types'
 import { useAI } from '@/hooks/useAI'
 import { toast } from 'sonner'

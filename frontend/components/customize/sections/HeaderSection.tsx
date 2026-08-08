@@ -45,6 +45,39 @@ export function HeaderSection({ s, upd, sections }: HeaderSectionProps) {
   return (
     <>
       <ControlGroup title="Header Layout">
+        {/* Only offered when there is a sidebar to place the header in —
+            mirrors how Details Position is gated below. */}
+        {!isCoverLetter && s.columnLayout !== 'one' && (
+          <div>
+            <FieldLabel>Header Position</FieldLabel>
+            <VisualSegmentGroup
+              columns={2}
+              value={s.headerLayout ?? 'top'}
+              onChange={(v) => upd({ headerLayout: v as 'top' | 'sidebar' })}
+              options={[
+                { value: 'top', label: 'Top', render: () => (
+                  <div className="flex flex-col gap-1 w-10 text-muted-foreground/40">
+                    <div className="h-1.5 w-full bg-current rounded-sm" />
+                    <div className="flex gap-1">
+                      <div className="h-3 flex-1 bg-current/50 rounded-sm" />
+                      <div className="h-3 w-1/3 bg-current/30 rounded-sm" />
+                    </div>
+                  </div>
+                ) },
+                { value: 'sidebar', label: 'Sidebar', render: () => (
+                  <div className="flex gap-1 w-10 text-muted-foreground/40">
+                    <div className="h-4 flex-1 bg-current/50 rounded-sm" />
+                    <div className="flex flex-col gap-0.5 w-1/3">
+                      <div className="h-1.5 w-full bg-current rounded-sm" />
+                      <div className="h-2 w-full bg-current/30 rounded-sm" />
+                    </div>
+                  </div>
+                ) },
+              ]}
+            />
+          </div>
+        )}
+
         <div>
           <FieldLabel>Text Alignment</FieldLabel>
           <VisualSegmentGroup

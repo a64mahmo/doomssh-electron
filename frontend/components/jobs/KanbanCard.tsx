@@ -1,5 +1,6 @@
 'use client'
 
+import { memo, useCallback, useMemo } from 'react'
 import { useDraggable } from '@dnd-kit/core'
 import { Building2 } from 'lucide-react'
 import { Card, CardHeader, CardContent } from '@/components/ui/card'
@@ -20,11 +21,14 @@ const priorityColors: Record<string, string> = {
 
 interface KanbanCardProps {
   job: JobApplication
-  onClick: () => void
+  /** Preferred: parent supplies a stable callback that receives the job id. */
+  onSelect?: (id: string) => void
+  /** Legacy no-arg click handler (still supported for the DragOverlay ghost). */
+  onClick?: () => void
   isDragging?: boolean
 }
 
-export function KanbanCard({ job, onClick, isDragging }: KanbanCardProps) {
+function KanbanCardImpl({ job, onSelect, onClick, isDragging }: KanbanCardProps) {
   const {
     attributes,
     listeners,
@@ -34,11 +38,17 @@ export function KanbanCard({ job, onClick, isDragging }: KanbanCardProps) {
 
   const dragging = isDragging || isActive
 
-  const daysAgo = job.appliedDate
-    ? dayjs(job.appliedDate).fromNow()
-    : job.createdAt
-    ? dayjs(job.createdAt).fromNow()
-    : null
+  // Recompute only when the underlying date changes, not on every render.
+  const daysAgo = useMemo(() => {
+    if (job.appliedDate) return dayjs(job.appliedDate).fromNow()
+    if (job.createdAt) return dayjs(job.createdAt).fromNow()
+    return null
+  }, [job.appliedDate, job.createdAt])
+
+  const handleClick = useCallback(() => {
+    if (onSelect) onSelect(job.id)
+    else if (onClick) onClick()
+  }, [onSelect, onClick, job.id])
 
   return (
     <div
@@ -55,7 +65,7 @@ export function KanbanCard({ job, onClick, isDragging }: KanbanCardProps) {
             ? 'ring-2 ring-primary/50 shadow-lg'
             : 'hover:ring-1 hover:ring-foreground/10 hover:shadow-md'
         )}
-        onClick={onClick}
+        onClick={handleClick}
       >
         <CardHeader className="p-3 pb-0">
           <div className="min-w-0">
@@ -99,3 +109,9 @@ export function KanbanCard({ job, onClick, isDragging }: KanbanCardProps) {
     </div>
   )
 }
+
+/**
+ * Memoized so untouched cards do not re-render when a sibling card or
+ * unrelated store field changes.
+ */
+export const KanbanCard = memo(KanbanCardImpl)

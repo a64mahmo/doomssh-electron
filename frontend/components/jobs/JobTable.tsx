@@ -43,7 +43,9 @@ interface JobTableProps {
 }
 
 export function JobTable({ onSelectJob }: JobTableProps) {
-  const { jobs, archiveJob, deleteJob } = useJobStore()
+  const jobs = useJobStore((s) => s.jobs)
+  const archiveJob = useJobStore((s) => s.archiveJob)
+  const deleteJob = useJobStore((s) => s.deleteJob)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [sourceFilter, setSourceFilter] = useState<string>('all')

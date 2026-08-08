@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState, useCallback } from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -32,7 +32,10 @@ interface KanbanBoardProps {
 }
 
 export function KanbanBoard({ onSelectJob, onAddJob }: KanbanBoardProps) {
-  const { jobs, moveJob } = useJobStore()
+  // Granular selectors — only re-render when the specific field changes.
+  const jobs = useJobStore((s) => s.jobs)
+  const moveJob = useJobStore((s) => s.moveJob)
+
   const [activeJob, setActiveJob] = useState<JobApplication | null>(null)
   const [showArchived, setShowArchived] = useState(false)
 
@@ -40,38 +43,62 @@ export function KanbanBoard({ onSelectJob, onAddJob }: KanbanBoardProps) {
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   )
 
-  const activeJobs = jobs.filter((j) => !j.archivedAt && ACTIVE_STATUSES.includes(j.status))
-  const archivedJobs = jobs.filter((j) => j.archivedAt || TERMINAL_STATUSES.includes(j.status))
-
-  function getJobsByStatus(status: JobStatus) {
-    return activeJobs
-      .filter((j) => j.status === status)
-      .sort((a, b) => b.updatedAt - a.updatedAt)
-  }
-
-  function handleDragStart(event: DragStartEvent) {
-    const job = jobs.find((j) => j.id === event.active.id)
-    if (job) setActiveJob(job)
-  }
-
-  function handleDragEnd(event: DragEndEvent) {
-    setActiveJob(null)
-    const { active, over } = event
-    if (!over) return
-
-    const jobId = active.id as string
-    let targetStatus: JobStatus | null = null
-
-    if (over.data.current?.type === 'column') {
-      targetStatus = over.data.current.status as JobStatus
-    } else if (over.data.current?.type === 'job') {
-      targetStatus = (over.data.current.job as JobApplication).status
+  // Split active vs archived once per jobs change.
+  const { activeJobs, archivedJobs } = useMemo(() => {
+    const active: JobApplication[] = []
+    const archived: JobApplication[] = []
+    for (const j of jobs) {
+      if (j.archivedAt || TERMINAL_STATUSES.includes(j.status)) {
+        archived.push(j)
+      } else if (ACTIVE_STATUSES.includes(j.status)) {
+        active.push(j)
+      }
     }
+    return { activeJobs: active, archivedJobs: archived }
+  }, [jobs])
 
-    if (targetStatus) {
-      moveJob(jobId, targetStatus)
+  // Pre-compute all column arrays once. Each column array is stable across
+  // renders unless the underlying jobs change, so React.memo on KanbanColumn
+  // will avoid re-rendering columns whose contents did not change.
+  const jobsByStatus = useMemo(() => {
+    const map: Partial<Record<JobStatus, JobApplication[]>> = {}
+    for (const status of ACTIVE_STATUSES) {
+      map[status] = activeJobs
+        .filter((j) => j.status === status)
+        .sort((a, b) => b.updatedAt - a.updatedAt)
     }
-  }
+    return map as Record<JobStatus, JobApplication[]>
+  }, [activeJobs])
+
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      const job = jobs.find((j) => j.id === event.active.id)
+      if (job) setActiveJob(job)
+    },
+    [jobs],
+  )
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      setActiveJob(null)
+      const { active, over } = event
+      if (!over) return
+
+      const jobId = active.id as string
+      let targetStatus: JobStatus | null = null
+
+      if (over.data.current?.type === 'column') {
+        targetStatus = over.data.current.status as JobStatus
+      } else if (over.data.current?.type === 'job') {
+        targetStatus = (over.data.current.job as JobApplication).status
+      }
+
+      if (targetStatus) {
+        moveJob(jobId, targetStatus)
+      }
+    },
+    [moveJob],
+  )
 
   return (
     <div className="flex flex-col h-full">
@@ -91,7 +118,7 @@ export function KanbanBoard({ onSelectJob, onAddJob }: KanbanBoardProps) {
                   <KanbanColumn
                     key={status}
                     config={config}
-                    jobs={getJobsByStatus(status)}
+                    jobs={jobsByStatus[status]}
                     onSelectJob={onSelectJob}
                     onAddJob={onAddJob}
                   />
@@ -102,7 +129,7 @@ export function KanbanBoard({ onSelectJob, onAddJob }: KanbanBoardProps) {
             <DragOverlay>
               {activeJob ? (
                 <div className="w-[252px] shadow-xl rotate-2 scale-105">
-                  <KanbanCard job={activeJob} onClick={() => {}} isDragging />
+                  <KanbanCard job={activeJob} isDragging />
                 </div>
               ) : null}
             </DragOverlay>
