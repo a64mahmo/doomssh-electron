@@ -119,7 +119,7 @@ export function Entry({
               </div>
             )}
           </div>
-          <div className="flex flex-col items-end shrink-0 pt-1">
+          <div className="flex flex-col items-end max-w-[34%] pt-1">
             {DateElement}
             {LocationElement}
           </div>
@@ -141,7 +141,7 @@ export function Entry({
               </div>
             )}
           </div>
-          <div className="flex flex-col items-start shrink-0 pt-1">
+          <div className="flex flex-col items-start max-w-[34%] pt-1">
             {DateElement}
             {LocationElement}
           </div>

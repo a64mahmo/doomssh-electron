@@ -18,6 +18,14 @@ const TEMPLATE_GRADIENT: Record<string, string> = {
   crisp:   'from-sky-500 to-blue-600',
   tokyo:   'from-rose-500 to-pink-600',
   elite:   'from-emerald-600 to-teal-800',
+  blocks:  'from-blue-500 to-indigo-700',
+  dublin:  'from-cyan-600 to-sky-800',
+  london:  'from-stone-600 to-neutral-800',
+  berlin:  'from-gray-700 to-gray-900',
+  oslo:    'from-amber-500 to-orange-700',
+  zurich:  'from-slate-400 to-slate-600',
+  milano:  'from-pink-600 to-rose-800',
+  seoul:   'from-indigo-500 to-violet-700',
 }
 
 export function LetterheadCard() {

@@ -189,15 +189,33 @@ export function ContactLine({
         columnGap: !hasVisibleDelimiter ? horizontalGap : 0,
       }}
     >
-      {parts.map((p, i) => (
-        <React.Fragment key={i}>
+      {parts.map((p, i) => {
+        // Mirrors components/pdf/sections/contact.tsx — the separator sits inside
+        // the flex child of the item it precedes, so wrapping can never strand it
+        // at the end of a line as if content were missing.
+        const showSep = arrangement === "wrap" && i > 0 && hasVisibleDelimiter;
+        return (
           <div
+            key={i}
             className={cn(
               "flex items-center",
               arrangement === "column" && "w-full",
               arrangement === "column" && (isCenter ? "justify-center" : isRight ? "justify-end" : "justify-start"),
             )}
           >
+            {showSep && (
+              <span
+                className="self-center flex items-center justify-center shrink-0"
+                style={{
+                  fontSize: pt(base * 0.8),
+                  width: s.detailsSpacing === "comfortable" ? "24pt" : "16pt",
+                  color: s.applyAccentDotsBarsBubbles ? colors.accent : colors.text,
+                  opacity: 0.3,
+                }}
+              >
+                {delimiter === "bullet" ? "•" : "|"}
+              </span>
+            )}
             <ContactItem
               value={p.val!}
               iconName={DEFAULT_CONTACT_ICONS[p.key]}
@@ -205,21 +223,8 @@ export function ContactLine({
               textColorOverride={textColorOverride}
             />
           </div>
-          {arrangement === "wrap" && i < parts.length - 1 && hasVisibleDelimiter && (
-            <span
-              className="self-center flex items-center justify-center shrink-0"
-              style={{
-                fontSize: pt(base * 0.8),
-                width: s.detailsSpacing === "comfortable" ? "24pt" : "16pt",
-                color: s.applyAccentDotsBarsBubbles ? colors.accent : colors.text,
-                opacity: 0.3,
-              }}
-            >
-              {delimiter === "bullet" ? "•" : "|"}
-            </span>
-          )}
-        </React.Fragment>
-      ))}
+        );
+      })}
     </div>
   );
 }

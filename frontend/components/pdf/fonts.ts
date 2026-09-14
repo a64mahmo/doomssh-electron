@@ -76,5 +76,40 @@ export function registerFont(family: FontOption): void {
   registered.add(family)
 }
 
-// Disable word hyphenation in PDFs
-Font.registerHyphenationCallback((word) => [word])
+// Line breaking.
+//
+// Returning [word] disables hyphenation entirely, which reads well — but a word
+// wider than its container then has nowhere to break and simply overflows: long
+// URLs escape the page, and a location like "Kitchener–Waterloo–Cambridge"
+// spills out of a sidebar. So: leave normal words intact, and offer break points
+// only inside tokens too long to fit anywhere sensible.
+//
+// @react-pdf appends a hyphen wherever it breaks, and the character is not
+// configurable, so a break inside a token that already contains punctuation
+// renders a doubled mark ("and--"). That is the cost of not overflowing; the
+// threshold is set high enough that ordinary content never reaches it.
+// Deliberately high. @react-pdf breaks greedily: any break point it is offered
+// may be taken even when the whole token would have fitted on the next line, so
+// a low threshold hyphenates ordinary compound surnames. Only tokens long enough
+// to overflow a narrow sidebar on their own get break points at all.
+const MAX_UNBROKEN_CHARS = 32
+const HARD_CHUNK = 16
+
+export function breakLongWord(word: string): string[] {
+  if (word.length <= MAX_UNBROKEN_CHARS) return [word]
+
+  // Prefer breaking after existing punctuation, keeping it on the leading part.
+  const segments = word.split(/(?<=[-–—_/.,:])/)
+  const out: string[] = []
+  for (const seg of segments) {
+    if (seg.length <= MAX_UNBROKEN_CHARS) {
+      out.push(seg)
+      continue
+    }
+    // Still too long (e.g. one enormous run of letters) — chunk it.
+    for (let i = 0; i < seg.length; i += HARD_CHUNK) out.push(seg.slice(i, i + HARD_CHUNK))
+  }
+  return out
+}
+
+Font.registerHyphenationCallback(breakLongWord)

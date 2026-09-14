@@ -30,6 +30,10 @@ export type TemplateId =
   | 'dublin'
   | 'london'
   | 'berlin'
+  | 'oslo'
+  | 'zurich'
+  | 'milano'
+  | 'seoul'
   | 'custom'
 
 export type FontOption =

@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { Plus } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -16,7 +17,7 @@ interface KanbanColumnProps {
   onAddJob: (status: JobStatus) => void
 }
 
-export function KanbanColumn({ config, jobs, onSelectJob, onAddJob }: KanbanColumnProps) {
+function KanbanColumnImpl({ config, jobs, onSelectJob, onAddJob }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: `column-${config.status}`,
     data: { type: 'column', status: config.status },
@@ -65,7 +66,7 @@ export function KanbanColumn({ config, jobs, onSelectJob, onAddJob }: KanbanColu
               <KanbanCard
                 key={job.id}
                 job={job}
-                onClick={() => onSelectJob(job.id)}
+                onSelect={onSelectJob}
               />
             ))}
             {jobs.length === 0 && (
@@ -84,3 +85,10 @@ export function KanbanColumn({ config, jobs, onSelectJob, onAddJob }: KanbanColu
     </div>
   )
 }
+
+/**
+ * Memoized so that mutating jobs in one column does not re-render sibling
+ * columns. Relies on the parent providing a stable `jobs` array reference
+ * (see `jobsByStatus` in KanbanBoard).
+ */
+export const KanbanColumn = memo(KanbanColumnImpl)

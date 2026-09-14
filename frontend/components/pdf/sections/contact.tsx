@@ -191,9 +191,14 @@ export function ContactLinePDF({
         alignItems: isCenter ? "center" : isRight ? "flex-end" : "flex-start",
       }}
     >
-      {parts.map((p, i) => (
-        <React.Fragment key={i}>
+      {parts.map((p, i) => {
+        // The separator belongs to the item that FOLLOWS it and lives inside the
+        // same flex child. If it were a sibling, wrapping could leave it stranded
+        // at the end of a line ("… linkedin.com/in/me |" + newline).
+        const showSep = arrangement === "wrap" && i > 0 && hasVisibleDelimiter;
+        return (
           <View
+            key={i}
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -209,6 +214,19 @@ export function ContactLinePDF({
               }),
             }}
           >
+            {showSep && (
+              <View
+                style={{
+                  width: s.detailsSpacing === "comfortable" ? 24 : 16,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text style={{ fontSize: pt(base * 0.8), color: s.applyAccentDotsBarsBubbles ? colors.accent : colors.text, opacity: 0.3 }}>
+                  {sep}
+                </Text>
+              </View>
+            )}
             <ContactItemPDF
               value={p.val!}
               iconName={DEFAULT_CONTACT_ICONS[p.key]}
@@ -220,21 +238,8 @@ export function ContactLinePDF({
               textColorOverride={textColorOverride}
             />
           </View>
-          {arrangement === "wrap" && i < parts.length - 1 && hasVisibleDelimiter && (
-            <View
-              style={{
-                width: s.detailsSpacing === "comfortable" ? 24 : 16,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text style={{ fontSize: pt(base * 0.8), color: s.applyAccentDotsBarsBubbles ? colors.accent : colors.text, opacity: 0.3 }}>
-                {sep}
-              </Text>
-            </View>
-          )}
-        </React.Fragment>
-      ))}
+        );
+      })}
     </View>
   );
 }

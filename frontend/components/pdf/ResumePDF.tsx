@@ -6,7 +6,7 @@ import { buildCtx, type TemplateCtx } from '@/lib/pdf/templateCtx'
 import { registerFont } from './fonts'
 import { SectionRendererPDF, ContactLinePDF, hexA } from './sections'
 import { SECTION_ICONS } from "@/lib/icons/sectionIcons";
-import { isLight, resolveColors } from '@/lib/pdf/styleUtils'
+import { isLight, resolveColors, A4, LETTER, mmToPt } from '@/lib/pdf/styleUtils'
 import { renderMd } from './sections/shared'
 import { tokenizeMd } from '@/lib/utils/text'
 
@@ -80,7 +80,13 @@ function SectionHeading({
   const lineColor = s.applyAccentHeadingLine ? colors.accent : (s.colorMode === 'basic' ? colors.text : colors.heading);
 
   const showIcon = s.sectionHeadingIcon !== 'none'
-  const iconSize = Number(pt(hSize * 1.1 * (s.sectionHeadingIconSize || 1.0)).replace('pt', ''))
+  // Knockout draws the glyph inside a filled chip at 75% scale, so it needs a
+  // larger floor than the inline styles or the icon turns into a dark smudge.
+  const minIconSize = s.sectionHeadingIcon === 'knockout' ? 9 : 7
+  const iconSize = Math.max(
+    minIconSize,
+    Number(pt(hSize * 1.1 * (s.sectionHeadingIconSize || 1.0)).replace('pt', '')),
+  )
 
   // Base container
   const base: Style = {
@@ -149,8 +155,13 @@ function SectionHeading({
     flex: 1,
   }
 
+  // wrap={false} keeps the heading's own rules from splitting across a page
+  // break (a 'top-bottom' heading used to leave its top rule stranded at the
+  // foot of the page). It does not prevent a heading landing last on a page:
+  // minPresenceAhead is ignored this deep in the tree, and hoisting it to the
+  // section wrapper pushes whole sections onto the next page instead.
   return (
-    <View style={base}>
+    <View style={base} wrap={false}>
       {showIcon && (() => {
         const mode = s.sectionHeadingIcon
         const isKnockout = mode === 'knockout'
@@ -237,15 +248,44 @@ function renderCoverLetterBodyPDF(md: string, ctx: TemplateCtx) {
 
 // ─── Shared Header Renderer ──────────────────────────────────────────────────
 
-function HeaderRendererPDF({ 
-  h, 
-  ctx,
-  isCoverLetter = false 
-}: { 
-  h?: HeaderData; 
+function HeaderRendererPDF({
+  h,
+  ctx: rawCtx,
+  isCoverLetter = false,
+  inSidebar = false,
+  availableWidth,
+}: {
+  h?: HeaderData;
   ctx: TemplateCtx;
   isCoverLetter?: boolean;
+  /** Rendered at the top of the sidebar column rather than across the page. */
+  inSidebar?: boolean;
+  /** Usable text width, in pt — used to fit the name to a narrow column. */
+  availableWidth?: number;
 }) {
+  // In the sidebar the header has roughly a third of the width, so details
+  // always stack and the name is capped — the page-width sizes overflow there.
+  // A name is a single unbreakable token as far as the layout engine is
+  // concerned — a long surname would simply run out of a narrow column, and
+  // neither the hyphenation callback (which is global) nor a zero-width space
+  // (which @react-pdf ignores) can break it. So shrink the name until its
+  // longest word fits. 0.58em per character approximates a bold sans average.
+  const fitNameSize = (size: number): number => {
+    if (!inSidebar || !availableWidth) return size
+    const longest = (h?.fullName || 'Your Name')
+      .split(/\s+/)
+      .reduce((m, w) => Math.max(m, w.length), 0)
+    if (!longest) return size
+    return Math.max(9, Math.min(size, Math.floor(availableWidth / (longest * 0.58))))
+  }
+
+  const ctx: TemplateCtx = inSidebar
+    ? {
+        ...rawCtx,
+        nameSize: fitNameSize(Math.min(rawCtx.nameSize, 17)),
+        s: { ...rawCtx.s, detailsArrangement: 'column', detailsPosition: 'below' },
+      }
+    : rawCtx
   const { colors, s, pt, base, nameSize } = ctx
   const showPhoto = s.photoEnabled && h?.photo
   const align = s.headerAlignment
@@ -301,16 +341,38 @@ function HeaderRendererPDF({
 
   const photoEl = showPhoto ? <Image src={h.photo!} style={photoStyle} /> : null
 
+  // Inside the sidebar everything stacks: photo, name, job title, then the
+  // contact details in a single column. The page-width arrangements below
+  // (beside / details-right) have nowhere near enough room here.
+  if (inSidebar) {
+    const stackAlign = align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start'
+    return (
+      <View style={{ width: '100%', marginBottom: 12, alignItems: stackAlign }}>
+        {photoEl && <View style={{ marginBottom: photoGap / 2 }}>{photoEl}</View>}
+        {nameText(align)}
+        {h && (
+          <View style={{ width: '100%', marginTop: 8 }}>
+            <ContactLinePDF h={h} ctx={ctx} alignOverride={align} />
+          </View>
+        )}
+      </View>
+    )
+  }
+
+  // `advanced` bleeds the header band out to the page edges by cancelling the
+  // page padding. That only makes sense for a full-width header.
+  const bleed = isAdvanced
+
   return (
     <View style={{
       backgroundColor: isAdvanced ? colors.accent : 'transparent',
       color: headerTextColor,
-      marginLeft: isAdvanced ? `-${s.marginHorizontal}mm` : 0,
-      marginRight: isAdvanced ? `-${s.marginHorizontal}mm` : 0,
-      marginTop: isAdvanced ? `-${s.marginVertical}mm` : 0,
-      paddingLeft: isAdvanced ? `${s.marginHorizontal}mm` : 0,
-      paddingRight: isAdvanced ? `${s.marginHorizontal}mm` : 0,
-      paddingTop: isAdvanced ? `${s.marginVertical}mm` : 0,
+      marginLeft: bleed ? `-${s.marginHorizontal}mm` : 0,
+      marginRight: bleed ? `-${s.marginHorizontal}mm` : 0,
+      marginTop: bleed ? `-${s.marginVertical}mm` : 0,
+      paddingLeft: bleed ? `${s.marginHorizontal}mm` : 0,
+      paddingRight: bleed ? `${s.marginHorizontal}mm` : 0,
+      paddingTop: bleed ? `${s.marginVertical}mm` : 0,
       paddingBottom: isAdvanced ? 15 : 0,
       marginBottom: isCoverLetter ? 30 : 15,
     }}>
@@ -595,6 +657,32 @@ export function ResumePDF({ resume }: { resume: Resume }) {
 
   const hasFooter = s.footerPageNumbers || s.footerEmail || s.footerName
   const hasSidebar = s.columnLayout !== 'one' && sidebarSections.length > 0
+  // The header can live at the top of the sidebar instead of across the page,
+  // but only when there is a sidebar to put it in.
+  const headerInSidebar = s.headerLayout === 'sidebar' && hasSidebar
+
+  const sidebarPct = s.columnWidthMode === 'manual' ? s.columnWidth : 32
+
+  // Sidebar panel: painted as a page-level layer rather than as the column's own
+  // background, so it reaches the page edges without the column widths having to
+  // change meaning (they stay a % of the content area, not of the page). `fixed`
+  // repeats it on every page — a flow background would only cover page 1.
+  const pageW = s.paperSize === 'a4' ? A4.width : LETTER.width
+  const gutter = mmToPt(s.marginHorizontal)
+  const sidebarPanelWidth = (pageW - gutter * 2) * (sidebarPct / 100) + gutter
+  // Usable text width inside the sidebar column (minus its 20pt inner gutter).
+  const sidebarTextWidth = (pageW - gutter * 2) * (sidebarPct / 100) - 20
+
+  // sidebarTheme picks the panel colour; resolveColors already folded
+  // 'accent'/'custom' into colors.sidebarBg. A dark pick is applied as a tint
+  // rather than a solid fill so the body text stays legible — the sidebar
+  // sections render in the normal text colour.
+  const sidebarThemed =
+    s.sidebarTheme === 'accent' ||
+    (s.sidebarTheme === 'custom' && !!s.sidebarBackgroundColor)
+  const sidebarPanelColor = sidebarThemed
+    ? (isLight(colors.sidebarBg) ? colors.sidebarBg : hexA(colors.sidebarBg, 0.1))
+    : (s.applyAccentDotsBarsBubbles ? hexA(colors.accent, 0.04) : 'transparent')
 
   const pageStyle: Style = {
     fontFamily: s.fontFamily,
@@ -615,17 +703,30 @@ export function ResumePDF({ resume }: { resume: Resume }) {
     <Document>
       <Page size={s.paperSize === 'a4' ? 'A4' : 'LETTER'} style={pageStyle}>
 
+        {/* ── Sidebar panel ────────────────────────────────────────── */}
+        {hasSidebar && sidebarPanelColor !== 'transparent' && (
+          <View
+            fixed
+            style={{
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              [s.columnReverse ? 'left' : 'right']: 0,
+              width: sidebarPanelWidth,
+              backgroundColor: sidebarPanelColor,
+            }}
+          />
+        )}
+
         {/* ── Header ───────────────────────────────────────────────── */}
-        <HeaderRendererPDF h={h} ctx={ctx} />
+        {!headerInSidebar && <HeaderRendererPDF h={h} ctx={ctx} />}
 
         {/* ── Body ─────────────────────────────────────────────────── */}
         <View style={{ flexDirection: s.columnReverse ? 'row-reverse' : 'row', flex: 1 }}>
           {(() => {
-            const sidebarWidth = s.columnWidthMode === "manual" ? s.columnWidth : 32;
+            const sidebarWidth = sidebarPct;
             const mainWidth = 100 - sidebarWidth;
             const dividerColor = s.applyAccentDotsBarsBubbles ? colors.accent : (s.colorMode === 'basic' ? colors.text : colors.heading);
-            const sidebarTint = s.applyAccentDotsBarsBubbles ? colors.accent : "transparent";
-            const sidebarBg = hexA(sidebarTint, 0.02);
 
             return (
               <>
@@ -661,15 +762,19 @@ export function ResumePDF({ resume }: { resume: Resume }) {
                     paddingRight: s.columnReverse ? 20 : 0,
                     paddingTop: 5,
                     paddingBottom: 20,
-                    backgroundColor: sidebarBg,
                   }}>
+                    {headerInSidebar && (
+                      <View style={{ marginBottom: 4 }}>
+                        <HeaderRendererPDF h={h} ctx={ctx} inSidebar availableWidth={sidebarTextWidth} />
+                      </View>
+                    )}
                     {sidebarSections.map((section, i) => (
                       <SectionRendererPDF
                         key={section.id}
                         section={section}
                         ctx={ctx}
                         renderHeading={(title) => (
-                          <SectionHeading title={title} type={section.type} ctx={ctx} isSidebar isFirst={i === 0} />
+                          <SectionHeading title={title} type={section.type} ctx={ctx} isSidebar isFirst={i === 0 && !headerInSidebar} />
                         )}
                         isSidebar
                       />

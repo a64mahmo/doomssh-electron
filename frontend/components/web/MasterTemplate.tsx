@@ -266,7 +266,9 @@ function SectionHeading({
         (() => {
           const mode = s.sectionHeadingIcon;
           const isKnockout = mode === "knockout";
-          const boxSize = hSize * 1.1 * iconSizeMultiplier;
+          // Knockout renders the glyph at 75% inside a filled chip, so it needs a
+          // bigger floor than the inline styles or it turns into a dark smudge.
+          const boxSize = Math.max(isKnockout ? 9 : 7, hSize * 1.1 * iconSizeMultiplier);
           const knockoutText = isLight(headingColor) ? '#1a1a1a' : colors.background;
           return (
             <div
@@ -293,7 +295,7 @@ function SectionHeading({
                   ? React.createElement(
                       SECTION_ICONS[type].lucide,
                       {
-                        size: pt(hSize * 0.75 * iconSizeMultiplier),
+                        size: pt(boxSize * 0.68),
                         strokeWidth: mode === "filled" ? 1.2 : 1.5,
                         fill: mode === "filled" ? "currentColor" : "none",
                         stroke:
@@ -542,7 +544,24 @@ export function MasterTemplate({
   const mainWidth = 100 - sidebarWidth;
 
   const dividerColor = s.applyAccentDotsBarsBubbles ? colors.accent : (s.colorMode === 'basic' ? colors.text : colors.heading);
-  const sidebarTint = s.applyAccentDotsBarsBubbles ? colors.accent : "transparent";
+  // Mirrors components/pdf/ResumePDF.tsx — honour sidebarTheme, tinting a dark
+  // pick instead of filling it so the sidebar text stays legible. Must resolve
+  // to a real colour or the literal "transparent": the old `${tint}05` form
+  // produced "transparent05", which only worked because it was invalid CSS.
+  // The header can sit at the top of the sidebar instead of across the page,
+  // but only when there is a sidebar to hold it. Details always stack there.
+  const headerInSidebar =
+    s.headerLayout === "sidebar" && s.columnLayout !== "one" && sidebarSections.length > 0;
+
+  // Contact details always stack in the narrow sidebar column.
+  const sidebarHeaderCtx = { ...ctx, s: { ...s, detailsArrangement: "column" as const, detailsPosition: "below" as const } };
+
+  const sidebarThemed =
+    s.sidebarTheme === "accent" ||
+    (s.sidebarTheme === "custom" && !!s.sidebarBackgroundColor);
+  const sidebarFill = sidebarThemed
+    ? (isLight(colors.sidebarBg) ? colors.sidebarBg : `${colors.sidebarBg}1a`)
+    : (s.applyAccentDotsBarsBubbles ? `${colors.accent}0a` : "transparent");
 
   if (resume.kind === 'coverLetter') {
     return (
@@ -689,6 +708,10 @@ export function MasterTemplate({
         fontFamily: font,
         fontSize: pt(base),
         lineHeight: lh,
+        // A token longer than its column (a URL, a long compound name) would
+        // otherwise escape the page. CSS can break it without inserting a
+        // hyphen, unlike the PDF renderer — see components/pdf/fonts.ts.
+        overflowWrap: "anywhere",
         boxSizing: "border-box",
         backgroundColor: (s.themeColorStyle === 'advanced' && s.backgroundColor === '#ffffff') ? `${colors.accent}05` : colors.background,
         color: colors.text,
@@ -704,8 +727,26 @@ export function MasterTemplate({
     >
       {fontHref && <link rel="stylesheet" href={fontHref} />}
 
+      {/* ── Sidebar panel ────────────────────────────────────────── */}
+      {/* Mirrors components/pdf/ResumePDF.tsx: painted as a page-level layer so
+          it reaches the page edges without changing what columnWidth means. */}
+      {s.columnLayout !== "one" && sidebarSections.length > 0 && sidebarFill !== "transparent" && (
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            top: 0,
+            bottom: 0,
+            [s.columnReverse ? "left" : "right"]: 0,
+            width: `calc((100% - ${padH} - ${padH}) * ${sidebarWidth / 100} + ${padH})`,
+            backgroundColor: sidebarFill,
+            zIndex: 0,
+          }}
+        />
+      )}
+
       {/* ── Header ───────────────────────────────────────────────── */}
-      {!hideHeader && (
+      {!hideHeader && !headerInSidebar && (
         <div
           style={{
             backgroundColor: s.themeColorStyle === 'advanced' ? colors.accent : 'transparent',
@@ -942,12 +983,8 @@ export function MasterTemplate({
           display: "flex",
           flexDirection: s.columnReverse ? "row-reverse" : "row",
           flex: 1,
-          background:
-            s.columnLayout !== "one"
-              ? s.columnReverse
-                ? `linear-gradient(to left, transparent ${mainWidth}%, ${sidebarTint}05 ${mainWidth}%)`
-                : `linear-gradient(to right, transparent ${mainWidth}%, ${sidebarTint}05 ${mainWidth}%)`
-              : "transparent",
+          position: "relative",
+          zIndex: 1,
         }}
       >
         {/* Main Column */}
@@ -1008,6 +1045,43 @@ export function MasterTemplate({
               paddingBottom: isMeasurement ? "0" : "20pt",
             }}
           >
+            {headerInSidebar && !hideHeader && (
+              <div
+                style={{
+                  marginBottom: "12pt",
+                  textAlign: s.headerAlignment === "center" ? "center" : s.headerAlignment === "right" ? "right" : "left",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: pt(Math.min(ctx.nameSize, 17)),
+                    fontWeight: "bold",
+                    lineHeight: 1.1,
+                    color: s.applyAccentName ? colors.accent : colors.text,
+                  }}
+                >
+                  {h?.fullName || "Your Name"}
+                </div>
+                {h?.jobTitle && (
+                  <div
+                    style={{
+                      fontSize: pt(base * 1.1),
+                      marginTop: "4pt",
+                      textTransform: "uppercase",
+                      letterSpacing: "1.5px",
+                      color: s.applyAccentJobTitle ? `${colors.accent}b3` : `${colors.text}b3`,
+                    }}
+                  >
+                    {h.jobTitle}
+                  </div>
+                )}
+                {h && (
+                  <div style={{ marginTop: "8pt" }}>
+                    <ContactLine h={h} ctx={sidebarHeaderCtx} alignOverride={s.headerAlignment} />
+                  </div>
+                )}
+              </div>
+            )}
             {sidebarSections.map((section, i) => (
               <div key={section.id} data-section>
                 <SectionRenderer
@@ -1019,7 +1093,7 @@ export function MasterTemplate({
                       type={section.type}
                       ctx={ctx}
                       isSidebar={true}
-                      isFirst={i === 0}
+                      isFirst={i === 0 && !headerInSidebar}
                     />
                   )}
                   isSidebar={true}

@@ -1,19 +1,23 @@
-// Vault-based file storage via Electron IPC
+// Vault-based file storage via Electron IPC, IndexedDB in the browser
 import type { Resume } from '@/lib/store/types'
 import { generateId } from '@/lib/utils/ids'
+import { browserDb } from '@/lib/db/browserDb'
 import { DEFAULT_SETTINGS, DEFAULT_HEADER, SECTION_LABELS } from '@/lib/store/types'
 
 // ─── CRUD Operations ──────────────────────────────────────────────────────────
 
+async function listAll(): Promise<Resume[]> {
+  if (!window.electron) return browserDb().resumes.toArray()
+  return (await window.electron.vault.list()) as Resume[]
+}
+
 export async function getAllResumes(): Promise<Resume[]> {
-  if (!window.electron) return []
-  const all = (await window.electron.vault.list()) as Resume[]
+  const all = await listAll()
   return all.filter(r => r.kind !== 'coverLetter')
 }
 
 export async function getAllCoverLetters(): Promise<Resume[]> {
-  if (!window.electron) return []
-  const all = (await window.electron.vault.list()) as Resume[]
+  const all = await listAll()
   return all.filter(r => r.kind === 'coverLetter')
 }
 
@@ -55,17 +59,24 @@ export function createNewCoverLetter(name: string = 'Untitled Cover Letter'): Re
 }
 
 export async function getResume(id: string): Promise<Resume | undefined> {
-  if (!window.electron) return undefined
+  if (!window.electron) return browserDb().resumes.get(id)
   return (await window.electron.vault.read(id)) as Resume | undefined
 }
 
 export async function saveResume(resume: Resume): Promise<void> {
-  if (!window.electron) return
-  await window.electron.vault.write({ ...resume, updatedAt: Date.now() })
+  const updated = { ...resume, updatedAt: Date.now() }
+  if (!window.electron) {
+    await browserDb().resumes.put(updated)
+    return
+  }
+  await window.electron.vault.write(updated)
 }
 
 export async function deleteResume(id: string): Promise<void> {
-  if (!window.electron) return
+  if (!window.electron) {
+    await browserDb().resumes.delete(id)
+    return
+  }
   await window.electron.vault.delete(id)
 }
 

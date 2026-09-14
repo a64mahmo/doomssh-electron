@@ -60,7 +60,9 @@ const DEFAULT_JOB = (status: JobStatus = 'wishlist'): JobApplication => ({
 
 export function JobDetailDialog({ jobId, mode = 'edit', initialStatus, onClose }: JobDetailDialogProps) {
   const storeJob = useJobStore((s) => (jobId ? s.jobs.find((j) => j.id === jobId) ?? null : null))
-  const { addJob, updateJob, deleteJob } = useJobStore()
+  const addJob = useJobStore((s) => s.addJob)
+  const updateJob = useJobStore((s) => s.updateJob)
+  const deleteJob = useJobStore((s) => s.deleteJob)
   
   const [draftJob, setDraftJob] = useState<JobApplication | null>(null)
   const [activeJobId, setActiveJobId] = useState<string | null>(null)

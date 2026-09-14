@@ -7,6 +7,14 @@ import { BsIconPDF } from '@/lib/icons/BsIconPDF'
 
 export type HeadingFn = (title: string) => React.ReactNode
 
+/**
+ * Cap on the date/location column of an entry. Without it that column is sized
+ * to its widest content, so a long location ("Kitchener–Waterloo–Cambridge
+ * Regional Municipality, Ontario") starves the title column and the job title
+ * wraps one word per line.
+ */
+const META_MAX_WIDTH = '34%'
+
 export interface SectionPDFProps {
   section: ResumeSection
   ctx: TemplateCtx
@@ -113,22 +121,40 @@ export function Entry({
 
   const isSameLine = s.subtitlePlacement === "same-line";
 
+  // A <Text> nested inside another <Text> shares one text run, and @react-pdf
+  // renders a hyphen when a line breaks at that boundary — "Computational
+  // Mathematics-" / "University of Waterloo". Registering a no-op hyphenation
+  // callback (see ./fonts) suppresses word hyphenation but not this one. Laying
+  // the two out as siblings in a wrapping row removes the shared run entirely.
+  const TitleLine = ({ align = 'flex-start' }: { align?: 'flex-start' | 'flex-end' }) => {
+    const titleStyle = {
+      fontWeight: titleWeight as 'bold' | 'normal',
+      fontSize: pt(titleFontSize),
+      lineHeight: lh,
+      color: colors.text,
+    };
+    if (!subtitle || !isSameLine) {
+      return <Text style={titleStyle}>{title}</Text>;
+    }
+    return (
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: align }}>
+        <Text style={titleStyle}>{title}</Text>
+        <Text style={{ ...subStyle, marginLeft: 5 }}>{subtitle}</Text>
+      </View>
+    );
+  };
+
   return (
     <View style={{ marginBottom: Number(ctx.gap.replace('pt', '')) }} wrap={false}>
       {layout === "date-location-right" ? (
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <View style={{ flex: 1, marginRight: 8 }}>
-            <Text style={{ fontWeight: titleWeight, fontSize: pt(titleFontSize), lineHeight: lh, color: colors.text }}>
-              {title}
-              {subtitle && isSameLine && (
-                <Text style={subStyle}>{"  "}{subtitle}</Text>
-              )}
-            </Text>
+            <TitleLine />
             {subtitle && !isSameLine && (
               <Text style={{ ...subStyle, marginTop: 1, lineHeight: lh }}>{subtitle}</Text>
             )}
           </View>
-          <View style={{ alignItems: 'flex-end', marginTop: 2 }}>
+          <View style={{ alignItems: 'flex-end', marginTop: 2, maxWidth: META_MAX_WIDTH, flexShrink: 1 }}>
             {DateElement}
             {LocationElement}
           </View>
@@ -136,17 +162,12 @@ export function Entry({
       ) : layout === "date-location-left" ? (
         <View style={{ flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <View style={{ flex: 1, marginLeft: 8, alignItems: 'flex-end' }}>
-            <Text style={{ fontWeight: titleWeight, fontSize: pt(titleFontSize), lineHeight: lh, color: colors.text, textAlign: 'right' }}>
-              {title}
-              {subtitle && isSameLine && (
-                <Text style={subStyle}>{"  "}{subtitle}</Text>
-              )}
-            </Text>
+            <TitleLine align="flex-end" />
             {subtitle && !isSameLine && (
               <Text style={{ ...subStyle, marginTop: 1, lineHeight: lh, textAlign: 'right' }}>{subtitle}</Text>
             )}
           </View>
-          <View style={{ alignItems: 'flex-start', marginTop: 2 }}>
+          <View style={{ alignItems: 'flex-start', marginTop: 2, maxWidth: META_MAX_WIDTH, flexShrink: 1 }}>
             {DateElement}
             {LocationElement}
           </View>
@@ -154,12 +175,7 @@ export function Entry({
       ) : layout === "date-content-location" ? (
         <View>
           <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
-            <Text style={{ fontWeight: titleWeight, fontSize: pt(titleFontSize), lineHeight: lh, color: colors.text, marginRight: 12 }}>
-              {title}
-              {subtitle && isSameLine && (
-                <Text style={subStyle}>{"  "}{subtitle}</Text>
-              )}
-            </Text>
+            <View style={{ marginRight: 12 }}><TitleLine /></View>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               {DateElement}
               {date && location && <Text style={{ fontSize: pt(base * 0.8), opacity: 0.2, marginHorizontal: 6 }}>{"•"}</Text>}
@@ -172,12 +188,7 @@ export function Entry({
         </View>
       ) : (
         <View>
-          <Text style={{ fontWeight: titleWeight, fontSize: pt(titleFontSize), lineHeight: lh, color: colors.text }}>
-            {title}
-            {subtitle && isSameLine && (
-              <Text style={subStyle}>{"  "}{subtitle}</Text>
-            )}
-          </Text>
+          <TitleLine />
           {subtitle && !isSameLine && (
             <Text style={{ ...subStyle, marginTop: 1, lineHeight: lh }}>{subtitle}</Text>
           )}
