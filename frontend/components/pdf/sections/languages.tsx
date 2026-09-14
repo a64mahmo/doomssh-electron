@@ -16,8 +16,9 @@ export function LanguagesSectionPDF({ section, ctx, renderHeading }: SectionPDFP
 
   const { base, colors, lh } = ctx;
 
+  // Kept whole so the heading can't be stranded at the foot of a page.
   return (
-    <View>
+    <View wrap={false}>
       {renderHeading(viewModel.title)}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: '4pt 20pt' }}>
         {viewModel.items.map((item: any, index) => (

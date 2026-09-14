@@ -1,6 +1,17 @@
 import { experienceController } from './experience';
-import type { SectionType, ResumeSection } from '@/lib/store/types';
+import type { SectionType, ResumeSection, DateFormat } from '@/lib/store/types';
 import type { SectionViewModel, RenderContext, SectionController } from './types';
+
+/** Date line for items the editor stores with a single `date` field. */
+function singleDate(
+  item: { date?: string; startDate?: string; endDate?: string; present?: boolean },
+  ctx: RenderContext,
+  s: { dateFormat?: DateFormat },
+): string | undefined {
+  if (item.date) return ctx.helpers.formatDate(item.date, '', false, s.dateFormat || 'YYYY')
+  if (item.startDate) return ctx.helpers.formatDate(item.startDate, item.endDate ?? '', !!item.present, s.dateFormat || 'YYYY')
+  return undefined
+}
 
 const controllers: Record<SectionType, SectionController> = {
   experience: experienceController,
@@ -70,7 +81,7 @@ const controllers: Record<SectionType, SectionController> = {
       id: item.id,
       primaryText: item.name,
       secondaryText: item.issuer,
-      dateRange: ctx.helpers.formatDate(item.startDate, item.endDate, item.present, s.dateFormat || 'YYYY'),
+      dateRange: singleDate(item, ctx, s),
       description: item.description,
     }));
     return {
@@ -91,9 +102,9 @@ const controllers: Record<SectionType, SectionController> = {
     const s = ctx.settings as any || {};
     const processedItems = items.map(item => ({
       id: item.id,
-      primaryText: item.name,
+      primaryText: item.title ?? item.name,
       secondaryText: item.issuer,
-      dateRange: ctx.helpers.formatDate(item.startDate, item.endDate, item.present, s.dateFormat || 'YYYY'),
+      dateRange: singleDate(item, ctx, s),
       description: item.description,
     }));
     return {
@@ -108,7 +119,7 @@ const controllers: Record<SectionType, SectionController> = {
     const s = ctx.settings as any || {};
     const processedItems = items.map(item => ({
       id: item.id,
-      primaryText: item.position,
+      primaryText: item.role ?? item.position,
       secondaryText: item.organization,
       location: item.location,
       dateRange: ctx.helpers.formatDate(item.startDate, item.endDate, item.present, s.dateFormat || 'YYYY'),
@@ -128,7 +139,7 @@ const controllers: Record<SectionType, SectionController> = {
       id: item.id,
       primaryText: item.title,
       secondaryText: item.publisher,
-      dateRange: ctx.helpers.formatDate(item.startDate, item.endDate, item.present, s.dateFormat || 'YYYY'),
+      dateRange: singleDate(item, ctx, s),
       description: item.description,
     }));
     return {
@@ -138,12 +149,19 @@ const controllers: Record<SectionType, SectionController> = {
       items: processedItems,
     };
   },
-  references: (section) => ({
-    title: section.title,
-    isVisible: section.visible !== false && (section.items as any[]).length > 0,
-    type: 'references',
-    items: section.items as any[],
-  }),
+  references: (section) => {
+    const items = (section.items as any[]) || [];
+    return {
+      title: section.title,
+      isVisible: section.visible !== false && items.length > 0,
+      type: 'references',
+      items: items.map(item => ({
+        ...item,
+        primaryText: item.name,
+        secondaryText: item.position,
+      })),
+    };
+  },
   custom: (section, ctx) => {
     const items = (section.items as any[]) || [];
     const s = ctx.settings as any || {};

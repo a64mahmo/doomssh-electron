@@ -34,6 +34,12 @@ export type TemplateId =
   | 'zurich'
   | 'milano'
   | 'seoul'
+  | 'aspen'
+  | 'vega'
+  | 'lumen'
+  | 'atlas'
+  | 'sierra'
+  | 'nova'
   | 'custom'
 
 export type FontOption =

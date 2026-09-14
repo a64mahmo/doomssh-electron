@@ -20,14 +20,15 @@ export { ContactLinePDF } from './contact'
 export { hexA } from './shared'
 export type { HeadingFn, SectionPDFProps } from './shared'
 
-export function SectionRendererPDF({ section, ctx, renderHeading, isSidebar = false }: {
+export function SectionRendererPDF({ section, ctx, renderHeading, isSidebar = false, isLastInColumn = false }: {
   section: ResumeSection
   ctx: TemplateCtx
   renderHeading: HeadingFn
   isSidebar?: boolean
+  isLastInColumn?: boolean
 }) {
   if (!section.visible) return null
-  const props = { section, ctx, renderHeading, isSidebar }
+  const props = { section, ctx, renderHeading, isSidebar, isLastInColumn }
   switch (section.type) {
     case 'summary':        return <SummarySectionPDF        {...props} />
     case 'experience':     return <ExperienceSectionPDF     {...props} />

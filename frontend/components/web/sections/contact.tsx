@@ -5,6 +5,7 @@ import type { TemplateCtx } from "@/lib/pdf/templateCtx";
 import { BsIcon } from "@/lib/icons/BsIcon";
 import { DEFAULT_CONTACT_ICONS } from "@/lib/icons/bootstrapIcons";
 import { isLight } from "@/lib/pdf/styleUtils";
+import { contentWidth, packContactRows } from "@/lib/pdf/layoutFit";
 
 function ContactItem({
   iconName,
@@ -31,7 +32,7 @@ function ContactItem({
   const finalIconColor = isBlue ? "#2563eb" : (s.applyAccentHeaderIcons ? (s.themeColorStyle === "advanced" ? advancedIconColor : colors.accent) : finalTextColor);
 
   return (
-    <div className="flex items-center whitespace-nowrap group gap-[6px]">
+    <div className="flex items-center min-w-0 max-w-full group gap-[6px]">
       {showIcons && iconName && (
         <div
           className={cn(
@@ -77,6 +78,7 @@ function ContactItem({
         style={{
           fontSize: pt(ctx.base * 0.85),
           color: finalTextColor,
+          overflowWrap: "anywhere",
         }}
       >
         {value}
@@ -90,11 +92,14 @@ export function ContactLine({
   ctx,
   alignOverride,
   textColorOverride,
+  availableWidth,
 }: {
   h: HeaderData;
   ctx: TemplateCtx;
   alignOverride?: "left" | "center" | "right";
   textColorOverride?: string;
+  /** Width the details may occupy, in pt. Defaults from the page and position. */
+  availableWidth?: number;
 }) {
   const { s, pt, base, colors } = ctx;
   const parts = [
@@ -142,7 +147,10 @@ export function ContactLine({
 
   const arrangement = s.detailsArrangement || "wrap";
   const align = s.headerAlignment;
-  const textAlign = alignOverride || s.detailsTextAlignment || align;
+  const isBeside = s.detailsPosition === "beside";
+  // Mirrors components/pdf/sections/contact.tsx — below the name the details
+  // follow the header alignment; detailsTextAlignment applies beside it.
+  const textAlign = alignOverride || (isBeside ? s.detailsTextAlignment || align : align);
   const isCenter = textAlign === "center";
   const isRight = textAlign === "right";
   const delimiter = s.headerArrangement;
@@ -173,58 +181,66 @@ export function ContactLine({
   }
 
   const hasVisibleDelimiter = delimiter === "bullet" || delimiter === "verticalBar";
-  const horizontalGap = s.detailsSpacing === "comfortable" ? "12pt" : "8pt";
+  const horizontalGap = s.detailsSpacing === "comfortable" ? 12 : 8;
+  const sepWidth = hasVisibleDelimiter ? (s.detailsSpacing === "comfortable" ? 24 : 16) : horizontalGap;
+  const justify = isCenter ? "justify-center" : isRight ? "justify-end" : "justify-start";
+
+  if (arrangement === "column") {
+    return (
+      <div className={cn("flex flex-col gap-y-1 w-full", isCenter ? "items-center" : isRight ? "items-end" : "items-start")}>
+        {parts.map((p) => (
+          <ContactItem
+            key={p.key}
+            value={p.val!}
+            iconName={DEFAULT_CONTACT_ICONS[p.key]}
+            ctx={ctx}
+            textColorOverride={textColorOverride}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  // Mirrors components/pdf/sections/contact.tsx — rows are packed up front so a
+  // separator never opens a line.
+  const rows = packContactRows(parts, {
+    width: availableWidth ?? contentWidth(s) * (isBeside ? 0.5 : 1),
+    fontSize: base * 0.85,
+    sepWidth,
+    iconWidth: s.contactIcons ? 19 : 0,
+  });
 
   return (
-    <div
-      className={cn(
-        "flex flex-wrap gap-y-1 w-full",
-        arrangement === "column" ? "flex-col" : "flex-row items-center",
-        arrangement === "wrap" &&
-          (isCenter ? "justify-center" : isRight ? "justify-end" : "justify-start"),
-        arrangement === "column" &&
-          (isCenter ? "items-center" : isRight ? "items-end" : "items-start"),
-      )}
-      style={{
-        columnGap: !hasVisibleDelimiter ? horizontalGap : 0,
-      }}
-    >
-      {parts.map((p, i) => {
-        // Mirrors components/pdf/sections/contact.tsx — the separator sits inside
-        // the flex child of the item it precedes, so wrapping can never strand it
-        // at the end of a line as if content were missing.
-        const showSep = arrangement === "wrap" && i > 0 && hasVisibleDelimiter;
-        return (
-          <div
-            key={i}
-            className={cn(
-              "flex items-center",
-              arrangement === "column" && "w-full",
-              arrangement === "column" && (isCenter ? "justify-center" : isRight ? "justify-end" : "justify-start"),
-            )}
-          >
-            {showSep && (
-              <span
-                className="self-center flex items-center justify-center shrink-0"
-                style={{
-                  fontSize: pt(base * 0.8),
-                  width: s.detailsSpacing === "comfortable" ? "24pt" : "16pt",
-                  color: s.applyAccentDotsBarsBubbles ? colors.accent : colors.text,
-                  opacity: 0.3,
-                }}
-              >
-                {delimiter === "bullet" ? "•" : "|"}
-              </span>
-            )}
-            <ContactItem
-              value={p.val!}
-              iconName={DEFAULT_CONTACT_ICONS[p.key]}
-              ctx={ctx}
-              textColorOverride={textColorOverride}
-            />
-          </div>
-        );
-      })}
+    <div className="flex flex-col gap-y-1 w-full">
+      {rows.map((row, ri) => (
+        <div key={ri} className={cn("flex flex-wrap items-center w-full", justify)}>
+          {row.map((p, i) => (
+            <div key={p.key} className="flex items-center min-w-0 max-w-full">
+              {i > 0 && (hasVisibleDelimiter ? (
+                <span
+                  className="flex items-center justify-center shrink-0"
+                  style={{
+                    fontSize: pt(base * 0.8),
+                    width: `${sepWidth}pt`,
+                    color: s.applyAccentDotsBarsBubbles ? colors.accent : colors.text,
+                    opacity: 0.3,
+                  }}
+                >
+                  {delimiter === "bullet" ? "•" : "|"}
+                </span>
+              ) : (
+                <span className="shrink-0" style={{ width: `${horizontalGap}pt` }} />
+              ))}
+              <ContactItem
+                value={p.val!}
+                iconName={DEFAULT_CONTACT_ICONS[p.key]}
+                ctx={ctx}
+                textColorOverride={textColorOverride}
+              />
+            </div>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }

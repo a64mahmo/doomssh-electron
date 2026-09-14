@@ -5,6 +5,7 @@ import type { TemplateCtx } from '@/lib/pdf/templateCtx'
 import { BsIconPDF } from '@/lib/icons/BsIconPDF'
 import { DEFAULT_CONTACT_ICONS } from '@/lib/icons/bootstrapIcons'
 import { isLight } from '@/lib/pdf/styleUtils'
+import { contentWidth, packContactRows } from '@/lib/pdf/layoutFit'
 
 function ContactItemPDF({
   iconName,
@@ -66,6 +67,7 @@ function ContactItemPDF({
           fontSize: pt(base * 0.85),
           color: finalTextColor,
           lineHeight: lh,
+          flexShrink: 1,
         }}
       >
         {value}
@@ -79,11 +81,14 @@ export function ContactLinePDF({
   ctx,
   alignOverride,
   textColorOverride,
+  availableWidth,
 }: {
   h: HeaderData;
   ctx: TemplateCtx;
   alignOverride?: "left" | "center" | "right";
   textColorOverride?: string;
+  /** Width the details may occupy, in pt. Defaults from the page and position. */
+  availableWidth?: number;
 }) {
   const { s, pt, base, colors } = ctx;
 
@@ -132,7 +137,11 @@ export function ContactLinePDF({
 
   const arrangement = s.detailsArrangement || "wrap";
   const align = s.headerAlignment;
-  const textAlign = alignOverride || s.detailsTextAlignment || align;
+  const isBeside = s.detailsPosition === "beside";
+  // detailsTextAlignment positions the details block beside the name. Below the
+  // name the details follow the header, or a left-aligned name gets a centred,
+  // seemingly indented contact line under it.
+  const textAlign = alignOverride || (isBeside ? s.detailsTextAlignment || align : align);
   const isCenter = textAlign === "center";
   const isRight = textAlign === "right";
   const delimiter = s.headerArrangement;
@@ -176,70 +185,60 @@ export function ContactLinePDF({
   const sep = delimiter === 'bullet' ? '•' : delimiter === 'verticalBar' ? '|' : ''
   const hasVisibleDelimiter = !!sep;
   const horizontalGap = s.detailsSpacing === "comfortable" ? 12 : 8;
+  const sepWidth = hasVisibleDelimiter ? (s.detailsSpacing === "comfortable" ? 24 : 16) : horizontalGap;
+  const justify = isCenter ? "center" : isRight ? "flex-end" : "flex-start";
 
-  return (
-    <View
-      style={{
-        flexDirection: arrangement === "column" ? "column" : "row",
-        flexWrap: arrangement === "column" ? "nowrap" : "wrap",
-        width: "100%",
-        justifyContent: isCenter
-          ? "center"
-          : isRight
-            ? "flex-end"
-            : "flex-start",
-        alignItems: isCenter ? "center" : isRight ? "flex-end" : "flex-start",
-      }}
-    >
-      {parts.map((p, i) => {
-        // The separator belongs to the item that FOLLOWS it and lives inside the
-        // same flex child. If it were a sibling, wrapping could leave it stranded
-        // at the end of a line ("… linkedin.com/in/me |" + newline).
-        const showSep = arrangement === "wrap" && i > 0 && hasVisibleDelimiter;
-        return (
-          <View
-            key={i}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              ...(arrangement === "column" ? {
-                width: "100%",
-                justifyContent: isCenter
-                  ? "center"
-                  : isRight
-                    ? "flex-end"
-                    : "flex-start",
-              } : {
-                marginRight: (!hasVisibleDelimiter && i < parts.length - 1) ? horizontalGap : 0
-              }),
-            }}
-          >
-            {showSep && (
-              <View
-                style={{
-                  width: s.detailsSpacing === "comfortable" ? 24 : 16,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Text style={{ fontSize: pt(base * 0.8), color: s.applyAccentDotsBarsBubbles ? colors.accent : colors.text, opacity: 0.3 }}>
-                  {sep}
-                </Text>
-              </View>
-            )}
+  if (arrangement === "column") {
+    return (
+      <View style={{ width: "100%", alignItems: justify }}>
+        {parts.map((p, i) => (
+          <View key={p.key} style={{ flexDirection: "row", width: "100%", justifyContent: justify }}>
             <ContactItemPDF
               value={p.val!}
               iconName={DEFAULT_CONTACT_ICONS[p.key]}
               ctx={ctx}
-              itemStyleOverrides={{
-                marginBottom:
-                  arrangement === "column" && i < parts.length - 1 ? 4 : 2,
-              }}
+              itemStyleOverrides={{ marginBottom: i < parts.length - 1 ? 4 : 2, maxWidth: "100%" }}
               textColorOverride={textColorOverride}
             />
           </View>
-        );
-      })}
+        ))}
+      </View>
+    );
+  }
+
+  const rows = packContactRows(parts, {
+    width: availableWidth ?? contentWidth(s) * (isBeside ? 0.5 : 1),
+    fontSize: base * 0.85,
+    sepWidth,
+    iconWidth: s.contactIcons ? 19 : 0,
+  });
+
+  return (
+    <View style={{ width: "100%", alignItems: justify }}>
+      {rows.map((row, ri) => (
+        <View key={ri} style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: justify, alignItems: "center", maxWidth: "100%" }}>
+          {row.map((p, i) => (
+            <View key={p.key} style={{ flexDirection: "row", alignItems: "center", maxWidth: "100%" }}>
+              {i > 0 && (hasVisibleDelimiter ? (
+                <View style={{ width: sepWidth, alignItems: "center", justifyContent: "center" }}>
+                  <Text style={{ fontSize: pt(base * 0.8), color: s.applyAccentDotsBarsBubbles ? colors.accent : colors.text, opacity: 0.3 }}>
+                    {sep}
+                  </Text>
+                </View>
+              ) : (
+                <View style={{ width: horizontalGap }} />
+              ))}
+              <ContactItemPDF
+                value={p.val!}
+                iconName={DEFAULT_CONTACT_ICONS[p.key]}
+                ctx={ctx}
+                itemStyleOverrides={{ marginBottom: 2, maxWidth: "100%" }}
+                textColorOverride={textColorOverride}
+              />
+            </View>
+          ))}
+        </View>
+      ))}
     </View>
   );
 }

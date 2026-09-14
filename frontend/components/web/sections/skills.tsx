@@ -91,7 +91,7 @@ export function SkillsSection({ section, ctx, renderHeading, isSidebar = false }
                 marginBottom: "2pt",
               }}
             >
-              <div style={{ fontSize: `${base * 0.9}pt`, lineHeight: lh }}>
+              <div style={{ fontSize: `${base * 0.9}pt`, lineHeight: lh, flex: 1, minWidth: 0, marginRight: "8pt" }}>
                 {sk.category ? `${sk.category}: ` : ""}
                 {sk.name}
               </div>
@@ -145,14 +145,21 @@ export function SkillsSection({ section, ctx, renderHeading, isSidebar = false }
         </div>
       )}
       {display === "bubble" && (
-        <div className="flex flex-wrap gap-1.5">
+        // Mirrors components/pdf/sections/skills.tsx — rounded-rectangle pills
+        // sized from the base font, so wrapped skills stay inside their pill.
+        <div className="flex flex-wrap" style={{ gap: "4pt" }}>
           {viewModel.items.map((sk: any) => (
             <span
               key={sk.id}
-              className="px-2 py-0.5 rounded-full text-[10px] font-semibold"
               style={{
                 backgroundColor: bubbleBg,
                 color: bubbleText,
+                fontSize: `${base * 0.85}pt`,
+                fontWeight: 500,
+                lineHeight: 1.35,
+                padding: "2pt 7pt",
+                borderRadius: "6pt",
+                maxWidth: "100%",
               }}
             >
               {sk.name}

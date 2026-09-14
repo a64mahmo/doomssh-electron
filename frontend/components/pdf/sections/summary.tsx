@@ -17,10 +17,16 @@ export function SummarySectionPDF({ section, ctx, renderHeading }: SectionPDFPro
 
   const text = (viewModel.items[0] as any)?.text || '';
 
+  // The heading travels with the first paragraph so it can't be stranded.
+  const lines = renderMd(text, ctx)
+
   return (
     <View>
-      {renderHeading(viewModel.title)}
-      <View style={{ marginTop: 2 }}>{renderMd(text, ctx)}</View>
+      <View wrap={false}>
+        {renderHeading(viewModel.title)}
+        <View style={{ marginTop: 2 }}>{lines[0]}</View>
+      </View>
+      {lines.slice(1)}
     </View>
   )
 }

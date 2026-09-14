@@ -5,7 +5,7 @@ import type { SectionPDFProps } from './shared'
 import { Entry } from './shared'
 import { getSectionViewModel } from '@/lib/renderers'
 
-export function EducationSectionPDF({ section, ctx, renderHeading, isSidebar }: SectionPDFProps) {
+export function EducationSectionPDF({ section, ctx, renderHeading, isSidebar, isLastInColumn }: SectionPDFProps) {
   const viewModel = getSectionViewModel(section, {
     settings: ctx.s,
     helpers: {
@@ -20,9 +20,9 @@ export function EducationSectionPDF({ section, ctx, renderHeading, isSidebar }: 
 
   return (
     <View>
-      {renderHeading(viewModel.title)}
+      {viewModel.items.length === 0 && renderHeading(viewModel.title)}
       {viewModel.items.map((item, index) => (
-        <Entry 
+        <Entry heading={index === 0 ? renderHeading(viewModel.title) : undefined} isLast={isLastInColumn && index === viewModel.items.length - 1} 
           key={item.id || index}
           title={item.primaryText}
           subtitle={item.secondaryText || undefined}

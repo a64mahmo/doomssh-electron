@@ -5,6 +5,7 @@ import { SectionRenderer, ContactLine } from "./sections";
 import { SECTION_ICONS } from "@/lib/icons/sectionIcons";
 import { cn } from "@/lib/utils";
 import { isLight } from "@/lib/pdf/styleUtils";
+import { contentWidth, fitNameSize } from "@/lib/pdf/layoutFit";
 
 // Abstract geometric symbols for a minimalist look
 const ABSTRACT_ICONS: Record<SectionType, React.ReactNode> = {
@@ -317,6 +318,9 @@ function SectionHeading({
 function CoverLetterBody({ resume, ctx }: { resume: Resume; ctx: ReturnType<typeof buildCtx> }) {
   const { colors, base, lh, pt, s } = ctx;
   const cl = resume.coverLetter;
+  // Mirrors components/pdf/ResumePDF.tsx — skip the automatic sign-off when the
+  // letter already closes with one.
+  const hasSignOff = /(^|\n)\s*(sincerely|best regards|kind regards|warm regards|regards|best|respectfully|yours (truly|sincerely|faithfully)),?\s*$/i.test(cl?.body || '');
   if (!cl || !cl.body) return null;
 
   const paraSpacing = s.clParagraphSpacing ?? 1.0;
@@ -412,7 +416,7 @@ function CoverLetterBody({ resume, ctx }: { resume: Resume; ctx: ReturnType<type
         marginTop: '40pt',
         textAlign: s.clSignaturePosition === 'right' ? 'right' : 'left',
       }}>
-        {(s.clShowAutoSignOff ?? true) && (
+        {(s.clShowAutoSignOff ?? true) && !hasSignOff && (
           <div style={{ color: colors.text, opacity: 0.8, marginBottom: '30pt' }}>Sincerely,</div>
         )}
 
@@ -562,6 +566,13 @@ export function MasterTemplate({
   const sidebarFill = sidebarThemed
     ? (isLight(colors.sidebarBg) ? colors.sidebarBg : `${colors.sidebarBg}1a`)
     : (s.applyAccentDotsBarsBubbles ? `${colors.accent}0a` : "transparent");
+  const bleedHeader =
+    s.themeColorStyle === "advanced" ||
+    (s.columnLayout !== "one" && sidebarSections.length > 0 && sidebarFill !== "transparent");
+  // Mirrors components/pdf/ResumePDF.tsx — shrink a name whose longest word
+  // would otherwise run past its column.
+  const headerNameWidth = contentWidth(s) * (s.detailsPosition === "beside" && s.headerAlignment !== "center" ? 0.5 : 1);
+  const fittedNameSize = fitNameSize(h?.fullName || "Your Name", nameSize, headerNameWidth);
 
   if (resume.kind === 'coverLetter') {
     return (
@@ -746,19 +757,23 @@ export function MasterTemplate({
       )}
 
       {/* ── Header ───────────────────────────────────────────────── */}
+      {/* Mirrors components/pdf/ResumePDF.tsx: over a tinted sidebar panel the
+          header is painted in the page colour out to the edges. */}
       {!hideHeader && !headerInSidebar && (
         <div
           style={{
-            backgroundColor: s.themeColorStyle === 'advanced' ? colors.accent : 'transparent',
+            backgroundColor: s.themeColorStyle === 'advanced' ? colors.accent : (bleedHeader ? colors.background : 'transparent'),
             color: s.themeColorStyle === 'advanced' ? (isLight(colors.accent) ? '#1a1a1a' : '#ffffff') : 'inherit',
-            marginLeft: s.themeColorStyle === 'advanced' ? `-${padH}` : 0,
-            marginRight: s.themeColorStyle === 'advanced' ? `-${padH}` : 0,
-            marginTop: s.themeColorStyle === 'advanced' ? `-${padV}` : 0,
-            paddingLeft: s.themeColorStyle === 'advanced' ? padH : 0,
-            paddingRight: s.themeColorStyle === 'advanced' ? padH : 0,
-            paddingTop: s.themeColorStyle === 'advanced' ? padV : 0,
-            paddingBottom: s.themeColorStyle === 'advanced' ? "15pt" : 0,
+            marginLeft: bleedHeader ? `-${padH}` : 0,
+            marginRight: bleedHeader ? `-${padH}` : 0,
+            marginTop: bleedHeader ? `-${padV}` : 0,
+            paddingLeft: bleedHeader ? padH : 0,
+            paddingRight: bleedHeader ? padH : 0,
+            paddingTop: bleedHeader ? padV : 0,
+            paddingBottom: bleedHeader ? "15pt" : 0,
             marginBottom: s.themeColorStyle === 'advanced' ? "15pt" : 0,
+            position: "relative",
+            zIndex: 1,
           }}
         >
           {(() => {
@@ -811,7 +826,7 @@ export function MasterTemplate({
                 <h1
                   className="m-0 font-bold tracking-tight print:text-black"
                   style={{
-                    fontSize: pt(nameSize),
+                    fontSize: pt(fittedNameSize),
                     color: s.themeColorStyle === 'advanced' ? advancedTextColor : (s.applyAccentName ? colors.accent : colors.text),
                     lineHeight: 1.1,
                   }}
@@ -968,7 +983,7 @@ export function MasterTemplate({
                           : "text-left flex justify-start",
                     )}
                   >
-                    <ContactLine h={h!} ctx={ctx} textColorOverride={contactTextColor} />
+                    <ContactLine h={h!} ctx={ctx} textColorOverride={contactTextColor} availableWidth={headerNameWidth - (photoEl ? photoPx + photoGap : 0)} />
                   </div>
                 </div>
               </div>
@@ -998,7 +1013,7 @@ export function MasterTemplate({
                 ? "20pt"
                 : 0,
             paddingTop: "5pt",
-            paddingBottom: isMeasurement ? "0" : "20pt",
+            paddingBottom: 0,
             borderRight:
               !s.columnReverse &&
               s.columnLayout !== "one" &&
@@ -1042,7 +1057,7 @@ export function MasterTemplate({
               paddingLeft: s.columnReverse ? 0 : "20pt",
               paddingRight: s.columnReverse ? "20pt" : 0,
               paddingTop: "5pt",
-              paddingBottom: isMeasurement ? "0" : "20pt",
+              paddingBottom: 0,
             }}
           >
             {headerInSidebar && !hideHeader && (

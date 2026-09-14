@@ -13,13 +13,15 @@ export type HeadingFn = (title: string) => React.ReactNode
  * Regional Municipality, Ontario") starves the title column and the job title
  * wraps one word per line.
  */
-const META_MAX_WIDTH = '34%'
+const META_MAX_WIDTH = '42%'
 
 export interface SectionPDFProps {
   section: ResumeSection
   ctx: TemplateCtx
   renderHeading: HeadingFn
   isSidebar?: boolean
+  /** Last section in its column — its last entry drops its trailing margin. */
+  isLastInColumn?: boolean
 }
 
 /** Convert 6-digit hex + decimal opacity → rgba string safe for @react-pdf */
@@ -47,7 +49,7 @@ export function renderMd(text: string, ctx: TemplateCtx) {
 
     if (line.type === 'bullet') {
       return (
-        <View key={i} style={{
+        <View key={i} wrap={false} style={{
           flexDirection: 'row',
           marginLeft: s.indentBody ? 12 : 0,
           marginBottom: 1.5,
@@ -76,8 +78,20 @@ export function renderMd(text: string, ctx: TemplateCtx) {
 }
 
 export function Entry({
-  title, subtitle, location, date, description, ctx, extraLine, isSidebar = false,
+  title, subtitle, location, date, description, ctx, extraLine, isSidebar = false, heading, isLast = false,
 }: {
+  /**
+   * Last entry in its column. Its bottom margin would sit below all content, and
+   * when that lands past the page's bottom edge the whole two-column body breaks
+   * onto an otherwise empty page.
+   */
+  isLast?: boolean
+  /**
+   * Section heading, passed to a section's first entry so the two share one
+   * unbreakable block. minPresenceAhead has no effect in @react-pdf 4, so this
+   * is the only way to stop a heading being stranded at the foot of a page.
+   */
+  heading?: React.ReactNode
   title: React.ReactNode
   subtitle?: React.ReactNode
   location?: string
@@ -137,15 +151,27 @@ export function Entry({
       return <Text style={titleStyle}>{title}</Text>;
     }
     return (
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: align }}>
+      // columnGap, not marginLeft: a margin travels with the subtitle and indents
+      // it when the row wraps.
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: align, columnGap: 5 }}>
         <Text style={titleStyle}>{title}</Text>
-        <Text style={{ ...subStyle, marginLeft: 5 }}>{subtitle}</Text>
+        <Text style={subStyle}>{subtitle}</Text>
       </View>
     );
   };
 
+  // Only the head of an entry (title, meta and its first line) is kept together.
+  // Holding the whole entry together pushed any long job onto the next page and
+  // left a large blank gap behind it.
+  const descLines = description ? renderMd(description, ctx) : []
+
   return (
-    <View style={{ marginBottom: Number(ctx.gap.replace('pt', '')) }} wrap={false}>
+    // With nothing after the head, the entry itself must be the unbreakable
+    // node: an unbreakable only child inside a breakable View is squeezed into
+    // the page's bottom margin instead of moving to the next page.
+    <View style={{ marginBottom: isLast ? 0 : Number(ctx.gap.replace('pt', '')) }} wrap={descLines.length > 1 ? undefined : false}>
+      <View wrap={false}>
+      {heading}
       {layout === "date-location-right" ? (
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <View style={{ flex: 1, marginRight: 8 }}>
@@ -204,11 +230,10 @@ export function Entry({
 
       {extraLine}
 
-      {description && (
-        <View style={{ marginTop: 3 }}>
-          {renderMd(description, ctx)}
-        </View>
-      )}
+      {descLines.length > 0 && <View style={{ marginTop: 3 }}>{descLines[0]}</View>}
+      </View>
+
+      {descLines.slice(1)}
 
       {isSidebar && (
         <View style={{ marginTop: 2 }}>

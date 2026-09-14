@@ -7,6 +7,7 @@ import { registerFont } from './fonts'
 import { SectionRendererPDF, ContactLinePDF, hexA } from './sections'
 import { SECTION_ICONS } from "@/lib/icons/sectionIcons";
 import { isLight, resolveColors, A4, LETTER, mmToPt } from '@/lib/pdf/styleUtils'
+import { fitNameSize } from '@/lib/pdf/layoutFit'
 import { renderMd } from './sections/shared'
 import { tokenizeMd } from '@/lib/utils/text'
 
@@ -254,14 +255,17 @@ function HeaderRendererPDF({
   isCoverLetter = false,
   inSidebar = false,
   availableWidth,
+  coverColor,
 }: {
   h?: HeaderData;
   ctx: TemplateCtx;
   isCoverLetter?: boolean;
   /** Rendered at the top of the sidebar column rather than across the page. */
   inSidebar?: boolean;
-  /** Usable text width, in pt — used to fit the name to a narrow column. */
+  /** Usable text width, in pt — used to fit the name to its column. */
   availableWidth?: number;
+  /** Paint the header band in this colour, out to the page edges. */
+  coverColor?: string;
 }) {
   // In the sidebar the header has roughly a third of the width, so details
   // always stack and the name is capped — the page-width sizes overflow there.
@@ -270,22 +274,16 @@ function HeaderRendererPDF({
   // neither the hyphenation callback (which is global) nor a zero-width space
   // (which @react-pdf ignores) can break it. So shrink the name until its
   // longest word fits. 0.58em per character approximates a bold sans average.
-  const fitNameSize = (size: number): number => {
-    if (!inSidebar || !availableWidth) return size
-    const longest = (h?.fullName || 'Your Name')
-      .split(/\s+/)
-      .reduce((m, w) => Math.max(m, w.length), 0)
-    if (!longest) return size
-    return Math.max(9, Math.min(size, Math.floor(availableWidth / (longest * 0.58))))
-  }
+  const fit = (size: number): number =>
+    availableWidth ? fitNameSize(h?.fullName || 'Your Name', size, availableWidth) : size
 
   const ctx: TemplateCtx = inSidebar
     ? {
         ...rawCtx,
-        nameSize: fitNameSize(Math.min(rawCtx.nameSize, 17)),
+        nameSize: fit(Math.min(rawCtx.nameSize, 17)),
         s: { ...rawCtx.s, detailsArrangement: 'column', detailsPosition: 'below' },
       }
-    : rawCtx
+    : { ...rawCtx, nameSize: fit(rawCtx.nameSize) }
   const { colors, s, pt, base, nameSize } = ctx
   const showPhoto = s.photoEnabled && h?.photo
   const align = s.headerAlignment
@@ -361,11 +359,13 @@ function HeaderRendererPDF({
 
   // `advanced` bleeds the header band out to the page edges by cancelling the
   // page padding. That only makes sense for a full-width header.
-  const bleed = isAdvanced
+  // A tinted sidebar panel runs the full page height; a header across the top
+  // covers it in the page colour so the name never straddles the panel edge.
+  const bleed = isAdvanced || !!coverColor
 
   return (
     <View style={{
-      backgroundColor: isAdvanced ? colors.accent : 'transparent',
+      backgroundColor: isAdvanced ? colors.accent : (coverColor ?? 'transparent'),
       color: headerTextColor,
       marginLeft: bleed ? `-${s.marginHorizontal}mm` : 0,
       marginRight: bleed ? `-${s.marginHorizontal}mm` : 0,
@@ -373,8 +373,8 @@ function HeaderRendererPDF({
       paddingLeft: bleed ? `${s.marginHorizontal}mm` : 0,
       paddingRight: bleed ? `${s.marginHorizontal}mm` : 0,
       paddingTop: bleed ? `${s.marginVertical}mm` : 0,
-      paddingBottom: isAdvanced ? 15 : 0,
-      marginBottom: isCoverLetter ? 30 : 15,
+      paddingBottom: bleed ? 15 : 0,
+      marginBottom: isCoverLetter ? 30 : (!isAdvanced && coverColor ? 0 : 15),
     }}>
       {(() => {
         if (align === "center") {
@@ -424,7 +424,12 @@ function HeaderRendererPDF({
               <View style={{ marginBottom: 8 }}>
                 {nameText(align)}
               </View>
-              <ContactLinePDF h={h!} ctx={ctx} textColorOverride={headerTextColor} />
+              <ContactLinePDF
+              h={h!}
+              ctx={ctx}
+              textColorOverride={headerTextColor}
+              availableWidth={availableWidth ? availableWidth - (photoEl ? photoPx + photoGap : 0) : undefined}
+            />
             </View>
           </View>
         );
@@ -437,6 +442,8 @@ function CoverLetterPDF({ resume }: { resume: Resume }) {
   const ctx = buildCtx(resume.settings)
   const { colors, s, pt, base, lh } = ctx
   const cl = resume.coverLetter as CoverLetterData
+  // Letters often already close with "Sincerely," — don't add a second one.
+  const hasSignOff = /(^|\n)\s*(sincerely|best regards|kind regards|warm regards|regards|best|respectfully|yours (truly|sincerely|faithfully)),?\s*$/i.test(cl.body || '')
   const header = resume.sections.find(sec => sec.type === 'header')?.items as HeaderData | undefined
 
   const pageStyle: Style = {
@@ -513,7 +520,7 @@ function CoverLetterPDF({ resume }: { resume: Resume }) {
             marginTop: 40,
             alignItems: s.clSignaturePosition === 'right' ? 'flex-end' : 'flex-start'
           }} wrap={false}>
-            {(s.clShowAutoSignOff ?? true) && (
+            {(s.clShowAutoSignOff ?? true) && !hasSignOff && (
               <Text style={{ color: colors.text, opacity: 0.8 }}>Sincerely,</Text>
             )}
 
@@ -672,6 +679,10 @@ export function ResumePDF({ resume }: { resume: Resume }) {
   const sidebarPanelWidth = (pageW - gutter * 2) * (sidebarPct / 100) + gutter
   // Usable text width inside the sidebar column (minus its 20pt inner gutter).
   const sidebarTextWidth = (pageW - gutter * 2) * (sidebarPct / 100) - 20
+  // Beside the details the name has half the row.
+  const headerNameWidth = s.detailsPosition === 'beside' && s.headerAlignment !== 'center'
+    ? (pageW - gutter * 2) / 2
+    : pageW - gutter * 2
 
   // sidebarTheme picks the panel colour; resolveColors already folded
   // 'accent'/'custom' into colors.sidebarBg. A dark pick is applied as a tint
@@ -719,7 +730,14 @@ export function ResumePDF({ resume }: { resume: Resume }) {
         )}
 
         {/* ── Header ───────────────────────────────────────────────── */}
-        {!headerInSidebar && <HeaderRendererPDF h={h} ctx={ctx} />}
+        {!headerInSidebar && (
+          <HeaderRendererPDF
+            h={h}
+            ctx={ctx}
+            availableWidth={headerNameWidth}
+            coverColor={hasSidebar && sidebarPanelColor !== 'transparent' && s.themeColorStyle !== 'advanced' ? colors.background : undefined}
+          />
+        )}
 
         {/* ── Body ─────────────────────────────────────────────────── */}
         <View style={{ flexDirection: s.columnReverse ? 'row-reverse' : 'row', flex: 1 }}>
@@ -735,7 +753,6 @@ export function ResumePDF({ resume }: { resume: Resume }) {
                   paddingRight: !s.columnReverse && hasSidebar ? 20 : 0,
                   paddingLeft: s.columnReverse && hasSidebar ? 20 : 0,
                   paddingTop: 5,
-                  paddingBottom: 20,
                   borderRightWidth: !s.columnReverse && hasSidebar ? 0.5 : 0,
                   borderRightColor: dividerColor,
                   borderRightStyle: 'solid',
@@ -751,6 +768,7 @@ export function ResumePDF({ resume }: { resume: Resume }) {
                       renderHeading={(title) => (
                         <SectionHeading title={title} type={section.type} ctx={ctx} isFirst={i === 0} />
                       )}
+                      isLastInColumn={i === mainSections.length - 1}
                     />
                   ))}
                 </View>
@@ -761,7 +779,6 @@ export function ResumePDF({ resume }: { resume: Resume }) {
                     paddingLeft: !s.columnReverse ? 20 : 0,
                     paddingRight: s.columnReverse ? 20 : 0,
                     paddingTop: 5,
-                    paddingBottom: 20,
                   }}>
                     {headerInSidebar && (
                       <View style={{ marginBottom: 4 }}>
@@ -777,6 +794,7 @@ export function ResumePDF({ resume }: { resume: Resume }) {
                           <SectionHeading title={title} type={section.type} ctx={ctx} isSidebar isFirst={i === 0 && !headerInSidebar} />
                         )}
                         isSidebar
+                        isLastInColumn={i === sidebarSections.length - 1}
                       />
                     ))}
                   </View>

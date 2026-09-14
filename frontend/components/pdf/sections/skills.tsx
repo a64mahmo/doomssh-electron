@@ -25,8 +25,9 @@ export function SkillsSectionPDF({ section, ctx, renderHeading, isSidebar = fals
   const dotColor = s.applyAccentDotsBarsBubbles ? colors.accent : colors.text;
   const dotSize = Math.max(3, base * 0.42);
 
+  // Kept whole so the heading can't be stranded at the foot of a page.
   return (
-    <View>
+    <View wrap={false}>
       {renderHeading(viewModel.title)}
       {display === 'compact' && (() => {
         const items = viewModel.items as any[];
@@ -71,7 +72,8 @@ export function SkillsSectionPDF({ section, ctx, renderHeading, isSidebar = fals
         <View>
           {viewModel.items.map((sk: any) => (
             <View key={sk.id} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 1 }}>
-              <Text style={{ fontSize: ctx.pt(base * 0.9), lineHeight: lh }}>
+              {/* flex: 1 so a long skill wraps before the level label instead of running under it. */}
+              <Text style={{ fontSize: ctx.pt(base * 0.9), lineHeight: lh, flex: 1, marginRight: 8 }}>
                 {sk.category ? `${sk.category}: ${sk.name}` : sk.name}
               </Text>
               {sk.level && (
@@ -111,20 +113,20 @@ export function SkillsSectionPDF({ section, ctx, renderHeading, isSidebar = fals
       {display === 'bubble' && (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
           {viewModel.items.map((sk: any) => (
-            <Text key={sk.id} style={{
-              // Without a ceiling a long skill string renders as one pill wider
-              // than the column and the text spills outside its own background.
+            // The pill is a View around the Text: padding on a Text only applies to
+            // its first line, so a wrapped skill spilled past the pill's left edge.
+            // A small radius keeps two-line pills from turning into blobs.
+            <View key={sk.id} style={{
               maxWidth: '100%',
-              fontSize: ctx.pt(base * 0.85),
               backgroundColor: bubbleBg,
-              color: bubbleText,
               paddingVertical: 2,
               paddingHorizontal: 7,
-              borderRadius: 99,
-              fontWeight: 500,
+              borderRadius: 6,
             }}>
-              {sk.name}
-            </Text>
+              <Text style={{ fontSize: ctx.pt(base * 0.85), color: bubbleText, fontWeight: 500, lineHeight: 1.35 }}>
+                {sk.name}
+              </Text>
+            </View>
           ))}
         </View>
       )}

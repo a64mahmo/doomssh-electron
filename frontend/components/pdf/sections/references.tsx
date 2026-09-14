@@ -16,8 +16,9 @@ export function ReferencesSectionPDF({ section, ctx, renderHeading }: SectionPDF
 
   const { base, colors, lh, s } = ctx;
 
+  // Kept whole so the heading can't be stranded at the foot of a page.
   return (
-    <View>
+    <View wrap={false}>
       {renderHeading(viewModel.title)}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: '8pt 24pt' }}>
         {viewModel.items.map((item: any, index) => (
