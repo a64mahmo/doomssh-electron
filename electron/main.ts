@@ -150,7 +150,7 @@ async function createWindow(): Promise<void> {
     visualEffectState: 'active', // macOS
     backgroundMaterial: 'acrylic', // Windows 11
     transparent: process.platform !== 'win32',
-    icon: path.join(projectRoot(), isDev ? 'frontend/public/file.svg' : 'frontend/out/file.svg'),
+    icon: path.join(projectRoot(), isDev ? 'frontend/public/icon.png' : 'frontend/out/icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -462,6 +462,56 @@ ipcMain.handle('save-pdf', async (_event, { bytes, fileName }: { bytes: number[]
   } catch (error) {
     console.error('PDF Save Error:', error)
     return { success: false, error: String(error) }
+  }
+})
+
+// ── IPC: HTML → PDF export ────────────────────────────────────────────────────
+// Lays the resume out on the /print page in a hidden window and captures it with
+// Chromium's printToPDF, so the PDF is exactly the HTML the preview renders.
+ipcMain.handle('export-pdf', async (_event, { resume, fileName }: { resume: Resume; fileName: string }) => {
+  const win = new BrowserWindow({
+    show: false,
+    width: 900,
+    height: 1200,
+    // Not the main window's transparent/vibrancy setup — printed pages need a solid ground.
+    backgroundColor: '#ffffff',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      webSecurity: !isDev,
+    },
+  })
+  try {
+    await win.loadURL(isDev
+      ? `http://127.0.0.1:${NEXT_PORT}/print/new/?mode=export`
+      : 'app://-/print/new/?mode=export')
+    await win.webContents.executeJavaScript(
+      `window.__DOOMSSH_PRINT_RESUME__ = ${JSON.stringify(resume)}; window.dispatchEvent(new Event('doomssh:print-resume'));`,
+    )
+    // The print page flags readiness once fonts and layout have settled.
+    const deadline = Date.now() + 15000
+    while (!(await win.webContents.executeJavaScript(`document.documentElement.dataset.printReady === 'true'`))) {
+      if (Date.now() > deadline) throw new Error('Timed out waiting for the resume to render')
+      await new Promise((resolve) => setTimeout(resolve, 100))
+    }
+    // printBackground keeps sidebar tints, header bands and pills; the page size
+    // and zero margin come from the print page's @page rule.
+    const pdf = await win.webContents.printToPDF({ printBackground: true, preferCSSPageSize: true })
+
+    const { filePath, canceled } = await dialog.showSaveDialog({
+      title: 'Save Resume',
+      defaultPath: fileName,
+      filters: [{ name: 'PDF Documents', extensions: ['pdf'] }],
+    })
+    if (canceled || !filePath) return { success: false, cancelled: true }
+    await fsp.writeFile(filePath, pdf)
+    return { success: true, path: filePath }
+  } catch (error) {
+    console.error('PDF export error:', error)
+    return { success: false, error: String(error) }
+  } finally {
+    if (!win.isDestroyed()) win.destroy()
   }
 })
 

@@ -5,6 +5,17 @@ export async function downloadResumePDF(resume: Resume): Promise<void> {
   const fileName = `${resume.name.replace(/\s+/g, '_')}_${isCL ? 'Cover_Letter' : 'Resume'}.pdf`
 
   try {
+    // Desktop: Chromium lays out the same HTML the preview shows and prints it.
+    if (typeof window !== 'undefined' && window.electron?.exportPdf) {
+      const result = await window.electron.exportPdf({ resume, fileName })
+      if (!result.success && !result.cancelled) {
+        console.error('Export failed:', result.error)
+      }
+      return
+    }
+
+    // Browser: no Chromium print API without a dialog, so keep the direct
+    // @react-pdf download until the HTML path covers the web build too.
     const [{ pdf }, { ResumePDF }] = await Promise.all([
       import('@react-pdf/renderer'),
       import('@/components/pdf/ResumePDF'),

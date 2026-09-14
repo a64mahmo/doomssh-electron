@@ -2,8 +2,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Plus, MoreHorizontal, Trash2, Pencil, FileText, Mail,
+  Plus, MoreHorizontal, Trash2, Pencil, FileText,
 } from 'lucide-react'
+import { Logo } from '@/components/Logo'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   getAllCoverLetters, createNewCoverLetter, saveResume, deleteResume,
@@ -70,9 +71,7 @@ export default function CoverLetterDashboard() {
         isWin && "win32-padding"
       )}>
         <div className="flex items-center gap-2.5 no-drag">
-          <div className="w-5 h-5 rounded bg-foreground flex items-center justify-center shrink-0">
-            <Mail size={10} className="text-background" />
-          </div>
+          <Logo />
           <span className="font-bold text-sm tracking-tight">DoomSSH</span>
         </div>
         <div className="no-drag">

@@ -20,6 +20,14 @@ interface ElectronAPI {
     cancelled?: boolean
   }>
 
+  // PDF export — lays out the HTML /print page in a hidden window, printToPDF, native save dialog
+  exportPdf: (args: { resume: unknown; fileName: string }) => Promise<{
+    success: boolean
+    path?: string
+    error?: string
+    cancelled?: boolean
+  }>
+
   // Vault / resume file storage
   vault: {
     getPath: () => Promise<string | null>

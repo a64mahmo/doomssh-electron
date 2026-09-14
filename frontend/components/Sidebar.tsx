@@ -11,6 +11,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { useUIStore } from '@/lib/store/uiStore'
+import { isElectron } from '@/lib/platform'
 import { Button } from '@/components/ui/button'
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -260,9 +261,25 @@ export function Sidebar() {
           <DialogHeader>
             <DialogTitle>Settings</DialogTitle>
             <DialogDescription>
-              Configure your preferences and API keys. These are stored securely on your device.
+              {isElectron()
+                ? 'Configure your preferences and API keys. These are stored securely on your device.'
+                : 'Preferences for this browser.'}
             </DialogDescription>
           </DialogHeader>
+          {/* Updates, AI and debugging need the desktop app; the browser build gets a storage note. */}
+          {!isElectron() && (
+            <div className="grid gap-2 py-4">
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                <Database size={12} />
+                Storage
+              </p>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Your resumes, cover letters and job applications are saved in this browser only.
+                Clearing this site&apos;s data deletes them — export anything you want to keep.
+              </p>
+            </div>
+          )}
+          {isElectron() && (
           <div className="grid gap-4 py-4">
             <div className="space-y-3 p-3 rounded-xl bg-accent/30 border border-border/50">
               <div className="flex items-center justify-between">
@@ -357,9 +374,16 @@ export function Sidebar() {
               <Switch id="bug-mode" checked={globalDebugMode} onCheckedChange={setGlobalDebugMode} />
             </div>
           </div>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSettingsOpen(false)}>Cancel</Button>
-            <Button onClick={saveSettings}>Save Changes</Button>
+            {isElectron() ? (
+              <>
+                <Button variant="outline" onClick={() => setSettingsOpen(false)}>Cancel</Button>
+                <Button onClick={saveSettings}>Save Changes</Button>
+              </>
+            ) : (
+              <Button onClick={() => setSettingsOpen(false)}>Close</Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

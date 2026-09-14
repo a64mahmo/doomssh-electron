@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { FileText, Database } from 'lucide-react'
+import { Database } from 'lucide-react'
+import { Logo } from '@/components/Logo'
 import { Sidebar } from '@/components/Sidebar'
 import { Button } from '@/components/ui/button'
 
@@ -25,9 +26,7 @@ export default function BuilderLayout({ children }: { children: React.ReactNode 
   if (!vaultReady) {
     return (
       <div className="h-screen flex flex-col items-center justify-center gap-6 bg-background text-foreground">
-        <div className="w-10 h-10 rounded-xl bg-foreground flex items-center justify-center">
-          <FileText size={20} className="text-background" />
-        </div>
+        <Logo className="size-10" />
         <div className="text-center space-y-1">
           <h1 className="text-lg font-bold tracking-tight">Choose a Vault Folder</h1>
           <p className="text-sm text-muted-foreground max-w-xs">

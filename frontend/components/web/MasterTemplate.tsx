@@ -262,7 +262,7 @@ function SectionHeading({
   const iconSizeMultiplier = s.sectionHeadingIconSize || 1.0;
 
   return (
-    <div style={containerStyle}>
+    <div data-section-heading style={containerStyle}>
       {showIcon &&
         (() => {
           const mode = s.sectionHeadingIcon;
@@ -577,6 +577,7 @@ export function MasterTemplate({
   if (resume.kind === 'coverLetter') {
     return (
       <div
+        data-resume-page
         style={{
           width: s.paperSize === "a4" ? "210mm" : "216mm",
           minHeight: isMeasurement ? "auto" : (s.paperSize === "a4" ? "297mm" : "279mm"),
@@ -709,6 +710,7 @@ export function MasterTemplate({
 
   return (
     <div
+      data-resume-page
       style={{
         width: s.paperSize === "a4" ? "210mm" : "216mm",
         minHeight: isMeasurement
@@ -744,6 +746,7 @@ export function MasterTemplate({
       {s.columnLayout !== "one" && sidebarSections.length > 0 && sidebarFill !== "transparent" && (
         <div
           aria-hidden
+          data-sidebar-panel
           style={{
             position: "absolute",
             top: 0,

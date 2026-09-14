@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { useJobStore } from '@/lib/store/jobStore'
+import { initJobPersistence } from '@/lib/store/jobPersistenceManager'
 import type { JobApplication, JobStatus } from '@/lib/store/jobTypes'
 
 // Mock dependencies
@@ -46,6 +47,9 @@ describe('jobStore', () => {
     useJobStore.setState({ jobs: [], isLoaded: true, isDirty: false })
     vi.clearAllMocks()
     vi.useFakeTimers()
+    // Saving lives in the persistence manager, which the app starts from
+    // PersistenceProvider. Idempotent, so calling it per test is safe.
+    initJobPersistence()
   })
 
   afterEach(() => {

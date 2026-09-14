@@ -17,6 +17,10 @@ contextBridge.exposeInMainWorld('electron', {
   savePdf: (args: { bytes: number[]; fileName: string }): Promise<{ success: boolean; path?: string; error?: string; cancelled?: boolean }> =>
     ipcRenderer.invoke('save-pdf', args),
 
+  // HTML → PDF: the main process renders /print in a hidden window and saves printToPDF output.
+  exportPdf: (args: { resume: Resume; fileName: string }): Promise<{ success: boolean; path?: string; error?: string; cancelled?: boolean }> =>
+    ipcRenderer.invoke('export-pdf', args),
+
   // ── Updates ────────────────────────────────────────────────────────────────
   onUpdateChecking: (callback: () => void) => {
     const handler = () => callback()

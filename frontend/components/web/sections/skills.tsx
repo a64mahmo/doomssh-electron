@@ -25,8 +25,9 @@ export function SkillsSection({ section, ctx, renderHeading, isSidebar = false }
   const dotColor = s.applyAccentDotsBarsBubbles ? colors.accent : colors.text;
   const dotSize = Math.max(3, base * 0.42);
 
+  // data-keep: printed as one block so the heading is never stranded (app/print).
   return (
-    <div>
+    <div data-keep>
       {renderHeading(viewModel.title)}
       {display === "compact" &&
         (() => {

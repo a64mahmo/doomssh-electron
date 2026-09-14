@@ -2,8 +2,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Plus, MoreHorizontal, Copy, Trash2, Pencil, FileText,
+  Plus, MoreHorizontal, Copy, Trash2, Pencil,
 } from 'lucide-react'
+import { Logo } from '@/components/Logo'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getAllResumes, deleteResume, duplicateResume, createNewResume, saveResume } from '@/lib/db/database'
 import { generateId } from '@/lib/utils/ids'
@@ -76,9 +77,7 @@ export default function ResumesDashboard() {
         isWin && "win32-padding"
       )}>
         <div className="flex items-center gap-2.5 no-drag">
-          <div className="w-5 h-5 rounded bg-foreground flex items-center justify-center shrink-0">
-            <FileText size={10} className="text-background" />
-          </div>
+          <Logo />
           <span className="font-bold text-sm tracking-tight">DoomSSH</span>
         </div>
         <div className="no-drag">

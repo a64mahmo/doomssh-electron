@@ -15,8 +15,9 @@ export function ReferencesSection({ section, ctx, renderHeading }: SectionProps)
 
   const { base, colors, lh, s } = ctx;
 
+  // data-keep: printed as one block so the heading is never stranded (app/print).
   return (
-    <div>
+    <div data-keep>
       {renderHeading(viewModel.title)}
       <div className="grid grid-cols-2 gap-x-6 gap-y-3">
         {viewModel.items.map((item: any, index) => (

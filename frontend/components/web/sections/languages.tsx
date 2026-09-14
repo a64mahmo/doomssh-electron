@@ -15,8 +15,9 @@ export function LanguagesSection({ section, ctx, renderHeading }: SectionProps) 
 
   const { base, colors, lh } = ctx;
 
+  // data-keep: printed as one block so the heading is never stranded (app/print).
   return (
-    <div>
+    <div data-keep>
       {renderHeading(viewModel.title)}
       <div className="flex flex-wrap gap-x-5 gap-y-1">
         {viewModel.items.map((item: any, index) => (

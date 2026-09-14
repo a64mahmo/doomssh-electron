@@ -103,7 +103,8 @@ export function Entry({
   const isSameLine = s.subtitlePlacement === "same-line";
 
   return (
-    <div style={{ marginBottom: pt(base * (s.entrySpacing ?? 1.0) * 1.2) }} className="w-full">
+    // data-entry / data-entry-desc drive page breaks in print (app/print).
+    <div data-entry style={{ marginBottom: pt(base * (s.entrySpacing ?? 1.0) * 1.2) }} className="w-full">
       {layout === "date-location-right" && (
         <div className="flex justify-between items-start gap-4">
           <div className="flex-1 min-w-0">
@@ -197,6 +198,7 @@ export function Entry({
       {extraLine}
       {description && (
         <div
+          data-entry-desc
           style={{
             fontSize: pt(base * 0.92),
             lineHeight: lh,

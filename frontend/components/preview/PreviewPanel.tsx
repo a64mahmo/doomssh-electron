@@ -3,65 +3,43 @@ import dynamic from 'next/dynamic'
 import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip'
-import { ZoomIn, ZoomOut, Maximize2, Minimize2, Download, Loader2 } from 'lucide-react'
+import { ZoomIn, ZoomOut, Maximize2, Minimize2, Download } from 'lucide-react'
 import { useUIStore } from '@/lib/store/uiStore'
 import { downloadResumePDF } from '@/lib/utils/export'
+import { MasterTemplate } from '@/components/web'
 import type { Resume } from '@/lib/store/types'
 import { cn } from '@/lib/utils'
 
+const MM_TO_PX = 96 / 25.4
+
 // ─── Inner (client-only) ──────────────────────────────────────────────────────
 
+/**
+ * Live preview: the HTML template itself, re-rendered on every change. Desktop
+ * export prints this same HTML with Chromium (app/print), so what you see is what
+ * you get. The dashed page guides are approximate — printing moves a heading or
+ * an entry's first line to the next page rather than splitting it.
+ */
 function PreviewInner({ resume }: { resume: Resume }) {
   const { previewZoom, setPreviewZoom } = useUIStore()
-  const [isFullscreen, setIsFullscreen]   = useState(false)
-  const [blobUrl, setBlobUrl]             = useState<string | null>(null)
-  const [loading, setLoading]             = useState(true)
-  const [error, setError]                 = useState<string | null>(null)
-  const debounceRef                       = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const prevUrlRef                        = useRef<string | null>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [contentHeight, setContentHeight] = useState(0)
+  const contentRef = useRef<HTMLDivElement | null>(null)
 
-  // Regenerate the PDF blob whenever the resume changes (debounced 500 ms)
+  const isA4 = resume.settings.paperSize === 'a4'
+  const pageWidth = (isA4 ? 210 : 215.9) * MM_TO_PX
+  const pageHeight = (isA4 ? 297 : 279.4) * MM_TO_PX
+
+  // Track the rendered height (unaffected by the zoom transform) to place page guides.
   useEffect(() => {
-    if (!resume?.sections?.length) return // Don't render if resume not ready
-    
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(async () => {
-      try {
-        setLoading(true)
-        setError(null)
-
-        // Lazy-import so the heavy @react-pdf bundle is never loaded server-side
-        const [{ pdf }, { ResumePDF }] = await Promise.all([
-          import('@react-pdf/renderer'),
-          import('@/components/pdf/ResumePDF'),
-        ])
-
-        const blob = await pdf(<ResumePDF resume={resume} />).toBlob()
-        const url  = URL.createObjectURL(blob)
-
-        // Revoke the previous URL before replacing it
-        if (prevUrlRef.current) URL.revokeObjectURL(prevUrlRef.current)
-        prevUrlRef.current = url
-        setBlobUrl(url)
-      } catch (err) {
-        console.error('PDF render error:', err)
-        setError(err instanceof Error ? err.message : 'Render failed')
-      } finally {
-        setLoading(false)
-      }
-    }, 500)
-
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current)
-    }
-  }, [resume])
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (prevUrlRef.current) URL.revokeObjectURL(prevUrlRef.current)
-    }
+    const el = contentRef.current
+    if (!el) return
+    const observer = new ResizeObserver(() => setContentHeight(el.offsetHeight))
+    observer.observe(el)
+    return () => observer.disconnect()
   }, [])
+
+  const pageCount = Math.max(1, Math.ceil((contentHeight - 1) / pageHeight))
 
   const handleZoom = (delta: number) =>
     setPreviewZoom(Number(Math.min(2, Math.max(0.3, previewZoom + delta)).toFixed(2)))
@@ -119,46 +97,33 @@ function PreviewInner({ resume }: { resume: Resume }) {
           </Button>
         </div>
 
-        {/* PDF iframe */}
+        {/* Page */}
         <div className="flex-1 overflow-auto flex items-start justify-center pt-24 pb-12 px-8">
+          {/* Sized to the zoomed page so scrolling and centring follow the zoom. */}
           <div
-            className="relative shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] dark:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] rounded-[1px] overflow-hidden bg-white border border-border/30"
-            style={{
-              width:     `calc(${resume.settings.paperSize === 'a4' ? '210mm' : '216mm'} * ${previewZoom})`,
-              minHeight: `calc(${resume.settings.paperSize === 'a4' ? '297mm' : '279mm'} * ${previewZoom})`,
-            }}
+            className="relative shrink-0"
+            style={{ width: pageWidth * previewZoom, height: Math.max(contentHeight, pageHeight) * previewZoom }}
           >
-            {/* Loading overlay */}
-            {loading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm z-10">
-                <div className="flex flex-col items-center gap-3">
-                  <Loader2 size={24} className="animate-spin text-muted-foreground" />
-                  <p className="text-xs text-muted-foreground font-medium">Rendering…</p>
+            <div
+              ref={contentRef}
+              className="absolute top-0 left-0 bg-white shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] dark:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] border border-border/30"
+              style={{ width: pageWidth, transform: `scale(${previewZoom})`, transformOrigin: 'top left' }}
+            >
+              <MasterTemplate resume={resume} />
+
+              {Array.from({ length: pageCount - 1 }, (_, i) => (
+                <div
+                  key={i}
+                  aria-hidden
+                  className="absolute left-0 right-0 border-t border-dashed border-rose-400/70 pointer-events-none"
+                  style={{ top: pageHeight * (i + 1) }}
+                >
+                  <span className="absolute right-2 -top-5 text-[10px] font-semibold text-rose-500/80 bg-white/90 px-1.5 rounded">
+                    Page {i + 2}
+                  </span>
                 </div>
-              </div>
-            )}
-
-            {/* Error state */}
-            {error && !loading && (
-              <div className="absolute inset-0 flex items-center justify-center p-8">
-                <p className="text-xs text-destructive text-center">{error}</p>
-              </div>
-            )}
-
-            {/* PDF */}
-            {blobUrl && (
-              <iframe
-                key={blobUrl}
-                src={`${blobUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
-                style={{
-                  width:     `calc(${resume.settings.paperSize === 'a4' ? '210mm' : '216mm'} * ${previewZoom})`,
-                  minHeight: `calc(${resume.settings.paperSize === 'a4' ? '297mm' : '279mm'} * ${previewZoom})`,
-                  border:    'none',
-                  display:   'block',
-                }}
-                title="Resume preview"
-              />
-            )}
+              ))}
+            </div>
           </div>
         </div>
 
