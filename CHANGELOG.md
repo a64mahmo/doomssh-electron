@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **HTML → PDF export (desktop)** — The `export-pdf` IPC handler renders the resume on `/print?mode=export` in a hidden window and saves it with Chromium's `printToPDF`, so exported PDFs match the live preview.
+- **Live HTML preview** — The preview renders `MasterTemplate` directly, updating instantly without PDF regeneration or iframe reloads, with approximate page guides.
+- **Web build storage** — IndexedDB (Dexie) fallback for resumes, cover letters and jobs when running in a browser.
+- **Cloudflare deployment** — `frontend/wrangler.jsonc` serves the static export as Worker assets.
+- **Platform flag** — `NEXT_PUBLIC_APP_PLATFORM` build variable and `frontend/lib/platform.ts` (`isWeb` / `isElectron`).
+- **Templates** — Aspen, Vega, Lumen, Atlas, Sierra and Nova presets; template thumbnails reflect header bands, sidebar tints, photos and pills.
+- **Logo** — Folded-corner D mark for the favicon, Electron app icons (`electron/resources/`) and in-app branding (`components/Logo.tsx`).
+- **Tooling** — `render-templates.tsx` `--matrix` and `--all-sections` modes, an all-sections fixture, an HTML template smoke test and section-mapping tests.
+
+### Changed
+
+- **Browser Settings dialog** — Hides the Anthropic API key, Bug Mode and software updates; shows a storage note instead.
+- **Persistence** — Resume and job saving use a shared debounced saver that watches the document instead of the `isDirty` flag.
+
+### Fixed
+
+- **Job dialog in Safari** — The New Application / job details dialog collapsed its form in Safari, leaving the footer over the tabs so applications could not be saved. The dialog now has a definite height.
+- **Lost saves** — Edits and new jobs made within a second of a previous save, or while one was in flight, were never written.
+- **Missing section content** — Award titles and dates, volunteering roles, reference names and positions, and certification/publication dates did not render.
+- **PDF layout** — Blank trailing pages, headings stranded at the foot of a page, large gaps from unsplittable entries, contact rows starting with a separator, contact details centred under a left-aligned header, overflowing names, skill pills spilling text, same-line subtitles indenting when wrapped, and level labels overlapping long skills.
+- **Cover letters** — No duplicate "Sincerely," when the letter already closes with a sign-off.
+- **Job persistence tests** — Four long-failing `jobStore` persistence tests now pass.
+
 ## [1.7.0] - 2026-04-23
 
 ### Added

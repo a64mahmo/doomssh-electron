@@ -2,6 +2,16 @@
 
 The Interview Prep feature is DoomSSH's interview preparation suite, integrated into the Job Tracker. It provides AI-powered question generation, structured answer drafting, company research storage, and post-interview reflection logging.
 
+![Interview Prep walkthrough](images/interview-prep.gif)
+
+| Questions & STAR answers | Inside the job dialog |
+|---|---|
+| ![Questions with a STAR answer](images/interview-prep.png) | ![Interview Prep tab in the job dialog](images/interview-prep-dialog.png) |
+
+![Company notes, cheat sheet and reflections](images/interview-prep-sections.png)
+
+> **Web vs desktop:** everything except AI question generation works in both builds. The **AI Generate** button needs an Anthropic API key, which only the desktop app stores, so it is disabled in the browser build. Prep data is saved with the job — to the vault on desktop, IndexedDB in the browser.
+
 ## Architecture
 
 ```

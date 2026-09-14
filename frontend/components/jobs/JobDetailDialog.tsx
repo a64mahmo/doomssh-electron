@@ -135,7 +135,9 @@ export function JobDetailDialog({ jobId, mode = 'edit', initialStatus, onClose }
 
   return (
     <Dialog open={!!jobId || mode === 'create'} onOpenChange={(open) => { if (!open) handleClose() }}>
-      <DialogContent className="sm:max-w-2xl h-[95vh] sm:h-fit sm:max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden border-none shadow-2xl">
+      {/* A definite height, not h-fit: Safari resolves the flex-1/min-h-0 tab area
+          to zero inside a fit-content dialog, hiding the form under the footer. */}
+      <DialogContent className="sm:max-w-2xl h-[95vh] sm:h-[85vh] sm:max-h-[860px] flex flex-col p-0 gap-0 overflow-hidden border-none shadow-2xl">
         {/* Header */}
         <div className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6 bg-gradient-to-b from-muted/50 to-transparent shrink-0">
           <DialogHeader>

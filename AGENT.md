@@ -1,4 +1,4 @@
-# Engineering Mandates for AI Agents (GEMINI.md)
+# Engineering Mandates for AI Agents (AGENT.md)
 
 As an AI agent, you are part of the core engineering team. You must adhere to these strict architectural constraints to ensure the stability and maintainability of the DoomSSH platform.
 
@@ -13,11 +13,12 @@ As an AI agent, you are part of the core engineering team. You must adhere to th
 - **Constraint:** We use Zustand with the `immer` middleware.
 - **Mandate:** Mutate the `state` draft directly within `set()` calls.
 - **Async Warning:** Never access the `state` draft inside an `async` callback or `setTimeout`. The proxy is revoked immediately after the `set()` function returns.
-- **Persistence Pattern:** Always use the `scheduleSave(get)` helper. Do not trigger `saveResume()` manually from components.
+- **Persistence Pattern:** Store actions only mutate state and set `isDirty`. Saving is automatic: `persistenceManager.ts` / `jobPersistenceManager.ts` (built on `createDebouncedSaver` in `lib/store/debouncedSaver.ts`) watch the document and save 500 ms after edits pause. Never call `saveResume()` / `saveAllJobs()` from components, and never gate saves on `isDirty` transitions or rate limits — that silently drops edits.
 
-## 3. The "Mirror-World" Rendering Rule
-- **Constraint:** The HTML preview (`MasterTemplate.tsx`) and the PDF engine (`ResumePDF.tsx`) are technically separate systems.
-- **Mandate:** If you change a margin, a font size, a color, or a layout structure in the HTML template, you **must** apply the identical change to the corresponding PDF component.
+## 3. Rendering: HTML First, PDF Mirror
+- **Constraint:** The HTML template (`MasterTemplate.tsx` + `components/web/sections/`) is the source of truth. It renders the live preview and, through `app/print`, the desktop PDF export (Chromium `printToPDF`).
+- **Mandate (print hooks):** Keep the `data-*` attributes the print CSS depends on — `data-resume-page`, `data-sidebar-panel`, `data-section-heading`, `data-entry`, `data-entry-desc`, `data-keep`, `data-footer-fixed`. Removing one reintroduces blank pages or split headings.
+- **Mandate (mirror):** The browser build still downloads PDFs from `@react-pdf/renderer` (`ResumePDF.tsx`). Until that path is retired, apply visual changes to the corresponding PDF component too.
 - **Primitive Matching:**
     - `<div>` / `<section>` → `<View>`
     - `<span>` / `<p>` / `<h1>` → `<Text>`
@@ -35,11 +36,12 @@ As an AI agent, you are part of the core engineering team. You must adhere to th
 - **Mandate:** 
     - Never import `@anthropic-ai/sdk` or `fs` in the `frontend/` directory.
     - All desktop-level features must be accessed via `window.electron`.
-    - If a new IPC channel is needed, define it in `electron/main.ts` (handler) and `electron/preload.ts` (bridge).
+    - If a new IPC channel is needed, define it in `electron/main.ts` (handler), `electron/preload.ts` (bridge) and `frontend/electron.d.ts` (type).
+    - Branch web vs desktop behaviour with `isElectron()` / `isWeb()` from `frontend/lib/platform.ts` (driven by the `NEXT_PUBLIC_APP_PLATFORM` build variable). Every `window.electron` call needs a browser fallback or must be hidden in the web build.
 
 ## 6. Layout Mathematics
-- **Constraint:** PDFs are rigid; HTML is fluid.
-- **Mandate:** When implementing multi-column layouts, use explicit percentage widths (e.g., `68%` and `32%`) and solid spacing units (`pt` or `mm`). Avoid `flex-grow` behaviors that behave differently between Chrome (Renderer) and Fontkit (PDF).
+- **Constraint:** Pages are fixed-size; the preview is fluid.
+- **Mandate:** When implementing multi-column layouts, use explicit percentage widths (e.g., `68%` and `32%`) and solid spacing units (`pt` or `mm`). Avoid `flex-grow` behaviors that behave differently between Chromium and `@react-pdf`. Width estimates shared by both renderers live in `frontend/lib/pdf/layoutFit.ts`.
 
 ## 7. Global Navigation & Layout
 - **Constraint:** The application uses a viewport-fixed layout (`h-screen overflow-hidden`) defined in `frontend/app/builder/layout.tsx`.
@@ -59,13 +61,9 @@ As an AI agent, you are part of the core engineering team. You must adhere to th
     - Every change to a Headless Controller (`frontend/lib/renderers/`) or Store Action (`frontend/lib/store/`) **must** be accompanied by a new or updated Vitest unit test.
     - Run `npm test --prefix frontend` to verify logic integrity after any data model or transformation change.
 
-## 10. Automated Release & Versioning
-- **Mechanism:** Merging a branch into `main` automatically triggers `.github/workflows/auto-version.yml`.
-- **Logic:**
-    - The workflow runs all tests (`npm run test:all`).
-    - It defaults to a `patch` version bump.
-    - To trigger a different bump, include `#minor` or `#major` in the commit message.
-    - Pushing a new tag (manually or via CI) triggers `.github/workflows/release.yml` for artifact building.
+## 10. CI & Releases
+- **Tests:** `.github/workflows/test.yml` runs the frontend unit tests (`npm test --prefix frontend`) on every push and pull request to `main`.
+- **Releases:** Versions are not bumped automatically. Bump `version` in `package.json`, commit, then push a `v*` tag (e.g. `git tag v1.8.0 && git push origin v1.8.0`). `.github/workflows/release.yml` builds the macOS and Windows artifacts for that tag.
 
 ## 11. Mandatory Documentation & Audit Trail
 - **Constraint:** Every significant feature, architectural change, or UI overhaul must be documented.
@@ -78,15 +76,15 @@ As an AI agent, you are part of the core engineering team. You must adhere to th
 
 ### Verification Checklist for AI Changes
 1. [ ] Did I update `types.ts`?
-2. [ ] Did I mirror the UI change in both `MasterTemplate.tsx` and `ResumePDF.tsx`?
+2. [ ] Did I make the UI change in `MasterTemplate.tsx` (keeping its print `data-*` hooks) and mirror it in `ResumePDF.tsx`?
 3. [ ] Is the state mutation happening safely within an `immer` draft?
 4. [ ] Does the change support both Light and Dark modes?
-5. [ ] Did I avoid introducing node-only modules into the frontend bundle?
+5. [ ] Did I avoid introducing node-only modules into the frontend bundle, and does the change work in the browser build (`isWeb()`)?
 6. [ ] Does the layout remain fixed to the viewport without global scrolling?
 7. [ ] Did I use shared PDF components (`HeaderRendererPDF`) for visual consistency?
 8. [ ] Did I add/update Vitest unit tests for any logic changes?
 9. [ ] Did I run `npm test --prefix frontend` and confirm all tests pass?
-10. [ ] If this is a release-ready merge, did I check if `#minor` or `#major` is required in the commit message?
+10. [ ] If this is a release, did I bump `package.json` and push a matching `v*` tag?
 11. [ ] **Documentation:** Did I update `CHANGELOG.md`, `README.md`, and relevant files in `/docs`?
 
 **Failure to follow these mandates will result in layout drift, state corruption, or build failures.**

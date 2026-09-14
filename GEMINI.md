@@ -13,15 +13,16 @@ The core data structures (Resume, Jobs) are defined in `frontend/lib/shared/type
 We use **Zustand + Immer**. This requires a specific mental model for async operations.
 - **Pattern:** `set((state) => { state.data = newValue; })`.
 - **CRITICAL:** The `state` object inside the `set` function is a Proxy. It is **revoked** as soon as the function returns.
-- **Persistence Rule:** Never call `saveResume()` inside a component. Always use the `updateSettings` or `updateSection` actions in the store, which trigger the internal `scheduleSave` debouncer.
+- **Persistence Rule:** Never call `saveResume()` inside a component. Use store actions such as `updateSettings` or `updateSection`; they mark the document dirty, and the persistence managers (`createDebouncedSaver` in `lib/store/debouncedSaver.ts`) save it 500 ms after edits pause — to the vault on desktop, IndexedDB in the browser.
 
-## 3. The Dual-Renderer Synchronization (The "Mirror" Rule)
-DoomSSH has two "realities":
-1.  **The DOM Reality:** (`MasterTemplate.tsx`, `web/sections/` directory)
-2.  **The PDF Reality:** (`ResumePDF.tsx`, `sections/` directory)
+## 3. Rendering: HTML First, PDF Mirror
+DoomSSH has two renderers:
+1.  **The HTML template (source of truth):** `MasterTemplate.tsx` and `web/sections/`. It powers the live preview and the desktop PDF export, which prints `app/print` with Chromium `printToPDF`.
+2.  **The `@react-pdf` renderer:** `ResumePDF.tsx` and `pdf/sections/`. Used only for the browser build's PDF download.
 
 **Mandates for AI Agents:**
-- When you modify a margin, padding, font size, or structural divider in the DOM, you **must** immediately find its counterpart in the PDF files and apply the equivalent `@react-pdf` style.
+- Keep the `data-*` hooks the print CSS relies on (`data-resume-page`, `data-sidebar-panel`, `data-section-heading`, `data-entry`, `data-entry-desc`, `data-keep`, `data-footer-fixed`).
+- When you modify a margin, padding, font size, or structural divider in the DOM, apply the equivalent `@react-pdf` style in the PDF files while the browser download still depends on them.
 - **Layout Math:** `@react-pdf` does not support complex CSS flex-box behaviors perfectly. Use explicit percentage widths (e.g., `68%` vs `32%`) to ensure alignment between the two realities.
 - **Colors:** Use the `colors` object from the `TemplateCtx`. In `basic` mode, `colors.heading` and `colors.accent` are often identical.
 
@@ -29,6 +30,7 @@ DoomSSH has two "realities":
 - **Mandate:** The frontend must remain "ignorant" of the underlying OS.
 - **Bridge:** Use `window.electron` for all AI, File System, and Secure Storage operations.
 - **Preload:** If you add a new IPC channel, you must update `electron/main.ts` (the handler), `electron/preload.ts` (the bridge), and `frontend/electron.d.ts` (the type definition).
+- **Web build:** The same frontend ships as a static site. Branch behaviour with `isElectron()` / `isWeb()` from `frontend/lib/platform.ts` (`NEXT_PUBLIC_APP_PLATFORM` build variable) and give every `window.electron` feature a browser fallback or hide it.
 
 ## 5. UI Component Architecture
 - **Foundation:** We use `@base-ui/react` for primitives.
@@ -50,9 +52,10 @@ DoomSSH has two "realities":
 Before declaring a task complete, verify the following:
 1. [ ] **Types:** Are all new data structures reflected in `types.ts`?
 2. [ ] **Persistence:** Does the change correctly trigger the auto-save debouncer?
-3. [ ] **Mirroring:** Is the visual change identical in both the Preview and the PDF export?
+3. [ ] **Rendering:** Did I change the HTML template (keeping its print hooks) and mirror it in the `@react-pdf` renderer?
 4. [ ] **Fidelity:** Did I avoid using CSS shorthand properties that `@react-pdf` doesn't support?
-5. [ ] **Security:** Did I avoid leaking logic into the frontend that belongs in the Electron main process?
-6. [ ] **Documentation:** Have I updated `CHANGELOG.md`, `README.md`, and relevant `/docs`?
+5. [ ] **Web build:** Does the change work without `window.electron`?
+6. [ ] **Security:** Did I avoid leaking logic into the frontend that belongs in the Electron main process?
+7. [ ] **Documentation:** Have I updated `CHANGELOG.md`, `README.md`, and relevant `/docs`?
 
 **Any deviation from this protocol will lead to technical debt and layout desynchronization.**

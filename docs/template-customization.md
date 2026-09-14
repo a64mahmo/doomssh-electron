@@ -59,60 +59,88 @@ All customizable settings are defined in `frontend/lib/store/types.ts` under the
 |---------|------|---------|-------------|
 | `dateFormat` | `string` | `"MMM YYYY"` | Moment.js-compatible date format |
 
+## Built-in Templates
+
+Every template is a **settings preset** applied on top of the resume's current settings; nothing about a template is a separate component. All presets render through `MasterTemplate.tsx` (preview and desktop export).
+
+| Template | Style |
+|----------|-------|
+| Modern | Two columns, clean lines, balanced accents |
+| Classic | Single column, serif, full-bleed header band |
+| Minimal | Single column, maximum whitespace |
+| Crisp | Mixed grid with vertical accent bars |
+| Tokyo | Bold, icon-heavy, strong sidebar |
+| Elite | Executive serif with a page border |
+| Blocks | Background-block headings |
+| Dublin | Reversed sidebar |
+| London | Serif single column with header band |
+| Berlin | Knockout icons, high contrast |
+| Oslo | Tinted sidebar, skill pills |
+| Zurich | Boxed headings, contact grid, rated skills |
+| Milano | Editorial mixed layout, dates on the left |
+| Seoul | Compact reversed sidebar, contact block beside the name |
+| Aspen | Photo, name and contact details in a tinted sidebar |
+| Vega | Compact one-pager for long histories |
+| Lumen | Spacious, centred — for first-job resumes |
+| Atlas | Full-bleed colour header band, two columns |
+| Sierra | Creative mixed grid, knockout icons, pills |
+| Nova | Executive serif, hairline rules, levelled skills |
+| Custom | Your own settings |
+
+Switching templates resets colours and the layout choices a preset makes that others don't mention (`headerLayout`, `sidebarTheme`), so a sidebar header from one preset doesn't leak into the next.
+
 ## Creating Custom Templates
 
-### Step 1: Define the Settings
+### Step 1: Add the template id
 
-Edit `frontend/lib/store/types.ts`. Add a new entry to the `Template` type union:
+Add the id to the `TemplateId` union in `frontend/lib/shared/types.ts` (re-exported from `frontend/lib/store/types.ts`):
 
 ```typescript
-export type Template =
+export type TemplateId =
   | 'modern'
-  | 'minimal'
-  | 'classic'
+  // ...
+  | 'my-template' // ← add before 'custom'
   | 'custom'
-  | 'crisp'
-  | 'my-template' // ← Add your template name here
 ```
 
-### Step 2: Create a Controller Preset (Optional)
+### Step 2: Describe it and define the preset
 
-If your template has custom display logic (e.g., a unique ordering rule), add it to the headless controller registry in `frontend/lib/renderers/index.ts`:
+In `frontend/components/web/index.ts`:
+
+1. Add a label and description to `TEMPLATE_META` — the Templates panel lists every entry automatically.
+2. Add a `case` to `getTemplateSettings` returning the settings to apply. Start from `...colorReset(accent)` and set every `applyAccent*` flag explicitly.
 
 ```typescript
-mySection: (section, ctx) => {
-  const items = (section.items as MyItem[]) || [];
-  const s = ctx.settings as any || {};
-
+case 'my-template':
   return {
-    title: section.title,
-    isVisible: section.visible !== false,
-    type: 'mySection',
-    items: items.map(item => ({
-      ...item,
-      primaryText: /* custom logic */,
-    })),
-  };
-},
+    ...colorReset('#0f766e'),
+    themeColorStyle: 'basic',
+    columnLayout: 'two',
+    sectionHeadingStyle: 'left-bar',
+    skillDisplay: 'bubble',
+    fontFamily: 'Lato',
+    fontSize: 10,
+    marginHorizontal: 18,
+    marginVertical: 14,
+    // ...
+  }
 ```
 
-### Step 3: Register the Template in the UI
+Prefer varying structural settings (`skillDisplay`, `entryLayout`, `detailsArrangement`, `sidebarTheme`, `headerLayout`) so the template changes the page's structure, not only its colour and font.
 
-Edit `frontend/components/customize/sections/TemplatesSection.tsx` to add your template as a selectable option in the Customize Panel.
+### Step 3: Check the thumbnail
 
-### Step 4: Apply via Code
+`TemplateVisual` in `frontend/components/customize/CustomizePrimitives.tsx` draws each card from the preset's settings (columns, header band, sidebar tint, header in sidebar, photo, skill pills). No per-template work is needed unless your preset introduces a new visual trait.
 
-```typescript
-import { useResumeStore } from '@/lib/store/resumeStore';
+### Step 4: Verify the output
 
-// Switch to a preset template
-useResumeStore.getState().updateSettings({
-  template: 'my-template',
-  accentColor: '#dc2626',
-  fontFamily: 'Playfair Display',
-  columnLayout: 'one',
-});
+```bash
+cd frontend
+npx vitest run tests/components/web/templateSmoke.test.tsx      # HTML renders for every preset
+npx tsx scripts/render-templates.tsx /tmp/renders --stress       # web-download PDFs with long content
 ```
+
+Export from the desktop app to confirm the printed PDF (no blank trailing page, margins intact).
 
 ## Headless Controller Reference
 

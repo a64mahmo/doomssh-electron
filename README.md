@@ -8,29 +8,77 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Electron](https://img.shields.io/badge/Electron-34-47848F?logo=electron&logoColor=white)](https://www.electronjs.org/)
-[![Next.js](https://img.shields.io/badge/Next.js-15-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 
 </div>
 
 ---
 
+<p align="center">
+  <img src="docs/images/builder.png" alt="DoomSSH builder: editor on the left, live resume preview on the right" width="100%">
+</p>
+
+## Screenshots
+
+### Live preview — edits appear as you type
+
+<p align="center">
+  <img src="docs/images/live-preview.gif" alt="Typing a new job title updates the resume preview instantly" width="85%">
+</p>
+
+### 21 templates, one click apart
+
+<p align="center">
+  <img src="docs/images/templates.png" alt="Modern, Atlas, Aspen, Sierra, Nova, Vega, Oslo and Zurich templates" width="100%">
+</p>
+
+### Interview Prep — questions, STAR answers, notes and reflections per application
+
+<p align="center">
+  <img src="docs/images/interview-prep.gif" alt="Picking a job, opening a STAR answer and moving through Company Notes, Cheat Sheet and Reflections" width="85%">
+</p>
+
+<p align="center">
+  <img src="docs/images/interview-prep.png" alt="Interview questions for a job with a behavioral answer drafted in the STAR editor" width="100%">
+</p>
+
+<p align="center">
+  <img src="docs/images/interview-prep-sections.png" alt="Company research notes, cheat sheet talking points and post-interview reflections" width="100%">
+</p>
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/images/dashboard.png" alt="Resume dashboard"><p align="center"><b>Dashboard</b></p></td>
+    <td width="50%"><img src="docs/images/job-tracker.png" alt="Job tracker board"><p align="center"><b>Job Tracker</b></p></td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="docs/images/builder-dark.png" alt="Builder in dark mode"><p align="center"><b>Dark mode</b></p></td>
+  </tr>
+</table>
+
+> Screenshots use the fictional sample resumes and job data. Regenerate them from a local build whenever the UI changes.
+
+---
+
 ## Why DoomSSH?
 
-Most modern resume builders lock your data behind a subscription or a cloud account. DoomSSH flips the script. It is a professional-grade desktop application designed for engineers and creatives who value privacy, performance, and data ownership.
+Most modern resume builders lock your data behind a subscription or a cloud account. DoomSSH flips the script. It is a professional-grade desktop application — also available in the browser — designed for engineers and creatives who value privacy, performance, and data ownership.
 
 - **Cover Letter Workshop:** A dedicated, modular workspace for crafting narratives. Features proactive AI drafting, tone-shifting tools, and smart resume synchronization.
 - **Unified Builder Experience:** A modern, collapsible sidebar provides instant access to your Resumes, Cover Letters, Job Tracker, and Interview Prep from a single interface.
-- **Visual Sync Engine:** Mirror Rule architecture ensures 100% parity between the live preview and exported PDF across all document types.
+- **What You See Is What You Export:** The live preview is plain HTML that updates as you type, and the desktop app prints that same HTML to PDF with Chromium — no drift between screen and page.
 - **Digital Signatures:** Integrated support for uploading and scaling handwritten signatures for a professional finish.
 - **Precision Job Tracker:** Link specific resumes and cover letters to your applications to track exactly what story you told to each company.
+- **Interview Prep Suite:** For every application, keep interview questions (technical, behavioral, situational), draft behavioral answers with a STAR editor, store company research, pin cheat-sheet talking points and log post-interview reflections. AI question generation is available in the desktop app.
 - **Local-First Vault:** Your documents are stored as plain JSON files in a Vault of your choice. No cloud, no tracking, no data harvesting.
+- **Runs in the Browser Too:** The same app deploys as a static site. In the browser, everything is saved locally in IndexedDB — still no account and no server.
 - **100% Offline Support:** All fonts are bundled locally. The application requires zero internet connection for drafting, designing, or exporting documents.
 - **Native Cross-Platform Experience:** Optimized for both macOS and Windows, including native window controls and deep OS integration.
-- **Continuous CD Release:** Every merge to `main` automatically triggers a full software release. Bumps version (`patch` by default) and publishes platform-specific builds.
+- **Tagged Releases:** Pushing a `v*` tag builds and publishes the macOS and Windows installers; every push to `main` runs the test suite.
 - **Transparent Updates:** Built-in software update system with real-time download progress and manual check controls.
-- **Bug Mode & Diagnostics:** Built-in diagnostic system ("Bug Mode") to capture and display system errors for easier troubleshooting.
-- **Infinite Customization:** Dozens of professionally designed templates with deep control over typography, colors, layout mathematics, and section arrangements.
+- **Bug Mode & Diagnostics:** Built-in diagnostic system ("Bug Mode") in the desktop app to capture and display system errors for easier troubleshooting.
+- **Infinite Customization:** 21 professionally designed templates — compact one-pagers, photo sidebars, header bands, creative grids and executive serifs — with deep control over typography, colors, layout mathematics, and section arrangements.
 
 ---
 
@@ -39,11 +87,11 @@ Most modern resume builders lock your data behind a subscription or a cloud acco
 | Layer          | Technology                                                 |
 | :------------- | :--------------------------------------------------------- |
 | **Runtime**    | **Electron 34** (Native OS integration & Security)         |
-| **Frontend**   | **Next.js 15** (App Router, React 19, Static Export)       |
+| **Frontend**   | **Next.js 16** (App Router, React 19, Static Export)       |
 | **State**      | **Zustand + Immer** (High-performance immutable state)     |
-| **Storage**    | **Local Vault** (JSON-based files)                         |
+| **Storage**    | **Local Vault** (JSON files) · **IndexedDB** in the browser |
 | **Styles**     | **Tailwind CSS 4** + **Base UI** (Atomic, Dark-mode ready) |
-| **PDF Engine** | **@react-pdf/renderer** (Client-side vector generation)    |
+| **PDF Engine** | **Chromium printToPDF** of the HTML preview (desktop) · **@react-pdf/renderer** (browser download) |
 | **AI Bridge**  | **Anthropic SDK** (IPC-streamed for credential safety)     |
 
 ---
@@ -68,11 +116,15 @@ API keys and sensitive operations never touch the untrusted frontend.
 
 ### Headless Rendering Architecture
 
-To prevent logic drift between the screen and the page, DoomSSH uses a "Headless Controller" pattern. All business logic for a section (formatting, ordering, visibility) is extracted into a single controller in `frontend/lib/renderers/`. Both the HTML and PDF renderers consume a unified `SectionViewModel`, ensuring that the exported PDF is always a perfect reflection of the editor.
+To prevent logic drift between the screen and the page, DoomSSH uses a "Headless Controller" pattern. All business logic for a section (formatting, ordering, visibility) is extracted into a single controller in `frontend/lib/renderers/`. Both the HTML and PDF renderers consume a unified `SectionViewModel`.
+
+### HTML → PDF Export
+
+The HTML template (`frontend/components/web/MasterTemplate.tsx`) is the source of truth. The live preview renders it directly, and the desktop app exports it by loading the `/print` page in a hidden window and calling Chromium's `printToPDF` — so the PDF is exactly what you see. Print CSS controls page breaks (headings stay with their content, bullets never split) and repeats margins, sidebar panels and footers on every page. The browser build, which cannot print to a file without a dialog, downloads a PDF from `@react-pdf/renderer` instead. See [PDF Export](docs/architecture.md#pdf-export-html--pdf).
 
 ### Persistence Manager
 
-State mutations are decoupled from disk I/O via a dedicated `PersistenceManager` (`frontend/lib/store/persistenceManager.ts`). The Zustand store manages in-memory state only; a subscription-based manager debounces writes to the Vault, ensuring efficient I/O without blocking the UI.
+State mutations are decoupled from disk I/O. The Zustand stores manage in-memory state only; persistence managers (`frontend/lib/store/persistenceManager.ts`, `jobPersistenceManager.ts`) built on a shared debounced saver write to the Vault — or IndexedDB in the browser — 500 ms after edits pause, and re-save anything that changes while a save is in flight.
 
 ---
 
@@ -83,16 +135,17 @@ doomssh/
 ├── electron/                    # Main Process
 │   ├── main.ts                  # Entry point, IPC handlers, window management
 │   └── preload.ts               # Secure bridge to renderer
-├── frontend/                    # Next.js 15 Workspace
+│   └── resources/               # App icons (icns / ico / png)
+├── frontend/                    # Next.js 16 Workspace
 │   ├── app/                     # App Router pages
 │   │   ├── builder/             # Resume builder UI
-│   │   ├── print/               # PDF export route
-│   │   └── api/ai/              # AI streaming endpoints
+│   │   └── print/               # Print page (desktop PDF export)
 │   ├── components/
-│   │   ├── web/                 # HTML renderers (Web preview)
+│   │   ├── web/                 # HTML template — live preview & desktop export
 │   │   │   └── sections/        # Section components (DOM)
-│   │   ├── pdf/                 # PDF renderers (Vector export)
+│   │   ├── pdf/                 # @react-pdf renderer (browser download)
 │   │   │   └── sections/        # Section components (@react-pdf)
+│   │   ├── preview/             # Live HTML preview panel
 │   │   ├── customize/           # Design panel & styling controls
 │   │   ├── editor/              # Data entry forms & inputs
 │   │   └── jobs/                # Application tracker UI
@@ -104,11 +157,16 @@ doomssh/
 │       │   └── types.ts         # ViewModel types
 │       ├── store/               # Zustand stores
 │       │   ├── resumeStore.ts   # Resume state (source of truth)
-│       │   ├── persistenceManager.ts  # Debounced vault writes
+│       │   ├── debouncedSaver.ts       # Shared save-after-change logic
+│       │   ├── persistenceManager.ts   # Resume saving
+│       │   ├── jobPersistenceManager.ts # Job saving
 │       │   ├── jobStore.ts      # Job tracker state
 │       │   └── uiStore.ts       # UI state (errors, modals)
-│       ├── db/                  # Vault CRUD via Electron IPC
-│       └── pdf/                 # PDF build utilities
+│       ├── db/                  # Vault via Electron IPC · IndexedDB in the browser
+│       ├── pdf/                 # Layout math shared by both renderers
+│       └── platform.ts          # Web vs Electron build detection
+│   ├── scripts/                 # Template render harness & fixtures
+│   └── wrangler.jsonc           # Cloudflare static-asset deployment
 ├── tests/                       # Playwright E2E & regression tests
 └── docs/                        # Architecture & deep-dive docs
 ```
@@ -135,12 +193,14 @@ npm run dev
 ### Build & Distribution
 
 ```bash
-# Production build (Next.js static export)
+# Production build for the desktop app (NEXT_PUBLIC_APP_PLATFORM=electron)
 npm run build
 
 # Package for macOS/Windows/Linux
 npm run electron:dist
 ```
+
+The web build deploys to Cloudflare from the `frontend` directory with `NEXT_PUBLIC_APP_PLATFORM=web` set as a build variable. See [Deployment](docs/deployment.md).
 
 ---
 
@@ -200,7 +260,7 @@ The following settings can be adjusted via the **Customize Panel** in the builde
 
 ### Programmatic Template Customization
 
-Templates are defined as **JSON data** in `frontend/lib/store/types.ts` via the `ResumeSettings` interface. You can create custom templates by modifying settings programmatically:
+Templates are **settings presets** (typed by the `ResumeSettings` interface) defined in `frontend/components/web/index.ts`. You can create custom templates by modifying settings programmatically:
 
 ```typescript
 // Example: Create a "Modern Minimal" template preset
@@ -234,9 +294,11 @@ const modernMinimalTemplate = {
 
 To add a new template preset:
 
-1. Define the settings in `frontend/lib/store/types.ts`
-2. Add the template name to the `Template` type union
-3. Register the template in the Customize Panel (`frontend/components/customize/sections/TemplatesSection.tsx`)
+1. Add the id to the `TemplateId` union in `frontend/lib/shared/types.ts`
+2. Add a label and description to `TEMPLATE_META` in `frontend/components/web/index.ts` (the Templates panel lists it automatically)
+3. Return the preset's settings from `getTemplateSettings` in the same file
+
+Full walkthrough: [Template Customization Guide](docs/template-customization.md).
 
 ### Adjusting Headless Controllers
 
@@ -311,6 +373,9 @@ For deeper technical insights, check out the `/docs` directory:
 - [Architecture Overview](docs/architecture.md) — System design, rendering pipeline, storage model
 - [Frontend Deep-Dive](docs/frontend.md) — Component architecture and state management
 - [Electron & IPC Protocol](docs/electron.md) — Main process, preload bridge, and security
+- [Template Customization](docs/template-customization.md) — Settings reference, built-in presets, adding templates
+- [Deployment](docs/deployment.md) — Cloudflare web build and the platform build variable
+- [Troubleshooting](docs/troubleshooting.md) — Builds, PDF export and the browser build
 - [Vault Storage Specification](docs/ideas/vault-storage.md) — JSON file format and CRUD operations
 
 ---
