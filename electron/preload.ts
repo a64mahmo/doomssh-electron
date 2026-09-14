@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { Resume, JobsVaultFile } from '../frontend/lib/shared/types'
+import type { Resume, JobsVaultFile } from './shared-types'
 
 contextBridge.exposeInMainWorld('electron', {
   platform: process.platform,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   ArrowLeft, Briefcase, MessageSquare, BookOpen, ListChecks,
@@ -47,7 +47,10 @@ const textareaBase = 'w-full text-xs bg-muted/20 border border-border/50 rounded
 
 export function InterviewPrepClient() {
   const router = useRouter()
-  const { jobs, isLoaded, loadJobs, updateInterviewPrep } = useJobStore()
+  const jobs = useJobStore((s) => s.jobs)
+  const isLoaded = useJobStore((s) => s.isLoaded)
+  const loadJobs = useJobStore((s) => s.loadJobs)
+  const updateInterviewPrep = useJobStore((s) => s.updateInterviewPrep)
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
   const [activeSection, setActiveSection] = useState<'questions' | 'company' | 'cheatsheet' | 'reflections'>('questions')
   const [isMac, setIsMac] = useState(false)
@@ -70,16 +73,19 @@ export function InterviewPrepClient() {
     updateInterviewPrep(selectedJobId, { ...current, ...updates })
   }, [selectedJobId, selectedJob, updateInterviewPrep])
 
-  // Sort: jobs in interview stages first, then by most recent
-  const sortedJobs = [...jobs]
-    .filter(j => !j.archivedAt)
-    .sort((a, b) => {
-      const interviewStatuses = ['phone-screen', 'technical', 'onsite']
-      const aInterview = interviewStatuses.includes(a.status) ? 1 : 0
-      const bInterview = interviewStatuses.includes(b.status) ? 1 : 0
-      if (aInterview !== bInterview) return bInterview - aInterview
-      return b.updatedAt - a.updatedAt
-    })
+  // Sort: jobs in interview stages first, then by most recent.
+  // Memoized so components downstream do not see a fresh array every render.
+  const sortedJobs = useMemo(() => {
+    const interviewStatuses = ['phone-screen', 'technical', 'onsite']
+    return jobs
+      .filter(j => !j.archivedAt)
+      .sort((a, b) => {
+        const aInterview = interviewStatuses.includes(a.status) ? 1 : 0
+        const bInterview = interviewStatuses.includes(b.status) ? 1 : 0
+        if (aInterview !== bInterview) return bInterview - aInterview
+        return b.updatedAt - a.updatedAt
+      })
+  }, [jobs])
 
   if (!isLoaded) {
     return (

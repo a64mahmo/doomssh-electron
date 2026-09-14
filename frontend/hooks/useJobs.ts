@@ -3,27 +3,40 @@ import { useJobStore } from '@/lib/store/jobStore'
 import { ACTIVE_STATUSES, TERMINAL_STATUSES } from '@/lib/store/jobTypes'
 import type { JobStatus } from '@/lib/store/jobTypes'
 
+/**
+ * @deprecated Prefer the granular hooks (useJob, useActiveJobs, useJobsByStatus)
+ * or subscribe to individual fields with useJobStore(selector). Returning the
+ * entire store causes the calling component to re-render on every state change.
+ */
 export function useJobs() {
   return useJobStore()
 }
 
 export function useJob(jobId: string | null) {
-  return useJobStore((s) => s.jobs.find((j) => j.id === jobId) ?? null)
+  return useJobStore((s) => (jobId ? s.jobs.find((j) => j.id === jobId) ?? null : null))
 }
 
 export function useJobsByStatus(status: JobStatus) {
-  return useJobStore((s) => s.jobs.filter((j) => j.status === status && !j.archivedAt))
+  const jobs = useJobStore((s) => s.jobs)
+  return useMemo(
+    () => jobs.filter((j) => j.status === status && !j.archivedAt),
+    [jobs, status]
+  )
 }
 
 export function useActiveJobs() {
-  return useJobStore((s) =>
-    s.jobs.filter((j) => ACTIVE_STATUSES.includes(j.status) && !j.archivedAt)
+  const jobs = useJobStore((s) => s.jobs)
+  return useMemo(
+    () => jobs.filter((j) => ACTIVE_STATUSES.includes(j.status) && !j.archivedAt),
+    [jobs]
   )
 }
 
 export function useArchivedJobs() {
-  return useJobStore((s) =>
-    s.jobs.filter((j) => TERMINAL_STATUSES.includes(j.status) || j.archivedAt)
+  const jobs = useJobStore((s) => s.jobs)
+  return useMemo(
+    () => jobs.filter((j) => TERMINAL_STATUSES.includes(j.status) || j.archivedAt),
+    [jobs]
   )
 }
 

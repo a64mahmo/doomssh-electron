@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Plus, Kanban, Table2, BarChart3, GraduationCap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -14,7 +14,8 @@ import { cn } from '@/lib/utils'
 
 export function JobsClient() {
   const router = useRouter()
-  const { isLoaded, loadJobs } = useJobStore()
+  const isLoaded = useJobStore((s) => s.isLoaded)
+  const loadJobs = useJobStore((s) => s.loadJobs)
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
   const [isAddingNew, setIsAddingNew] = useState(false)
   const [initialStatus, setInitialStatus] = useState<any>(undefined)
@@ -29,10 +30,16 @@ export function JobsClient() {
     if (!isLoaded) loadJobs()
   }, [isLoaded, loadJobs])
 
-  function handleAddJob(status?: any) {
+  const handleAddJob = useCallback((status?: any) => {
     setInitialStatus(status)
     setIsAddingNew(true)
-  }
+  }, [])
+
+  const handleCloseDialog = useCallback(() => {
+    setSelectedJobId(null)
+    setIsAddingNew(false)
+    setInitialStatus(undefined)
+  }, [])
 
   if (!isLoaded) {
     return (
@@ -96,11 +103,7 @@ export function JobsClient() {
         jobId={selectedJobId}
         mode={isAddingNew ? 'create' : 'edit'}
         initialStatus={initialStatus}
-        onClose={() => {
-          setSelectedJobId(null)
-          setIsAddingNew(false)
-          setInitialStatus(undefined)
-        }}
+        onClose={handleCloseDialog}
       />
     </div>
   )

@@ -4,7 +4,7 @@ import path from 'path'
 import fs from 'fs'
 import Anthropic from '@anthropic-ai/sdk'
 import { autoUpdater, type UpdateInfo } from 'electron-updater'
-import type { Resume, JobApplication, JobsVaultFile } from '../frontend/lib/shared/types'
+import type { Resume, JobApplication, JobsVaultFile } from './shared-types'
 
 // ── Auto Update Config ────────────────────────────────────────────────────────
 autoUpdater.logger = console
@@ -26,8 +26,10 @@ let nextProc: ChildProcess | null = null
 
 // ── Resolve paths ─────────────────────────────────────────────────────────────
 function projectRoot(): string {
-  // In dev, __dirname is projetRoot/electron/dist
-  return isDev ? path.join(__dirname, '..', '..') : app.getAppPath()
+  // Only a packaged app has its resources at getAppPath(); when running
+  // unpackaged (dev, or `electron:preview` against a production build)
+  // __dirname is projectRoot/electron/dist either way.
+  return app.isPackaged ? app.getAppPath() : path.join(__dirname, '..', '..')
 }
 
 // ── Spawn Next.js ─────────────────────────────────────────────────────────────
