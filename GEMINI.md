@@ -15,15 +15,15 @@ We use **Zustand + Immer**. This requires a specific mental model for async oper
 - **CRITICAL:** The `state` object inside the `set` function is a Proxy. It is **revoked** as soon as the function returns.
 - **Persistence Rule:** Never call `saveResume()` inside a component. Use store actions such as `updateSettings` or `updateSection`; they mark the document dirty, and the persistence managers (`createDebouncedSaver` in `lib/store/debouncedSaver.ts`) save it 500 ms after edits pause — to the vault on desktop, IndexedDB in the browser.
 
-## 3. Rendering: HTML First, PDF Mirror
-DoomSSH has two renderers:
-1.  **The HTML template (source of truth):** `MasterTemplate.tsx` and `web/sections/`. It powers the live preview and the desktop PDF export, which prints `app/print` with Chromium `printToPDF`.
-2.  **The `@react-pdf` renderer:** `ResumePDF.tsx` and `pdf/sections/`. Used only for the browser build's PDF download.
+## 3. Rendering: One HTML Template
+DoomSSH has one renderer, used two ways:
+1.  **Live preview:** `MasterTemplate.tsx` and `web/sections/`, rendered directly in the builder.
+2.  **PDF export:** the same template on `app/print`, printed with Chromium `printToPDF` on desktop and through the browser's print dialog (Save as PDF) on the web.
 
 **Mandates for AI Agents:**
 - Keep the `data-*` hooks the print CSS relies on (`data-resume-page`, `data-sidebar-panel`, `data-section-heading`, `data-entry`, `data-entry-desc`, `data-keep`, `data-footer-fixed`).
-- When you modify a margin, padding, font size, or structural divider in the DOM, apply the equivalent `@react-pdf` style in the PDF files while the browser download still depends on them.
-- **Layout Math:** `@react-pdf` does not support complex CSS flex-box behaviors perfectly. Use explicit percentage widths (e.g., `68%` vs `32%`) to ensure alignment between the two realities.
+- Check visual changes in print (`/print/new/?mode=export`) as well as the preview — page breaks only happen there.
+- New template options go in `base()` in `components/web/index.ts`, so switching templates resets them.
 - **Colors:** Use the `colors` object from the `TemplateCtx`. In `basic` mode, `colors.heading` and `colors.accent` are often identical.
 
 ## 4. Electron IPC & Security Boundary
@@ -52,10 +52,9 @@ DoomSSH has two renderers:
 Before declaring a task complete, verify the following:
 1. [ ] **Types:** Are all new data structures reflected in `types.ts`?
 2. [ ] **Persistence:** Does the change correctly trigger the auto-save debouncer?
-3. [ ] **Rendering:** Did I change the HTML template (keeping its print hooks) and mirror it in the `@react-pdf` renderer?
-4. [ ] **Fidelity:** Did I avoid using CSS shorthand properties that `@react-pdf` doesn't support?
-5. [ ] **Web build:** Does the change work without `window.electron`?
-6. [ ] **Security:** Did I avoid leaking logic into the frontend that belongs in the Electron main process?
-7. [ ] **Documentation:** Have I updated `CHANGELOG.md`, `README.md`, and relevant `/docs`?
+3. [ ] **Rendering:** Did I change the HTML template, keep its print hooks, and check the printed output?
+4. [ ] **Web build:** Does the change work without `window.electron`?
+5. [ ] **Security:** Did I avoid leaking logic into the frontend that belongs in the Electron main process?
+6. [ ] **Documentation:** Have I updated `CHANGELOG.md`, `README.md`, and relevant `/docs`?
 
 **Any deviation from this protocol will lead to technical debt and layout desynchronization.**

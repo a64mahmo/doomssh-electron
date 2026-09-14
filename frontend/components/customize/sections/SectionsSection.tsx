@@ -80,6 +80,18 @@ export function SectionsSection({ s, upd }: SectionsSectionProps) {
           </div>
         </div>
 
+        <div>
+          <FieldLabel>Alignment</FieldLabel>
+          <SegmentGroup
+            value={s.sectionHeadingAlign ?? 'left'}
+            onChange={(v) => upd({ sectionHeadingAlign: v as 'left' | 'center' })}
+            options={[
+              { value: 'left',   label: 'Left',   render: () => <span className="text-[10px] font-semibold leading-none">Left</span> },
+              { value: 'center', label: 'Center', render: () => <span className="text-[10px] font-semibold leading-none">Center</span> },
+            ]}
+          />
+        </div>
+
         {headingHasLine && (
           <SliderRow
             label="Line Thickness"

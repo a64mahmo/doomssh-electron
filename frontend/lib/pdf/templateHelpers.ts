@@ -1,4 +1,4 @@
-// CSS-based template helpers — replaces the react-pdf-specific helpers in pdfStyles.ts
+// CSS-based template helpers
 import type { FontOption } from '@/lib/store/types'
 
 // CSS font stacks for each font option

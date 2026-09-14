@@ -91,7 +91,7 @@ Most modern resume builders lock your data behind a subscription or a cloud acco
 | **State**      | **Zustand + Immer** (High-performance immutable state)     |
 | **Storage**    | **Local Vault** (JSON files) · **IndexedDB** in the browser |
 | **Styles**     | **Tailwind CSS 4** + **Base UI** (Atomic, Dark-mode ready) |
-| **PDF Engine** | **Chromium printToPDF** of the HTML preview (desktop) · **@react-pdf/renderer** (browser download) |
+| **PDF Engine** | The HTML preview, printed — **Chromium printToPDF** (desktop) · browser **Save as PDF** (web) |
 | **AI Bridge**  | **Anthropic SDK** (IPC-streamed for credential safety)     |
 
 ---
@@ -120,7 +120,7 @@ To prevent logic drift between the screen and the page, DoomSSH uses a "Headless
 
 ### HTML → PDF Export
 
-The HTML template (`frontend/components/web/MasterTemplate.tsx`) is the source of truth. The live preview renders it directly, and the desktop app exports it by loading the `/print` page in a hidden window and calling Chromium's `printToPDF` — so the PDF is exactly what you see. Print CSS controls page breaks (headings stay with their content, bullets never split) and repeats margins, sidebar panels and footers on every page. The browser build, which cannot print to a file without a dialog, downloads a PDF from `@react-pdf/renderer` instead. See [PDF Export](docs/architecture.md#pdf-export-html--pdf).
+The HTML template (`frontend/components/web/MasterTemplate.tsx`) is the source of truth. The live preview renders it directly, and the desktop app exports it by loading the `/print` page in a hidden window and calling Chromium's `printToPDF` — so the PDF is exactly what you see. Print CSS controls page breaks (headings stay with their content, bullets never split) and repeats margins, sidebar panels and footers on every page. The browser build prints the same page through the browser's print dialog, where you choose **Save as PDF**. See [PDF Export](docs/architecture.md#pdf-export-html--pdf).
 
 ### Persistence Manager
 
@@ -139,12 +139,10 @@ doomssh/
 ├── frontend/                    # Next.js 16 Workspace
 │   ├── app/                     # App Router pages
 │   │   ├── builder/             # Resume builder UI
-│   │   └── print/               # Print page (desktop PDF export)
+│   │   └── print/               # Print page (every PDF export)
 │   ├── components/
-│   │   ├── web/                 # HTML template — live preview & desktop export
+│   │   ├── web/                 # HTML template — live preview & PDF export
 │   │   │   └── sections/        # Section components (DOM)
-│   │   ├── pdf/                 # @react-pdf renderer (browser download)
-│   │   │   └── sections/        # Section components (@react-pdf)
 │   │   ├── preview/             # Live HTML preview panel
 │   │   ├── customize/           # Design panel & styling controls
 │   │   ├── editor/              # Data entry forms & inputs
@@ -341,7 +339,7 @@ export const experienceController: SectionController = (section, ctx) => {
 };
 ```
 
-Both the **Web renderer** (`frontend/components/web/sections/experience.tsx`) and the **PDF renderer** (`frontend/components/pdf/sections/experience.tsx`) then consume this ViewModel, guaranteeing that a change to the controller is reflected instantly in both the live preview and the exported PDF.
+The **Web renderer** (`frontend/components/web/sections/experience.tsx`) consumes this ViewModel. The live preview and the exported PDF render the same component, so a change to the controller shows up in both.
 
 ---
 

@@ -63,31 +63,31 @@ All customizable settings are defined in `frontend/lib/store/types.ts` under the
 
 Every template is a **settings preset** applied on top of the resume's current settings; nothing about a template is a separate component. All presets render through `MasterTemplate.tsx` (preview and desktop export).
 
-| Template | Style |
-|----------|-------|
-| Modern | Two columns, clean lines, balanced accents |
-| Classic | Single column, serif, full-bleed header band |
-| Minimal | Single column, maximum whitespace |
-| Crisp | Mixed grid with vertical accent bars |
-| Tokyo | Bold, icon-heavy, strong sidebar |
-| Elite | Executive serif with a page border |
-| Blocks | Background-block headings |
-| Dublin | Reversed sidebar |
-| London | Serif single column with header band |
-| Berlin | Knockout icons, high contrast |
-| Oslo | Tinted sidebar, skill pills |
-| Zurich | Boxed headings, contact grid, rated skills |
-| Milano | Editorial mixed layout, dates on the left |
-| Seoul | Compact reversed sidebar, contact block beside the name |
-| Aspen | Photo, name and contact details in a tinted sidebar |
-| Vega | Compact one-pager for long histories |
-| Lumen | Spacious, centred — for first-job resumes |
-| Atlas | Full-bleed colour header band, two columns |
-| Sierra | Creative mixed grid, knockout icons, pills |
-| Nova | Executive serif, hairline rules, levelled skills |
-| Custom | Your own settings |
+| Template | Structure | Photo |
+|----------|-----------|-------|
+| Modern | Two columns, right sidebar with divider | Beside the name, L circle |
+| Classic | Centred black serif, hairline rules | Above the name, M circle |
+| Minimal | Light name, no heading rules, stacked entries | Beside, square, top-aligned |
+| Crisp | Name left, contact details stacked on the right, bar headings | Beside, rounded |
+| Tokyo | Red header band, icon headings, skill pills | Above the name, L with white border |
+| Elite | Framed page, right-aligned serif header | Right of the name, L square |
+| Blocks | Solid blue sidebar on the right, white pills | Beside, L rounded |
+| Dublin | Dark navy sidebar with name, as-typed title and icon contacts; centred box headings | Below the name in the sidebar, XL circle |
+| London | Warm paper, editorial serif, double rules | Above the name, L with accent border |
+| Berlin | Black sidebar on the right with yellow highlights | In the sidebar, XL square |
+| Oslo | Warm tinted sidebar, skill pills | Beside, L with border |
+| Zurich | Boxed headings, contact grid, rated skills | Beside, square |
+| Milano | Italic job title beside the name, summary and skills in a left column, icon headings | Beside, XL circle |
+| Seoul | Lavender sidebar on the left, details beside the name, skills grid | Beside, S rounded |
+| Aspen | Soft green sidebar with photo, name and details | Above the name in the sidebar, XL |
+| Vega | Dense single column | Beside, S rounded |
+| Lumen | Spacious and centred | Above the name, XL with border |
+| Atlas | Navy header band over two columns | Beside, in the band |
+| Sierra | Warm left sidebar, knockout icons, big name | Beside, L rounded |
+| Nova | Executive serif, portrait and name centred together | Beside, centred group |
+| Custom | Your own settings | — |
 
-Switching templates resets colours and the layout choices a preset makes that others don't mention (`headerLayout`, `sidebarTheme`), so a sidebar header from one preset doesn't leak into the next.
+Every preset starts from `base(accent)`, which resets every layout setting — colours, columns, sidebar fill, header and photo placement, headings, entries — so nothing from the previous template leaks into the next. Photo on/off is left alone except in photo-led presets (Aspen, Dublin, Berlin, Lumen, Atlas), which turn it on; with no uploaded photo nothing is drawn.
 
 ## Creating Custom Templates
 
@@ -108,13 +108,12 @@ export type TemplateId =
 In `frontend/components/web/index.ts`:
 
 1. Add a label and description to `TEMPLATE_META` — the Templates panel lists every entry automatically.
-2. Add a `case` to `getTemplateSettings` returning the settings to apply. Start from `...colorReset(accent)` and set every `applyAccent*` flag explicitly.
+2. Add a `case` to `getTemplateSettings` returning the settings to apply. Start from `...base(accent)` and override only what makes the template different.
 
 ```typescript
 case 'my-template':
   return {
-    ...colorReset('#0f766e'),
-    themeColorStyle: 'basic',
+    ...base('#0f766e'),
     columnLayout: 'two',
     sectionHeadingStyle: 'left-bar',
     skillDisplay: 'bubble',
@@ -126,21 +125,35 @@ case 'my-template':
   }
 ```
 
-Prefer varying structural settings (`skillDisplay`, `entryLayout`, `detailsArrangement`, `sidebarTheme`, `headerLayout`) so the template changes the page's structure, not only its colour and font.
+Prefer varying structural settings so the template changes the page's structure, not only its colour and font:
+
+| Setting | Values | Effect |
+|---------|--------|--------|
+| `sidebarTheme` + `sidebarFill` | `accent` / `custom` (+ `sidebarBackgroundColor`); `tint` / `solid` | Tinted or solid sidebar panel. On a dark solid panel, text, headings and accent details turn light. |
+| `headerLayout` | `top` / `sidebar` | Name, photo and details across the top or at the top of the sidebar |
+| `themeColorStyle` | `basic` / `advanced` / `border` | Plain, full-bleed header band, or framed page |
+| `detailsPosition` | `below` / `beside` | Contact details under the name or in a column beside it |
+| `photoPosition` | `beside` / `top` / `bottom` | Beside the name, above it, or below it (in the sidebar: under the job title) |
+| `jobTitleStyle` / `jobTitlePlacement` | `caps` / `normal` / `italic`; `below` / `inline` | Small caps under the name, or as typed / italic on the name's line |
+| `sectionHeadingStyle` / `sectionHeadingAlign` | `underline` … `left-bar`; `left` / `center` | Heading decoration and position |
+| `sidebarSectionTypes` | e.g. `['summary', 'skills']` | Which section types go in the sidebar (sections the user drags still win) |
+| `columnDivider` | `true` / `false` | Hairline between the columns |
+| `entryLayout`, `skillDisplay`, `subtitlePlacement` | see types | Entry and skill structure |
+
+A new option needs a default in `base()` so other presets reset it.
 
 ### Step 3: Check the thumbnail
 
-`TemplateVisual` in `frontend/components/customize/CustomizePrimitives.tsx` draws each card from the preset's settings (columns, header band, sidebar tint, header in sidebar, photo, skill pills). No per-template work is needed unless your preset introduces a new visual trait.
+`TemplateVisual` in `frontend/components/customize/CustomizePrimitives.tsx` draws each card from the preset's settings (columns, header band, page border, tinted or solid sidebar, header in sidebar, details beside the name, photo, skill pills). No per-template work is needed unless your preset introduces a new visual trait.
 
 ### Step 4: Verify the output
 
 ```bash
 cd frontend
 npx vitest run tests/components/web/templateSmoke.test.tsx      # HTML renders for every preset
-npx tsx scripts/render-templates.tsx /tmp/renders --stress       # web-download PDFs with long content
 ```
 
-Export from the desktop app to confirm the printed PDF (no blank trailing page, margins intact).
+Export a PDF (desktop app, or Save as PDF in the browser) to confirm the printed output: no blank trailing page, margins intact, and try it with a photo.
 
 ## Headless Controller Reference
 

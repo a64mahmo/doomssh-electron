@@ -290,6 +290,18 @@ export interface ResumeSettings {
   headerLayout?: 'top' | 'sidebar'
   sidebarTheme?: 'none' | 'accent' | 'custom'
   sidebarBackgroundColor?: string
+  /** tint: a pale wash behind normal text. solid: the full colour, with light text on a dark pick. */
+  sidebarFill?: 'tint' | 'solid'
+  /** Section heading text position. */
+  sectionHeadingAlign?: 'left' | 'center'
+  /** caps: small spaced capitals. normal: larger, as typed. italic: as typed, in italics. */
+  jobTitleStyle?: 'caps' | 'normal' | 'italic'
+  /** below: under the name. inline: on the name's line. */
+  jobTitlePlacement?: 'below' | 'inline'
+  /** Section types that go in the sidebar, replacing the built-in split. Per-section drags still win. */
+  sidebarSectionTypes?: SectionType[]
+  /** Hairline between the main column and the sidebar. Default on. */
+  columnDivider?: boolean
   sidebarTextColor?: string
   columnReverse: boolean
   lineHeight: number

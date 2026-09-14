@@ -1,6 +1,6 @@
 import React from "react";
 import type { Resume, ResumeSection, SectionType, HeaderData } from "@/lib/store/types";
-import { buildCtx } from "@/lib/pdf/templateCtx";
+import { buildCtx, sidebarCtx, isSolidSidebar } from "@/lib/pdf/templateCtx";
 import { SectionRenderer, ContactLine } from "./sections";
 import { SECTION_ICONS } from "@/lib/icons/sectionIcons";
 import { cn } from "@/lib/utils";
@@ -229,6 +229,7 @@ function SectionHeading({
     display: "flex",
     alignItems: "center",
     gap: "8pt",
+    justifyContent: s.sectionHeadingAlign === "center" ? "center" : undefined,
     position: "relative",
   };
 
@@ -318,7 +319,7 @@ function SectionHeading({
 function CoverLetterBody({ resume, ctx }: { resume: Resume; ctx: ReturnType<typeof buildCtx> }) {
   const { colors, base, lh, pt, s } = ctx;
   const cl = resume.coverLetter;
-  // Mirrors components/pdf/ResumePDF.tsx — skip the automatic sign-off when the
+  // Skip the automatic sign-off when the
   // letter already closes with one.
   const hasSignOff = /(^|\n)\s*(sincerely|best regards|kind regards|warm regards|regards|best|respectfully|yours (truly|sincerely|faithfully)),?\s*$/i.test(cl?.body || '');
   if (!cl || !cl.body) return null;
@@ -530,7 +531,10 @@ export function MasterTemplate({
       } else if (assigned === "main") {
         mainSections.push(sec);
       } else {
-        if (s.columnLayout === "mix") {
+        if (s.sidebarSectionTypes) {
+          if (s.sidebarSectionTypes.includes(sec.type)) sidebarSections.push(sec);
+          else mainSections.push(sec);
+        } else if (s.columnLayout === "mix") {
           if (mixMainTypes.includes(sec.type)) mainSections.push(sec);
           else sidebarSections.push(sec);
         } else {
@@ -548,7 +552,7 @@ export function MasterTemplate({
   const mainWidth = 100 - sidebarWidth;
 
   const dividerColor = s.applyAccentDotsBarsBubbles ? colors.accent : (s.colorMode === 'basic' ? colors.text : colors.heading);
-  // Mirrors components/pdf/ResumePDF.tsx — honour sidebarTheme, tinting a dark
+  // Honour sidebarTheme, tinting a dark
   // pick instead of filling it so the sidebar text stays legible. Must resolve
   // to a real colour or the literal "transparent": the old `${tint}05` form
   // produced "transparent05", which only worked because it was invalid CSS.
@@ -558,21 +562,31 @@ export function MasterTemplate({
     s.headerLayout === "sidebar" && s.columnLayout !== "one" && sidebarSections.length > 0;
 
   // Contact details always stack in the narrow sidebar column.
-  const sidebarHeaderCtx = { ...ctx, s: { ...s, detailsArrangement: "column" as const, detailsPosition: "below" as const } };
+  const sCtx = sidebarCtx(ctx);
+  const solidSidebar = isSolidSidebar(s);
+  const sidebarHeaderCtx = { ...sCtx, s: { ...s, detailsArrangement: "column" as const, detailsPosition: "below" as const } };
 
   const sidebarThemed =
     s.sidebarTheme === "accent" ||
     (s.sidebarTheme === "custom" && !!s.sidebarBackgroundColor);
-  const sidebarFill = sidebarThemed
+  const sidebarFill = solidSidebar
+    ? colors.sidebarBg
+    : sidebarThemed
     ? (isLight(colors.sidebarBg) ? colors.sidebarBg : `${colors.sidebarBg}1a`)
     : (s.applyAccentDotsBarsBubbles ? `${colors.accent}0a` : "transparent");
   const bleedHeader =
     s.themeColorStyle === "advanced" ||
     (s.columnLayout !== "one" && sidebarSections.length > 0 && sidebarFill !== "transparent");
-  // Mirrors components/pdf/ResumePDF.tsx — shrink a name whose longest word
+  // Shrink a name whose longest word
   // would otherwise run past its column.
   const headerNameWidth = contentWidth(s) * (s.detailsPosition === "beside" && s.headerAlignment !== "center" ? 0.5 : 1);
-  const fittedNameSize = fitNameSize(h?.fullName || "Your Name", nameSize, headerNameWidth);
+  // The photo shares the name's row unless it sits above or below a centred name.
+  const photoReserve = s.photoEnabled && h?.photo &&
+    (s.headerAlignment !== "center" || s.photoPosition === "beside")
+    ? ({ XS: 28, S: 36, M: 48, L: 64, XL: 80 }[s.photoSize] || 48) + (s.photoGap || 12)
+    : 0;
+  const fittedNameSize = fitNameSize(h?.fullName || "Your Name", nameSize, headerNameWidth - photoReserve);
+  const sidebarNameSize = fitNameSize(h?.fullName || "Your Name", Math.min(nameSize, 17), contentWidth(s) * (sidebarWidth / 100) - 20);
 
   if (resume.kind === 'coverLetter') {
     return (
@@ -638,12 +652,12 @@ export function MasterTemplate({
               ) : null;
 
               const nameEl = (
-                <div className={cn("flex flex-col", isCenter ? "items-center text-center" : isRight ? "items-end text-right" : "items-start text-left")}>
-                  <h1 className="m-0 font-bold tracking-tight print:text-black" style={{ fontSize: pt(nameSize), color: s.themeColorStyle === 'advanced' ? advancedTextColor : (s.applyAccentName ? colors.accent : colors.text), lineHeight: 1.1 }}>
+                <div className={cn("flex flex-col", isCenter ? "items-center text-center" : isRight ? "items-end text-right" : "items-start text-left", s.jobTitlePlacement === "inline" && cn("flex-row flex-wrap items-baseline gap-x-[0.5em]", isCenter ? "justify-center" : isRight ? "justify-end" : "justify-start"))}>
+                  <h1 className="m-0 font-bold tracking-tight print:text-black" style={{ fontSize: pt(fittedNameSize), color: s.themeColorStyle === 'advanced' ? advancedTextColor : (s.applyAccentName ? colors.accent : colors.text), lineHeight: 1.1 }}>
                     {h?.fullName || "Your Name"}
                   </h1>
                   {h?.jobTitle && (
-                    <div className="mt-1 font-medium uppercase tracking-[0.2em] opacity-70 print:text-black print:opacity-100" style={{ fontSize: pt(base * 1.1), color: s.themeColorStyle === 'advanced' ? advancedTextColor : (s.applyAccentJobTitle ? colors.accent : colors.text) }}>
+                    <div className={cn("font-medium print:text-black print:opacity-100", s.jobTitlePlacement !== "inline" && "mt-1", !s.jobTitleStyle || s.jobTitleStyle === "caps" ? "uppercase tracking-[0.2em] opacity-70" : "opacity-90", s.jobTitleStyle === "italic" && "italic")} style={{ fontSize: pt(base * (!s.jobTitleStyle || s.jobTitleStyle === "caps" ? 1.1 : s.jobTitlePlacement === "inline" ? 1.9 : 1.3)), color: s.themeColorStyle === 'advanced' ? advancedTextColor : (s.applyAccentJobTitle ? colors.accent : colors.text) }}>
                       {h.jobTitle}
                     </div>
                   )}
@@ -654,9 +668,9 @@ export function MasterTemplate({
               if (isCenter) {
                 return (
                   <div className="flex flex-col items-center text-center pb-1 mb-1 w-full" style={{ color: s.themeColorStyle === 'advanced' ? advancedTextColor : colors.text }}>
-                    <div className="flex items-center justify-center w-full relative">
-                      {photoPos === "beside" && photoEl && <div className="absolute left-0 top-1/2 -translate-y-1/2">{photoEl}</div>}
-                      <div className="flex flex-col items-center">
+                    <div className="flex items-center justify-center max-w-full" style={{ gap: photoPos === "beside" && photoEl ? `${photoGap}pt` : 0 }}>
+                      {photoPos === "beside" && photoEl}
+                      <div className={cn("flex flex-col min-w-0", photoPos === "beside" && photoEl ? "items-start text-left [&>div]:items-start [&>div]:text-left" : "items-center")}>
                         {photoPos === "top" && photoEl && <div style={{ marginBottom: `${photoGap / 2}pt` }}>{photoEl}</div>}
                         {nameEl}
                         {photoPos === "bottom" && photoEl && <div style={{ marginTop: `${photoGap / 2}pt` }}>{photoEl}</div>}
@@ -723,7 +737,7 @@ export function MasterTemplate({
         lineHeight: lh,
         // A token longer than its column (a URL, a long compound name) would
         // otherwise escape the page. CSS can break it without inserting a
-        // hyphen, unlike the PDF renderer — see components/pdf/fonts.ts.
+        // hyphen.
         overflowWrap: "anywhere",
         boxSizing: "border-box",
         backgroundColor: (s.themeColorStyle === 'advanced' && s.backgroundColor === '#ffffff') ? `${colors.accent}05` : colors.background,
@@ -741,7 +755,7 @@ export function MasterTemplate({
       {fontHref && <link rel="stylesheet" href={fontHref} />}
 
       {/* ── Sidebar panel ────────────────────────────────────────── */}
-      {/* Mirrors components/pdf/ResumePDF.tsx: painted as a page-level layer so
+      {/* Painted as a page-level layer so
           it reaches the page edges without changing what columnWidth means. */}
       {s.columnLayout !== "one" && sidebarSections.length > 0 && sidebarFill !== "transparent" && (
         <div
@@ -760,7 +774,7 @@ export function MasterTemplate({
       )}
 
       {/* ── Header ───────────────────────────────────────────────── */}
-      {/* Mirrors components/pdf/ResumePDF.tsx: over a tinted sidebar panel the
+      {/* Over a tinted sidebar panel the
           header is painted in the page colour out to the edges. */}
       {!hideHeader && !headerInSidebar && (
         <div
@@ -824,6 +838,9 @@ export function MasterTemplate({
                     : isRight
                       ? "items-end text-right"
                       : "items-start text-left",
+                  // Job title on the name's line, sharing its baseline.
+                  s.jobTitlePlacement === "inline" &&
+                    cn("flex-row flex-wrap items-baseline gap-x-[0.5em]", isCenter ? "justify-center" : isRight ? "justify-end" : "justify-start"),
                 )}
               >
                 <h1
@@ -838,9 +855,9 @@ export function MasterTemplate({
                 </h1>
                 {h?.jobTitle && (
                   <div
-                    className="mt-1 font-medium uppercase tracking-[0.2em] opacity-70 print:text-black print:opacity-100"
+                    className={cn("font-medium print:text-black print:opacity-100", s.jobTitlePlacement !== "inline" && "mt-1", !s.jobTitleStyle || s.jobTitleStyle === "caps" ? "uppercase tracking-[0.2em] opacity-70" : "opacity-90", s.jobTitleStyle === "italic" && "italic")}
                     style={{ 
-                      fontSize: pt(base * 1.1),
+                      fontSize: pt(base * (!s.jobTitleStyle || s.jobTitleStyle === "caps" ? 1.1 : s.jobTitlePlacement === "inline" ? 1.9 : 1.3)),
                       color: s.themeColorStyle === 'advanced' ? advancedTextColor : (s.applyAccentJobTitle ? colors.accent : colors.text),
                     }}
                   >
@@ -864,15 +881,13 @@ export function MasterTemplate({
                   }}
                 >
                   {/* Identity Unit (Photo + Name) */}
-                  <div className="flex items-center justify-center w-full relative">
-                    {/* Photo on the side if specified */}
-                    {photoPos === "beside" && photoEl && (
-                      <div className="absolute left-0 top-1/2 -translate-y-1/2">
-                        {photoEl}
-                      </div>
-                    )}
+                  {/* Beside a centred name the
+                      photo and name form one centred group, in flow so a long name
+                      never runs underneath the photo. */}
+                  <div className="flex items-center justify-center max-w-full" style={{ gap: photoPos === "beside" && photoEl ? `${photoGap}pt` : 0 }}>
+                    {photoPos === "beside" && photoEl}
 
-                    <div className="flex flex-col items-center">
+                    <div className={cn("flex flex-col min-w-0", photoPos === "beside" && photoEl ? "items-start text-left [&>div]:items-start [&>div]:text-left" : "items-center")}>
                       {photoPos === "top" && photoEl && (
                         <div style={{ marginBottom: `${photoGap / 2}pt` }}>{photoEl}</div>
                       )}
@@ -1020,13 +1035,17 @@ export function MasterTemplate({
             borderRight:
               !s.columnReverse &&
               s.columnLayout !== "one" &&
-              sidebarSections.length > 0
+              sidebarSections.length > 0 &&
+              !solidSidebar &&
+              s.columnDivider !== false
                 ? `0.5pt solid ${dividerColor}`
                 : "none",
             borderLeft:
               s.columnReverse &&
               s.columnLayout !== "one" &&
-              sidebarSections.length > 0
+              sidebarSections.length > 0 &&
+              !solidSidebar &&
+              s.columnDivider !== false
                 ? `0.5pt solid ${dividerColor}`
                 : "none",
           }}
@@ -1063,53 +1082,97 @@ export function MasterTemplate({
               paddingBottom: 0,
             }}
           >
-            {headerInSidebar && !hideHeader && (
-              <div
-                style={{
-                  marginBottom: "12pt",
-                  textAlign: s.headerAlignment === "center" ? "center" : s.headerAlignment === "right" ? "right" : "left",
-                }}
-              >
+            {headerInSidebar && !hideHeader && (() => {
+              // In the sidebar everything stacks: photo, name, job title, then
+              // the details in one column.
+              const sc = sCtx.colors;
+              const px = ({ XS: 28, S: 36, M: 48, L: 64, XL: 80 } as const)[s.photoSize] || 48;
+              const bw = s.photoBorderStyle === "none" ? 0 : s.photoBorderStyle === "thin" ? 0.5 : s.photoBorderStyle === "medium" ? 1 : 1.5;
+              const textAlign = s.headerAlignment === "center" ? "center" : s.headerAlignment === "right" ? "right" : "left";
+              return (
                 <div
+                  data-header
                   style={{
-                    fontSize: pt(Math.min(ctx.nameSize, 17)),
-                    fontWeight: "bold",
-                    lineHeight: 1.1,
-                    color: s.applyAccentName ? colors.accent : colors.text,
+                    marginBottom: "12pt",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: textAlign === "center" ? "center" : textAlign === "right" ? "flex-end" : "flex-start",
+                    textAlign,
                   }}
                 >
-                  {h?.fullName || "Your Name"}
-                </div>
-                {h?.jobTitle && (
+                  {s.photoEnabled && h?.photo && s.photoPosition !== "bottom" && (
+                    <img
+                      src={h.photo}
+                      alt={h.fullName || "Profile"}
+                      style={{
+                        width: `${px}pt`,
+                        height: `${px}pt`,
+                        borderRadius: s.photoShape === "circle" ? "50%" : s.photoShape === "rounded" ? "6pt" : 0,
+                        objectFit: "cover",
+                        border: `${bw}pt solid ${s.photoBorderColor || "#e5e7eb"}`,
+                        marginBottom: `${(s.photoGap || 12) / 2}pt`,
+                        flexShrink: 0,
+                      }}
+                    />
+                  )}
                   <div
                     style={{
-                      fontSize: pt(base * 1.1),
-                      marginTop: "4pt",
-                      textTransform: "uppercase",
-                      letterSpacing: "1.5px",
-                      color: s.applyAccentJobTitle ? `${colors.accent}b3` : `${colors.text}b3`,
+                      fontSize: pt(sidebarNameSize),
+                      fontWeight: "bold",
+                      lineHeight: 1.1,
+                      color: s.applyAccentName ? sc.accent : sc.text,
                     }}
                   >
-                    {h.jobTitle}
+                    {h?.fullName || "Your Name"}
                   </div>
-                )}
-                {h && (
-                  <div style={{ marginTop: "8pt" }}>
-                    <ContactLine h={h} ctx={sidebarHeaderCtx} alignOverride={s.headerAlignment} />
-                  </div>
-                )}
-              </div>
-            )}
+                  {h?.jobTitle && (
+                    <div
+                      style={{
+                        fontSize: pt(base * (!s.jobTitleStyle || s.jobTitleStyle === "caps" ? 1.1 : s.jobTitlePlacement === "inline" ? 1.9 : 1.3)),
+                        marginTop: "4pt",
+                        textTransform: s.jobTitleStyle && s.jobTitleStyle !== "caps" ? "none" : "uppercase",
+                        letterSpacing: s.jobTitleStyle && s.jobTitleStyle !== "caps" ? 0 : "1.5px",
+                        fontStyle: s.jobTitleStyle === "italic" ? "italic" : "normal",
+                        color: s.applyAccentJobTitle ? `${sc.accent}b3` : `${sc.text}b3`,
+                      }}
+                    >
+                      {h.jobTitle}
+                    </div>
+                  )}
+                  {s.photoEnabled && h?.photo && s.photoPosition === "bottom" && (
+                    <img
+                      src={h.photo}
+                      alt={h.fullName || "Profile"}
+                      style={{
+                        width: `${px}pt`,
+                        height: `${px}pt`,
+                        borderRadius: s.photoShape === "circle" ? "50%" : s.photoShape === "rounded" ? "6pt" : 0,
+                        objectFit: "cover",
+                        border: `${bw}pt solid ${s.photoBorderColor || "#e5e7eb"}`,
+                        marginTop: `${s.photoGap || 12}pt`,
+                        marginBottom: "4pt",
+                        flexShrink: 0,
+                      }}
+                    />
+                  )}
+                  {h && (
+                    <div style={{ marginTop: "8pt", width: "100%" }}>
+                      <ContactLine h={h} ctx={sidebarHeaderCtx} alignOverride={s.headerAlignment} />
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             {sidebarSections.map((section, i) => (
               <div key={section.id} data-section>
                 <SectionRenderer
                   section={section}
-                  ctx={ctx}
+                  ctx={sCtx}
                   renderHeading={(title) => (
                     <SectionHeading
                       title={title}
                       type={section.type}
-                      ctx={ctx}
+                      ctx={sCtx}
                       isSidebar={true}
                       isFirst={i === 0 && !headerInSidebar}
                     />

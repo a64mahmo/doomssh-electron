@@ -12,14 +12,6 @@ interface ElectronAPI {
   setDebugMode: (enabled: boolean) => Promise<void>
   getDebugMode: () => Promise<boolean>
 
-  // PDF export — generates PDF in-renderer via @react-pdf, saves via native dialog
-  savePdf: (args: { bytes: number[]; fileName: string }) => Promise<{
-    success: boolean
-    path?: string
-    error?: string
-    cancelled?: boolean
-  }>
-
   // PDF export — lays out the HTML /print page in a hidden window, printToPDF, native save dialog
   exportPdf: (args: { resume: unknown; fileName: string }) => Promise<{
     success: boolean

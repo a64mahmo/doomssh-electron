@@ -27,15 +27,14 @@ The root builder layout (`frontend/app/builder/layout.tsx`) implements a `h-scre
 
 ## Modular Component Architecture
 
-The frontend is organized into highly modularized directories to manage the complexity of dual rendering and deep customization.
+The frontend is organized into modular directories to manage deep customization over a single HTML renderer.
 
 ### Customization Panel
 The design and styling logic is decoupled into `frontend/components/customize/sections/`. Each customization category (e.g., Typography, Colors, Layout) is an isolated component, coordinated by a main `CustomizePanel` shell. Common UI patterns are abstracted into `CustomizePrimitives.tsx`.
 
 ### Renderer Paths
--   **Web Path (source of truth):** `frontend/components/web/`. Contains `MasterTemplate.tsx` and modular section renderers in `sections/`. It powers the live preview and, through the `/print` page, the desktop app's PDF export (Chromium `printToPDF`). Elements carry `data-*` hooks (`data-resume-page`, `data-sidebar-panel`, `data-section-heading`, `data-entry`, `data-entry-desc`, `data-keep`) that the print CSS uses for page breaks — keep them when restructuring markup.
--   **PDF Path:** `frontend/components/pdf/`. Mirrors the web path with `@react-pdf/renderer` primitives and is used only for the web build's PDF download. Utilizes shared components like `HeaderRendererPDF` and `ContactLinePDF`. Visual changes to the web path must still be mirrored here while the web download depends on it.
--   **Shared layout math:** `frontend/lib/pdf/layoutFit.ts` (content width, name fitting, contact-row packing) and `frontend/lib/pdf/styleUtils.ts` are used by both paths.
+-   **Web Path (source of truth):** `frontend/components/web/`. Contains `MasterTemplate.tsx` and modular section renderers in `sections/`. It powers the live preview and, through the `/print` page, every PDF export (Chromium `printToPDF` on desktop, the browser print dialog on the web). Elements carry `data-*` hooks (`data-resume-page`, `data-sidebar-panel`, `data-section-heading`, `data-entry`, `data-entry-desc`, `data-keep`) that the print CSS uses for page breaks — keep them when restructuring markup.
+-   **Shared layout math:** `frontend/lib/pdf/layoutFit.ts` (content width, name fitting, contact-row packing) and `frontend/lib/pdf/styleUtils.ts` hold the layout math. `frontend/lib/pdf/templateCtx.ts` builds the template context, including `sidebarCtx` — the light colour set for content on a solid dark sidebar.
 
 ## State Management
 
@@ -80,7 +79,7 @@ The value comes from `NEXT_PUBLIC_APP_PLATFORM` at build time (`web` on Cloudfla
 
 ## Resume Templates
 
-Templates are **setting presets**, not separate components: every template renders through `MasterTemplate.tsx`. Presets are defined in `frontend/components/web/index.ts` (`TEMPLATE_META` and `getTemplateSettings`); see the [Template Customization Guide](./template-customization.md#creating-custom-templates). Because the web build's PDF download still uses `components/pdf/`, visual changes to the template must be mirrored there.
+Templates are **setting presets**, not separate components: every template renders through `MasterTemplate.tsx`. Presets are defined in `frontend/components/web/index.ts` (`TEMPLATE_META` and `getTemplateSettings`); see the [Template Customization Guide](./template-customization.md#creating-custom-templates). The preview and every PDF export render the same template, so there is nothing to mirror.
 
 ### Visual Standards
 -   **Unified Headings:** Section headings (font size, margins, and spacing) are unified across both main and sidebar columns to ensure a balanced, professional layout.

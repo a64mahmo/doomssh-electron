@@ -14,9 +14,6 @@ contextBridge.exposeInMainWorld('electron', {
   setDebugMode: (enabled: boolean): Promise<void> => ipcRenderer.invoke('set-debug-mode', enabled),
   getDebugMode: (): Promise<boolean> => ipcRenderer.invoke('get-debug-mode'),
 
-  savePdf: (args: { bytes: number[]; fileName: string }): Promise<{ success: boolean; path?: string; error?: string; cancelled?: boolean }> =>
-    ipcRenderer.invoke('save-pdf', args),
-
   // HTML → PDF: the main process renders /print in a hidden window and saves printToPDF output.
   exportPdf: (args: { resume: Resume; fileName: string }): Promise<{ success: boolean; path?: string; error?: string; cancelled?: boolean }> =>
     ipcRenderer.invoke('export-pdf', args),

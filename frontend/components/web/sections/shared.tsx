@@ -111,7 +111,7 @@ export function Entry({
             <div style={{ fontWeight: s.titleBold ? "bold" : "normal", fontSize: pt(base * currentTitleSize), lineHeight: 1.2, color: colors.text }}>
               {title}
               {subtitle && isSameLine && (
-                <span style={{ ...subStyle, marginLeft: "8pt" }}>{subtitle}</span>
+                <span style={{ ...subStyle, display: "inline", marginLeft: "0.5em" }}>{subtitle}</span>
               )}
             </div>
             {subtitle && !isSameLine && (
@@ -133,7 +133,7 @@ export function Entry({
             <div style={{ fontWeight: s.titleBold ? "bold" : "normal", fontSize: pt(base * currentTitleSize), lineHeight: 1.2, color: colors.text }}>
               {title}
               {subtitle && isSameLine && (
-                <span style={{ ...subStyle, marginLeft: "8pt" }}>{subtitle}</span>
+                <span style={{ ...subStyle, display: "inline", marginLeft: "0.5em" }}>{subtitle}</span>
               )}
             </div>
             {subtitle && !isSameLine && (
@@ -155,7 +155,7 @@ export function Entry({
             <div style={{ fontWeight: s.titleBold ? "bold" : "normal", fontSize: pt(base * currentTitleSize), lineHeight: 1.2, color: colors.text }}>
               {title}
               {subtitle && isSameLine && (
-                <span style={{ ...subStyle, marginLeft: "8pt" }}>{subtitle}</span>
+                <span style={{ ...subStyle, display: "inline", marginLeft: "0.5em" }}>{subtitle}</span>
               )}
             </div>
             <div className="flex items-center gap-3">
@@ -177,7 +177,7 @@ export function Entry({
           <div style={{ fontWeight: s.titleBold ? "bold" : "normal", fontSize: pt(base * currentTitleSize), lineHeight: 1.2, color: colors.text }}>
             {title}
             {subtitle && isSameLine && (
-              <span style={{ ...subStyle, marginLeft: "8pt" }}>{subtitle}</span>
+              <span style={{ ...subStyle, display: "inline", marginLeft: "0.5em" }}>{subtitle}</span>
             )}
           </div>
           {subtitle && !isSameLine && (

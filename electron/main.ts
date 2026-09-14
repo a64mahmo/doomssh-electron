@@ -448,23 +448,6 @@ ipcMain.handle('restart-and-install', () => {
   }
 })
 
-ipcMain.handle('save-pdf', async (_event, { bytes, fileName }: { bytes: number[]; fileName: string }) => {
-  try {
-    const buffer = Buffer.from(bytes)
-    const { filePath, canceled } = await dialog.showSaveDialog({
-      title: 'Save Resume',
-      defaultPath: fileName,
-      filters: [{ name: 'PDF Documents', extensions: ['pdf'] }],
-    })
-    if (canceled || !filePath) return { success: false, cancelled: true }
-    fs.writeFileSync(filePath, buffer)
-    return { success: true, path: filePath }
-  } catch (error) {
-    console.error('PDF Save Error:', error)
-    return { success: false, error: String(error) }
-  }
-})
-
 // ── IPC: HTML → PDF export ────────────────────────────────────────────────────
 // Lays the resume out on the /print page in a hidden window and captures it with
 // Chromium's printToPDF, so the PDF is exactly the HTML the preview renders.

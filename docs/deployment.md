@@ -5,7 +5,7 @@ DoomSSH builds two ways from the same frontend:
 | Build | How it runs | Storage | PDF export |
 |-------|-------------|---------|------------|
 | **Desktop** | Electron app (`npm run electron:dist`) | Vault JSON files | Chromium `printToPDF` |
-| **Web** | Static site on Cloudflare | Browser IndexedDB | `@react-pdf/renderer` download |
+| **Web** | Static site on Cloudflare | Browser IndexedDB | Browser print dialog → Save as PDF |
 
 ## Web build on Cloudflare Workers
 
@@ -42,7 +42,7 @@ If the variable is unset, the app detects the platform at runtime (no Electron b
 `isWeb()` / `isElectron()` from `frontend/lib/platform.ts` drive the differences:
 - **Storage:** resumes, cover letters and jobs are saved in IndexedDB (`frontend/lib/db/browserDb.ts`). Data does not sync between browsers or devices.
 - **Settings:** the dialog shows a storage note only — no Anthropic API key, Bug Mode or software updates.
-- **PDF:** downloaded via `@react-pdf/renderer`; a browser cannot print to a file without the print dialog.
+- **PDF:** Export loads the `/print` page in a hidden frame and opens the browser's print dialog; choose **Save as PDF**. It is the same HTML the desktop app prints, so output matches the preview.
 
 ## Desktop build
 

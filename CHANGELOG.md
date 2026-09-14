@@ -14,12 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Web build storage** — IndexedDB (Dexie) fallback for resumes, cover letters and jobs when running in a browser.
 - **Cloudflare deployment** — `frontend/wrangler.jsonc` serves the static export as Worker assets.
 - **Platform flag** — `NEXT_PUBLIC_APP_PLATFORM` build variable and `frontend/lib/platform.ts` (`isWeb` / `isElectron`).
-- **Templates** — Aspen, Vega, Lumen, Atlas, Sierra and Nova presets; template thumbnails reflect header bands, sidebar tints, photos and pills.
+- **Templates** — Aspen, Vega, Lumen, Atlas, Sierra and Nova presets; template thumbnails reflect header bands, borders, tinted and solid sidebars, details beside the name, photos and pills.
+- **Template options** — Solid sidebar fill (light text on a dark panel), photo below the name in the sidebar, centred section headings, job title style (caps / as typed / italic) and placement (below or beside the name), per-template sidebar section lists and a column divider toggle. New Customize controls for sidebar fill, heading alignment, job title, photo position and XL photo size.
 - **Logo** — Folded-corner D mark for the favicon, Electron app icons (`electron/resources/`) and in-app branding (`components/Logo.tsx`).
-- **Tooling** — `render-templates.tsx` `--matrix` and `--all-sections` modes, an all-sections fixture, an HTML template smoke test and section-mapping tests.
+- **Tooling** — An all-sections fixture, an HTML template smoke test, section-mapping tests and sidebar colour tests.
 
 ### Changed
 
+- **PDF export is HTML-only** — The web build now prints the same `/print` page through the browser's print dialog (Save as PDF) instead of generating a separate PDF. `@react-pdf/renderer`, `components/pdf/`, the render harness scripts and the unused `savePdf` IPC bridge were removed, so templates only need changing in one place.
+- **Template redesign** — Every preset now starts from a full layout reset and has its own page structure and photo treatment: solid sidebars (Blocks, Dublin, Berlin), header bands (Tokyo, Atlas), a framed page (Elite), warm paper (London) and more. Dublin and Milano were rebuilt around a dark photo sidebar and an inline italic job title.
 - **Browser Settings dialog** — Hides the Anthropic API key, Bug Mode and software updates; shows a storage note instead.
 - **Persistence** — Resume and job saving use a shared debounced saver that watches the document instead of the `isDirty` flag.
 
@@ -27,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Job dialog in Safari** — The New Application / job details dialog collapsed its form in Safari, leaving the footer over the tabs so applications could not be saved. The dialog now has a definite height.
 - **Lost saves** — Edits and new jobs made within a second of a previous save, or while one was in flight, were never written.
+- **Photos in templates** — A photo beside a centred name was positioned absolutely and could overlap long names; it now sits in flow beside the name. Photos never showed when the header was in the sidebar in the preview or desktop export. Name fitting now leaves room for the photo.
+- **Skill text on dark sidebars** — Skills shown with levels rendered in the page's dark text colour on a dark panel.
 - **Missing section content** — Award titles and dates, volunteering roles, reference names and positions, and certification/publication dates did not render.
 - **PDF layout** — Blank trailing pages, headings stranded at the foot of a page, large gaps from unsplittable entries, contact rows starting with a separator, contact details centred under a left-aligned header, overflowing names, skill pills spilling text, same-line subtitles indenting when wrapped, and level labels overlapping long skills.
 - **Cover letters** — No duplicate "Sincerely," when the letter already closes with a sign-off.

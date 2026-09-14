@@ -1,5 +1,5 @@
 import type { ResumeSettings } from '@/lib/store/types'
-import { resolveColors, nameFontSize, headingFontSize, bulletChar, type ResolvedColors } from './styleUtils'
+import { isLight, resolveColors, nameFontSize, headingFontSize, bulletChar, type ResolvedColors } from './styleUtils'
 import { cssFont, googleFontHref } from './templateHelpers'
 
 export interface TemplateCtx {
@@ -32,5 +32,40 @@ export function buildCtx(s: ResumeSettings): TemplateCtx {
     fontHref: googleFontHref(s.fontFamily),
     s,
     pt,
+  }
+}
+
+/** True when the sidebar panel is painted in its full colour. */
+export function isSolidSidebar(s: ResumeSettings): boolean {
+  return (
+    s.columnLayout !== 'one' &&
+    s.sidebarFill === 'solid' &&
+    (s.sidebarTheme === 'accent' || (s.sidebarTheme === 'custom' && !!s.sidebarBackgroundColor))
+  )
+}
+
+/**
+ * The context for content inside the sidebar column. On a solid dark panel
+ * every colour flips light — text, headings and the accent details (pills,
+ * dots, icons) — so nothing renders dark-on-dark. A light accent that differs
+ * from the panel is kept. Shared by both renderers.
+ */
+export function sidebarCtx(ctx: TemplateCtx): TemplateCtx {
+  if (!isSolidSidebar(ctx.s)) return ctx
+  const bg = ctx.colors.sidebarBg
+  if (isLight(bg)) return { ...ctx, colors: { ...ctx.colors, background: bg } }
+  const keepAccent = isLight(ctx.colors.accent) && ctx.colors.accent.toLowerCase() !== bg.toLowerCase()
+  const accent = keepAccent ? ctx.colors.accent : '#ffffff'
+  return {
+    ...ctx,
+    colors: {
+      ...ctx.colors,
+      text: '#f8fafc',
+      heading: accent,
+      subtitle: '#cbd5e1',
+      date: '#cbd5e1',
+      accent,
+      background: bg,
+    },
   }
 }

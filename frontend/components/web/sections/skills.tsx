@@ -1,8 +1,6 @@
 import React from "react";
 import type { SectionProps } from "./shared";
 import { getSectionViewModel } from "@/lib/renderers";
-// Never import from components/pdf here: that pulls @react-pdf/renderer into the
-// builder bundle, which PreviewPanel deliberately loads lazily.
 import { isLight, LEVEL_ORDER, LEVEL_LABELS, levelScore } from "@/lib/pdf/styleUtils";
 import type { ProficiencyLevel } from "@/lib/store/types";
 
@@ -32,7 +30,7 @@ export function SkillsSection({ section, ctx, renderHeading, isSidebar = false }
       {display === "compact" &&
         (() => {
           const items = viewModel.items as any[];
-          // Mirrors components/pdf/sections/skills.tsx — categorised skills get a
+          // Categorised skills get a
           // line each so the groups stay legible instead of collapsing into a
           // single · -joined run-on.
           const hasCategories = items.some((sk) => sk.category);
@@ -92,7 +90,7 @@ export function SkillsSection({ section, ctx, renderHeading, isSidebar = false }
                 marginBottom: "2pt",
               }}
             >
-              <div style={{ fontSize: `${base * 0.9}pt`, lineHeight: lh, flex: 1, minWidth: 0, marginRight: "8pt" }}>
+              <div style={{ fontSize: `${base * 0.9}pt`, lineHeight: lh, flex: 1, minWidth: 0, marginRight: "8pt", color: colors.text }}>
                 {sk.category ? `${sk.category}: ` : ""}
                 {sk.name}
               </div>
@@ -146,7 +144,7 @@ export function SkillsSection({ section, ctx, renderHeading, isSidebar = false }
         </div>
       )}
       {display === "bubble" && (
-        // Mirrors components/pdf/sections/skills.tsx — rounded-rectangle pills
+        // Rounded-rectangle pills
         // sized from the base font, so wrapped skills stay inside their pill.
         <div className="flex flex-wrap" style={{ gap: "4pt" }}>
           {viewModel.items.map((sk: any) => (

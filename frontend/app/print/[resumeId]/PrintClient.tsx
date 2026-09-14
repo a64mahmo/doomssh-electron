@@ -34,6 +34,9 @@ export function PrintClient({ params }: { params: Promise<{ resumeId: string }> 
         if (window.__DOOMSSH_PRINT_RESUME__) setResume(window.__DOOMSSH_PRINT_RESUME__)
       }
       window.addEventListener('doomssh:print-resume', take)
+      // The resume may have arrived between the first render and this effect,
+      // with its event dispatched before the listener existed.
+      take()
       return () => window.removeEventListener('doomssh:print-resume', take)
     }
     getResume(resumeId).then((r) => {

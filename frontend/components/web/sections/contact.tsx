@@ -148,7 +148,7 @@ export function ContactLine({
   const arrangement = s.detailsArrangement || "wrap";
   const align = s.headerAlignment;
   const isBeside = s.detailsPosition === "beside";
-  // Mirrors components/pdf/sections/contact.tsx — below the name the details
+  // Below the name the details
   // follow the header alignment; detailsTextAlignment applies beside it.
   const textAlign = alignOverride || (isBeside ? s.detailsTextAlignment || align : align);
   const isCenter = textAlign === "center";
@@ -201,7 +201,7 @@ export function ContactLine({
     );
   }
 
-  // Mirrors components/pdf/sections/contact.tsx — rows are packed up front so a
+  // Rows are packed up front so a
   // separator never opens a line.
   const rows = packContactRows(parts, {
     width: availableWidth ?? contentWidth(s) * (isBeside ? 0.5 : 1),

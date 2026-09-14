@@ -143,64 +143,92 @@ export function TemplateVisual({ id }: { id: TemplateId }) {
   const headerAlign = settings.headerAlignment || 'left'
   const accent = settings.accentColor || '#3b82f6'
   // Enough of each preset's character to tell templates apart at a glance:
-  // header band, tinted sidebar, header in the sidebar, photo and skill pills.
+  // header band, page border, tinted or solid sidebar, header in the sidebar,
+  // details beside the name, photo placement and skill pills.
   const band = settings.themeColorStyle === 'advanced'
-  const tint = isSidebar && settings.sidebarTheme === 'accent'
+  const border = settings.themeColorStyle === 'border'
+  const panelColor = settings.sidebarTheme === 'custom' && settings.sidebarBackgroundColor
+    ? settings.sidebarBackgroundColor
+    : accent
+  const themed = isSidebar && (settings.sidebarTheme === 'accent' || settings.sidebarTheme === 'custom')
+  const solid = themed && settings.sidebarFill === 'solid'
+  const tint = themed && !solid
   const headerInSidebar = isSidebar && settings.headerLayout === 'sidebar'
+  const detailsBeside = settings.detailsPosition === 'beside' && headerAlign !== 'center'
   const photo = !!settings.photoEnabled
+  const photoTop = headerAlign === 'center' && settings.photoPosition !== 'beside'
   const pills = settings.skillDisplay === 'bubble'
+  const bg = settings.backgroundColor || '#ffffff'
+  const onPanel = solid ? '#ffffffcc' : undefined
 
-  const photoEl = photo
-    ? <div className="size-5 rounded-full shrink-0" style={{ backgroundColor: `${accent}55` }} />
+  const photoEl = (size = 'size-5') => photo
+    ? <div className={cn(size, 'shrink-0', settings.photoShape === 'square' ? 'rounded-none' : settings.photoShape === 'rounded' ? 'rounded' : 'rounded-full')}
+        style={{ backgroundColor: band || solid ? '#ffffff66' : `${accent}55` }} />
     : null
 
-  const lines = (n: number) => (
+  const lines = (n: number, color?: string) => (
     <div className="space-y-1">
       {Array.from({ length: n }, (_, i) => (
-        <div key={i} className="h-0.5 rounded-full bg-gray-200" style={{ width: i === n - 1 ? '80%' : '100%' }} />
+        <div key={i} className="h-0.5 rounded-full" style={{ width: i === n - 1 ? '80%' : '100%', backgroundColor: color ?? '#e5e7eb' }} />
+      ))}
+    </div>
+  )
+
+  const contacts = (color: string, justify: string) => (
+    <div className={cn('flex gap-1.5 w-full', justify)}>
+      {[3, 5, 3].map((w, i) => (
+        <div key={i} className="h-1 rounded-full" style={{ width: w * 4, backgroundColor: color }} />
       ))}
     </div>
   )
 
   return (
-    <div className="flex-1 h-full bg-white flex flex-col overflow-hidden select-none transition-colors">
+    <div
+      className="flex-1 h-full flex flex-col overflow-hidden select-none transition-colors relative"
+      style={{ backgroundColor: bg, boxShadow: border ? `inset 0 0 0 4px ${accent}` : undefined }}
+    >
+      {isSidebar && (solid || tint) && (
+        <div
+          className={cn('absolute top-0 bottom-0 w-[38%]', isReverse ? 'left-0' : 'right-0')}
+          style={{ backgroundColor: solid ? panelColor : `${panelColor}1f` }}
+        />
+      )}
+
       {!headerInSidebar && (
         <div
           className={cn(
-            'flex items-center gap-2',
-            band ? 'px-4 pt-4 pb-3' : 'mx-4 pt-4 pb-3 border-b border-gray-200',
-            headerAlign === 'center' && 'justify-center',
+            'relative flex gap-2',
+            photoTop ? 'flex-col items-center' : 'items-center',
+            band ? 'px-4 pt-4 pb-3' : cn('mx-4 pt-4 pb-3', !solid && !tint && 'border-b border-gray-200'),
             headerAlign === 'right' && 'flex-row-reverse',
           )}
-          style={band ? { backgroundColor: accent } : undefined}
+          style={{ backgroundColor: band ? accent : (solid || tint) ? bg : undefined, ...(solid || tint) && !band ? { marginLeft: 0, marginRight: 0, paddingLeft: 16, paddingRight: 16 } : {} }}
         >
-          {photoEl}
+          {photoEl(photoTop ? 'size-6' : 'size-5')}
           <div className={cn(
-            'flex flex-col gap-2 flex-1',
+            'flex flex-col gap-2 flex-1 w-full',
             headerAlign === 'center' && 'items-center',
             headerAlign === 'right' && 'items-end',
           )}>
-            <div className="h-2.5 w-2/3 rounded-full" style={{ backgroundColor: band ? '#ffffff' : accent }} />
-            <div className={cn('flex gap-1.5 w-full',
-              headerAlign === 'center' ? 'justify-center' :
-              headerAlign === 'right' ? 'justify-end' : 'justify-start'
-            )}>
-              {[3, 5, 3].map((w, i) => (
-                <div key={i} className="h-1 rounded-full" style={{ width: w * 4, backgroundColor: band ? '#ffffff99' : '#d1d5db' }} />
-              ))}
+            <div className={cn('flex w-full gap-2', detailsBeside ? 'items-center' : 'flex-col',
+              headerAlign === 'center' && 'items-center', headerAlign === 'right' && 'items-end')}>
+              <div className={cn('h-2.5 rounded-full', detailsBeside ? 'w-1/2' : 'w-2/3')} style={{ backgroundColor: band ? '#ffffff' : accent }} />
+              {detailsBeside
+                ? <div className="flex-1 flex flex-col items-end gap-1">{[5, 4, 6].map((w, i) => <div key={i} className="h-0.5 rounded-full" style={{ width: w * 4, backgroundColor: '#d1d5db' }} />)}</div>
+                : contacts(band ? '#ffffff99' : '#d1d5db', headerAlign === 'center' ? 'justify-center' : headerAlign === 'right' ? 'justify-end' : 'justify-start')}
             </div>
           </div>
         </div>
       )}
 
-      <div className={cn('flex-1 flex gap-3 px-4', headerInSidebar ? 'pt-0' : 'pt-3', isReverse && 'flex-row-reverse')}>
+      <div className={cn('relative flex-1 flex gap-3 px-4', headerInSidebar ? 'pt-0' : 'pt-3', isReverse && 'flex-row-reverse')}>
         <div className={cn('flex-1 flex flex-col gap-3', headerInSidebar ? 'pt-4' : 'pt-1')}>
           <div className="space-y-2">
-            <div className="h-1.5 w-1/3 bg-gray-400 rounded-full" />
+            <div className="h-1.5 w-1/3 rounded-full" style={{ backgroundColor: settings.applyAccentHeadings ? accent : '#9ca3af' }} />
             {lines(3)}
           </div>
           <div className="space-y-2">
-            <div className="h-1.5 w-1/2 bg-gray-400 rounded-full" />
+            <div className="h-1.5 w-1/2 rounded-full" style={{ backgroundColor: settings.applyAccentHeadings ? accent : '#9ca3af' }} />
             {lines(2)}
           </div>
         </div>
@@ -209,25 +237,25 @@ export function TemplateVisual({ id }: { id: TemplateId }) {
           <div
             className={cn(
               'w-1/3 flex flex-col gap-3',
-              tint ? 'px-2 pt-3' : cn('pt-1 border-gray-200', isReverse ? 'border-r pr-3' : 'border-l pl-3'),
+              solid || tint ? cn('pt-3', isReverse ? 'pr-1' : 'pl-1') : cn('pt-1 border-gray-200', isReverse ? 'border-r pr-3' : 'border-l pl-3'),
             )}
-            style={tint ? { backgroundColor: `${accent}1f` } : undefined}
           >
             {headerInSidebar && (
-              <div className="flex flex-col items-center gap-1.5">
-                {photoEl}
-                <div className="h-1.5 w-4/5 rounded-full" style={{ backgroundColor: accent }} />
+              <div className="flex flex-col items-center gap-1.5 pt-1">
+                {photoEl('size-7')}
+                <div className="h-1.5 w-4/5 rounded-full" style={{ backgroundColor: solid ? '#ffffff' : accent }} />
+                {lines(2, onPanel)}
               </div>
             )}
             <div className="space-y-1.5">
-              <div className="h-1.5 w-full bg-gray-300 rounded-full" />
+              <div className="h-1.5 w-full rounded-full" style={{ backgroundColor: onPanel ?? '#d1d5db' }} />
               {pills ? (
                 <div className="flex flex-wrap gap-1">
                   {[6, 4, 5].map((w, i) => (
-                    <div key={i} className="h-1.5 rounded-full" style={{ width: w * 4, backgroundColor: accent }} />
+                    <div key={i} className="h-1.5 rounded-full" style={{ width: w * 4, backgroundColor: solid ? '#ffffff' : accent }} />
                   ))}
                 </div>
-              ) : lines(2)}
+              ) : lines(2, onPanel)}
             </div>
           </div>
         )}

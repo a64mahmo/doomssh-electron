@@ -15,14 +15,10 @@ As an AI agent, you are part of the core engineering team. You must adhere to th
 - **Async Warning:** Never access the `state` draft inside an `async` callback or `setTimeout`. The proxy is revoked immediately after the `set()` function returns.
 - **Persistence Pattern:** Store actions only mutate state and set `isDirty`. Saving is automatic: `persistenceManager.ts` / `jobPersistenceManager.ts` (built on `createDebouncedSaver` in `lib/store/debouncedSaver.ts`) watch the document and save 500 ms after edits pause. Never call `saveResume()` / `saveAllJobs()` from components, and never gate saves on `isDirty` transitions or rate limits — that silently drops edits.
 
-## 3. Rendering: HTML First, PDF Mirror
-- **Constraint:** The HTML template (`MasterTemplate.tsx` + `components/web/sections/`) is the source of truth. It renders the live preview and, through `app/print`, the desktop PDF export (Chromium `printToPDF`).
+## 3. Rendering: One HTML Template
+- **Constraint:** The HTML template (`MasterTemplate.tsx` + `components/web/sections/`) is the source of truth. It renders the live preview and, through `app/print`, every PDF: Chromium `printToPDF` on desktop, the browser's print dialog (Save as PDF) on the web. There is no second renderer to keep in step.
 - **Mandate (print hooks):** Keep the `data-*` attributes the print CSS depends on — `data-resume-page`, `data-sidebar-panel`, `data-section-heading`, `data-entry`, `data-entry-desc`, `data-keep`, `data-footer-fixed`. Removing one reintroduces blank pages or split headings.
-- **Mandate (mirror):** The browser build still downloads PDFs from `@react-pdf/renderer` (`ResumePDF.tsx`). Until that path is retired, apply visual changes to the corresponding PDF component too.
-- **Primitive Matching:**
-    - `<div>` / `<section>` → `<View>`
-    - `<span>` / `<p>` / `<h1>` → `<Text>`
-    - `border-bottom: 1px solid` → `borderBottomWidth: 1, borderBottomColor: ..., borderBottomStyle: 'solid'`
+- **Mandate (check print):** Check visual changes in print as well as the preview — load `/print/new/?mode=export` or export a PDF — since page breaks only happen there.
 
 ## 4. UI Architecture (Base UI + Tailwind)
 - **Constraint:** We use `@base-ui/react` (Radix) for unstyled primitives and Tailwind 4 for styling.
@@ -41,7 +37,7 @@ As an AI agent, you are part of the core engineering team. You must adhere to th
 
 ## 6. Layout Mathematics
 - **Constraint:** Pages are fixed-size; the preview is fluid.
-- **Mandate:** When implementing multi-column layouts, use explicit percentage widths (e.g., `68%` and `32%`) and solid spacing units (`pt` or `mm`). Avoid `flex-grow` behaviors that behave differently between Chromium and `@react-pdf`. Width estimates shared by both renderers live in `frontend/lib/pdf/layoutFit.ts`.
+- **Mandate:** When implementing multi-column layouts, use explicit percentage widths (e.g., `68%` and `32%`) and solid spacing units (`pt` or `mm`). Width estimates (content width, name fitting, contact-row packing) live in `frontend/lib/pdf/layoutFit.ts`.
 
 ## 7. Global Navigation & Layout
 - **Constraint:** The application uses a viewport-fixed layout (`h-screen overflow-hidden`) defined in `frontend/app/builder/layout.tsx`.
@@ -49,11 +45,11 @@ As an AI agent, you are part of the core engineering team. You must adhere to th
     - Never allow the root `<body>` or `main` container to scroll. Only individual panels (Sidebar, Editor, Preview) should have `overflow-y-auto`.
     - All builder pages must be wrapped by the global `Sidebar`.
 
-## 8. Shared Component DRY-ness (PDF)
+## 8. Shared Components (Templates)
 - **Constraint:** Resumes and Cover Letters must share visual branding.
 - **Mandate:** 
-    - Always use the `HeaderRendererPDF` component for document headers. Do not implement custom header logic in `CoverLetterPDF`.
-    - Use `ContactLinePDF` for all contact information rendering to ensure consistent wrapping and delimiter logic.
+    - Resume and cover letter headers both live in `MasterTemplate.tsx`; a header change (photo placement, job title style) must cover both branches.
+    - Use `ContactLine` (`components/web/sections/contact.tsx`) for all contact information rendering to ensure consistent wrapping and delimiter logic.
 
 ## 9. Unit Testing & Logic Validation
 - **Constraint:** Logic changes must be empirically verified before being committed.
@@ -76,12 +72,12 @@ As an AI agent, you are part of the core engineering team. You must adhere to th
 
 ### Verification Checklist for AI Changes
 1. [ ] Did I update `types.ts`?
-2. [ ] Did I make the UI change in `MasterTemplate.tsx` (keeping its print `data-*` hooks) and mirror it in `ResumePDF.tsx`?
+2. [ ] Did I make the UI change in `MasterTemplate.tsx`, keeping its print `data-*` hooks?
 3. [ ] Is the state mutation happening safely within an `immer` draft?
 4. [ ] Does the change support both Light and Dark modes?
 5. [ ] Did I avoid introducing node-only modules into the frontend bundle, and does the change work in the browser build (`isWeb()`)?
 6. [ ] Does the layout remain fixed to the viewport without global scrolling?
-7. [ ] Did I use shared PDF components (`HeaderRendererPDF`) for visual consistency?
+7. [ ] Did I add new template options to `base()` in `components/web/index.ts` so switching templates resets them?
 8. [ ] Did I add/update Vitest unit tests for any logic changes?
 9. [ ] Did I run `npm test --prefix frontend` and confirm all tests pass?
 10. [ ] If this is a release, did I bump `package.json` and push a matching `v*` tag?

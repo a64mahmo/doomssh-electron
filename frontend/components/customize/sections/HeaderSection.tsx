@@ -179,6 +179,29 @@ export function HeaderSection({ s, upd, sections }: HeaderSectionProps) {
             <ToggleRow id="name-bold" label="Bold Name" checked={s.nameBold} onCheckedChange={(v) => upd({ nameBold: v })} />
           </div>
         </div>
+
+        <div>
+          <FieldLabel>Job Title</FieldLabel>
+          <div className="grid grid-cols-2 gap-3">
+            <SegmentGroup
+              value={s.jobTitleStyle ?? 'caps'}
+              onChange={(v) => upd({ jobTitleStyle: v as 'caps' | 'normal' | 'italic' })}
+              options={[
+                { value: 'caps',   label: 'Small caps', render: () => <span className="text-[9px] font-bold tracking-widest">CAPS</span> },
+                { value: 'normal', label: 'As typed',   render: () => <span className="text-[10px] font-semibold">Aa</span> },
+                { value: 'italic', label: 'Italic',     render: () => <span className="text-[10px] font-semibold italic">Aa</span> },
+              ]}
+            />
+            <SegmentGroup
+              value={s.jobTitlePlacement ?? 'below'}
+              onChange={(v) => upd({ jobTitlePlacement: v as 'below' | 'inline' })}
+              options={[
+                { value: 'below',  label: 'Below name',   render: () => <span className="text-[10px] font-semibold">Below</span> },
+                { value: 'inline', label: 'Beside name',  render: () => <span className="text-[10px] font-semibold">Inline</span> },
+              ]}
+            />
+          </div>
+        </div>
       </ControlGroup>
 
       <Separator className="opacity-30" />
@@ -248,6 +271,7 @@ export function HeaderSection({ s, upd, sections }: HeaderSectionProps) {
                     { value: 'S',  label: 'Small',  render: () => <span className="text-[10px] font-bold">S</span> },
                     { value: 'M',  label: 'Medium', render: () => <span className="text-[10px] font-bold">M</span> },
                     { value: 'L',  label: 'Large',  render: () => <span className="text-[10px] font-bold">L</span> },
+                    { value: 'XL', label: 'Extra large', render: () => <span className="text-[10px] font-bold">XL</span> },
                   ]}
                 />
               </div>
@@ -265,6 +289,19 @@ export function HeaderSection({ s, upd, sections }: HeaderSectionProps) {
               </div>
             </div>
             
+            <div>
+              <FieldLabel>Position</FieldLabel>
+              <SegmentGroup
+                value={s.photoPosition}
+                onChange={(v) => upd({ photoPosition: v as PhotoPosition })}
+                options={[
+                  { value: 'beside', label: 'Beside', render: () => <span className="text-[10px] font-bold">Beside</span> },
+                  { value: 'top',    label: 'Above',  render: () => <span className="text-[10px] font-bold">Above</span> },
+                  { value: 'bottom', label: 'Below',  render: () => <span className="text-[10px] font-bold">Below</span> },
+                ]}
+              />
+            </div>
+
             <SliderRow
               id="photo-gap-header"
               label="Photo Gap"

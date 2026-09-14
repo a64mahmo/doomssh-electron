@@ -132,6 +132,52 @@ export function EntrySection({ s, upd }: EntrySectionProps) {
               min={10} max={60} step={1} onChange={(v) => upd({ columnWidth: v })}
             />
           )}
+
+          {s.columnLayout !== 'one' && (
+            <div>
+              <ToggleRow
+                id="column-divider"
+                label="Column divider line"
+                checked={s.columnDivider !== false}
+                onCheckedChange={(v) => upd({ columnDivider: v })}
+              />
+              <FieldLabel>Sidebar Fill</FieldLabel>
+              <VisualSegmentGroup
+                columns={3}
+                showLabel={true}
+                value={s.sidebarTheme === 'none' || !s.sidebarTheme ? 'none' : (s.sidebarFill ?? 'tint')}
+                onChange={(v) => upd(
+                  v === 'none'
+                    ? { sidebarTheme: 'none' }
+                    : {
+                        // Keep a custom panel colour; otherwise fill with the accent.
+                        sidebarTheme: s.sidebarTheme === 'custom' && s.sidebarBackgroundColor ? 'custom' : 'accent',
+                        sidebarFill: v as 'tint' | 'solid',
+                      },
+                )}
+                options={[
+                  { value: 'none', label: 'None', render: () => (
+                    <div className="flex gap-1 w-10 h-4 text-muted-foreground/40">
+                      <div className="flex-1 border border-current rounded-sm" />
+                      <div className="w-1/3 border border-current rounded-sm" />
+                    </div>
+                  )},
+                  { value: 'tint', label: 'Tint', render: () => (
+                    <div className="flex gap-1 w-10 h-4 text-muted-foreground/40">
+                      <div className="flex-1 border border-current rounded-sm" />
+                      <div className="w-1/3 bg-current/30 rounded-sm" />
+                    </div>
+                  )},
+                  { value: 'solid', label: 'Solid', render: () => (
+                    <div className="flex gap-1 w-10 h-4 text-muted-foreground/40">
+                      <div className="flex-1 border border-current rounded-sm" />
+                      <div className="w-1/3 bg-current rounded-sm" />
+                    </div>
+                  )},
+                ]}
+              />
+            </div>
+          )}
         </div>
       </ControlGroup>
 
