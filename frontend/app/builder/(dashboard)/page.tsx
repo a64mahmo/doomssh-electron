@@ -4,13 +4,13 @@ import { useRouter } from 'next/navigation'
 import {
   Plus, MoreHorizontal, Copy, Trash2, Pencil,
 } from 'lucide-react'
-import { Logo } from '@/components/Logo'
+import { PageHeader } from '@/components/PageHeader'
+import { WelcomePanel } from '@/components/WelcomePanel'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getAllResumes, deleteResume, duplicateResume, createNewResume, saveResume } from '@/lib/db/database'
 import { generateId } from '@/lib/utils/ids'
 import type { Resume } from '@/lib/store/types'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -34,16 +34,17 @@ export default function ResumesDashboard() {
   const router = useRouter()
   const [resumes, setResumes] = useState<Resume[]>([])
   const [loading, setLoading] = useState(true)
-  const [isWin, setIsWin] = useState(false)
 
   useEffect(() => {
-    if (window.electron) {
-      setIsWin(window.electron.platform === 'win32')
-    }
-    getAllResumes().then((existing) => {
-      setResumes(existing)
-      setLoading(false)
-    })
+    // The dashboard renders nothing until this settles, so a failed read must
+    // still end loading rather than leave a blank page.
+    getAllResumes()
+      .then(setResumes)
+      .catch((err) => {
+        console.error('Failed to load resumes:', err)
+        toast.error("Couldn't load your resumes")
+      })
+      .finally(() => setLoading(false))
   }, [])
 
   async function handleCreate() {
@@ -52,6 +53,11 @@ export default function ResumesDashboard() {
     resume.id = id
     await saveResume(resume)
     router.push(`/builder/new?id=${id}`)
+  }
+
+  async function handleStartFromExample(resume: Resume) {
+    await saveResume(resume)
+    router.push(`/builder/new?id=${resume.id}`)
   }
 
   async function handleDuplicate(id: string) {
@@ -72,32 +78,30 @@ export default function ResumesDashboard() {
 
   return (
     <>
-      <header className={cn(
-        "border-b border-border px-6 h-11 flex items-center justify-between shrink-0 bg-background drag",
-        isWin && "win32-padding"
-      )}>
-        <div className="flex items-center gap-2.5 no-drag">
-          <Logo />
-          <span className="font-bold text-sm tracking-tight">DoomSSH</span>
-        </div>
-        <div className="no-drag">
-          <Button
-            onClick={handleCreate}
-            size="sm"
-            className="h-7.5 bg-foreground text-background hover:bg-foreground/90 gap-1.5 font-semibold text-xs px-4 rounded-lg"
-          >
-            <Plus size={14} />
-            New Resume
-          </Button>
-        </div>
-      </header>
+      <PageHeader title="Resumes">
+        <Button
+          onClick={handleCreate}
+          size="sm"
+          aria-label="New Resume"
+          className="h-7.5 bg-foreground text-background hover:bg-foreground/90 gap-1.5 font-semibold text-xs px-3 sm:px-4 rounded-lg"
+        >
+          <Plus size={14} />
+          <span className="hidden sm:inline">New Resume</span>
+        </Button>
+      </PageHeader>
 
-      <main className="flex-1 overflow-y-auto px-8 py-12">
+      <main className="flex-1 overflow-y-auto px-4 sm:px-8 py-8 sm:py-12">
         <div className="max-w-6xl mx-auto">
+          {/* Render nothing until the (fast, local) read finishes, so a first-time
+              visitor goes straight to the welcome panel without a flash of the grid. */}
+          {loading ? null : resumes.length === 0 ? (
+            <WelcomePanel onStartBlank={handleCreate} onStartFromExample={handleStartFromExample} />
+          ) : (
+          <>
           <div className="mb-10">
-            <h1 className="text-2xl font-bold tracking-tight mb-1">My Resumes</h1>
+            <h2 className="text-2xl font-bold tracking-tight mb-1">My Resumes</h2>
             <p className="text-muted-foreground text-sm">
-              {loading ? 'Loading…' : `${resumes.length} resume${resumes.length !== 1 ? 's' : ''}`}
+              {`${resumes.length} resume${resumes.length !== 1 ? 's' : ''}`}
             </p>
           </div>
 
@@ -125,6 +129,8 @@ export default function ResumesDashboard() {
               ))}
             </AnimatePresence>
           </div>
+          </>
+          )}
         </div>
       </main>
     </>

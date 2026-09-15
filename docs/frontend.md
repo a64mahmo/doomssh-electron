@@ -17,9 +17,12 @@ DoomSSH uses a "Fixed-Viewport" architecture to provide a stable, professional d
 
 ### Global Sidebar
 The `Sidebar` (`frontend/components/Sidebar.tsx`) is the primary navigation hub. It is:
-- **Collapsible:** Saves horizontal space for editing.
+- **Collapsible:** Saves horizontal space for editing. It collapses automatically below 768px and inside the editor; a manual toggle overrides that until the automatic state changes.
 - **Animated:** Uses `framer-motion` for smooth width transitions.
-- **Context-Aware:** Highlights the active route and provides tooltips when collapsed.
+- **Context-Aware:** Route items are `next/link` links with `aria-current="page"`. The highlight follows the clicked item immediately (an optimistic pending target) rather than waiting for `usePathname()`, and items show tooltips when collapsed.
+- **What's New:** A sidebar item opens `WhatsNewDialog`, which renders the hand-written notes in `frontend/lib/whatsNew.ts` (newest first, stable `id`s). The unread dot compares the stored id in `localStorage` (`doomssh:whats-new-seen`) with the newest entry; users with no documents start caught up. Add an entry there for any user-visible release.
+- **First run:** An empty Resumes dashboard renders `WelcomePanel` (blank or one of three example resumes) instead of the grid.
+- **Page headers:** Dashboard pages (Resumes, Cover Letters, Job Tracker) use `components/PageHeader.tsx`, which owns the Electron `drag` region and Windows title-bar padding.
 - **Shared Settings:** Integrates the global settings dialog and theme switcher. The dialog depends on the build: the desktop app shows Software Update, the Anthropic API key and Bug Mode; the web build shows only a note that data is stored in this browser.
 
 ### Fixed Layout Architecture

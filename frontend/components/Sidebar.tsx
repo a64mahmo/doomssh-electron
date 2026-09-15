@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useState, useEffect, useSyncExternalStore } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useResumeStore } from "@/lib/store/resumeStore";
 import { useTheme } from "next-themes";
 import {
@@ -11,6 +12,7 @@ import {
   Settings as SettingsIcon,
   Sun,
   Moon,
+  Monitor,
   LayoutGrid,
   Database,
   Key,
@@ -21,9 +23,19 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
+  Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/Logo";
+import { WhatsNewDialog } from "@/components/WhatsNewDialog";
+import { getAllCoverLetters, getAllResumes } from "@/lib/db/database";
+import {
+  hasUnseenWhatsNew,
+  latestWhatsNewId,
+  markWhatsNewSeen,
+  readSeenWhatsNew,
+} from "@/lib/whatsNew";
 import { useUIStore } from "@/lib/store/uiStore";
 import { isElectron } from "@/lib/platform";
 import { Button } from "@/components/ui/button";
@@ -50,26 +62,30 @@ function NavItem({
   icon,
   label,
   active,
+  href,
   onClick,
   collapsed,
+  badge,
 }: {
   icon: React.ReactNode;
   label: string;
   active?: boolean;
-  onClick?: () => void;
+  /** Small unread dot, announced to screen readers as "new". */
+  badge?: boolean;
+  /** Route links render as <Link>; items without a route render as <button>. */
+  href?: string;
+  onClick?: (e: React.MouseEvent) => void;
   collapsed?: boolean;
 }) {
-  const content = (
-    <div
-      onClick={onClick}
-      className={cn(
-        "relative w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer group",
-        active
-          ? "text-background"
-          : "text-muted-foreground hover:text-foreground hover:bg-accent",
-        collapsed ? "justify-center" : "justify-between",
-      )}
-    >
+  const className = cn(
+    "relative w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer group text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+    active
+      ? "text-background"
+      : "text-muted-foreground hover:text-foreground hover:bg-accent",
+    collapsed ? "justify-center" : "justify-between",
+  );
+  const inner = (
+    <>
       {active && (
         <motion.div
           layoutId="nav-active-pill"
@@ -86,7 +102,38 @@ function NavItem({
         {icon}
         {!collapsed && <span>{label}</span>}
       </div>
-    </div>
+      {badge && (
+        <span
+          aria-hidden
+          className={cn(
+            "z-10 w-2 h-2 rounded-full bg-sky-500",
+            collapsed && "absolute top-1.5 right-3",
+          )}
+        />
+      )}
+    </>
+  );
+  const ariaLabel = collapsed || badge ? `${label}${badge ? " (new)" : ""}` : undefined;
+
+  const content = href ? (
+    <Link
+      href={href}
+      onClick={onClick}
+      aria-label={ariaLabel}
+      aria-current={active ? "page" : undefined}
+      className={className}
+    >
+      {inner}
+    </Link>
+  ) : (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={ariaLabel}
+      className={className}
+    >
+      {inner}
+    </button>
   );
 
   if (collapsed) {
@@ -101,17 +148,53 @@ function NavItem({
   return content;
 }
 
+const THEME_OPTIONS = [
+  { value: "light", label: "Light Mode", icon: Sun },
+  { value: "system", label: "System Theme", icon: Monitor },
+  { value: "dark", label: "Dark Mode", icon: Moon },
+] as const;
+
+const NARROW_QUERY = "(max-width: 767px)";
+
+const noopSubscribe = () => () => {};
+
+function subscribeNarrow(onChange: () => void) {
+  const mq = window.matchMedia?.(NARROW_QUERY);
+  if (!mq) return () => {};
+  mq.addEventListener("change", onChange);
+  return () => mq.removeEventListener("change", onChange);
+}
+
 export function Sidebar() {
-  const router = useRouter();
   const pathname = usePathname();
-  const editingKind = useResumeStore((s) => s.resume?.kind);
+  const editingResume = useResumeStore((s) => s.resume);
   const { theme, setTheme } = useTheme();
+  // next-themes only knows the theme in the browser. Until hydration finishes,
+  // render no theme as selected so the markup matches the server HTML.
+  const hydrated = useSyncExternalStore(noopSubscribe, () => true, () => false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [whatsNewOpen, setWhatsNewOpen] = useState(false);
+  const [whatsNewUnread, setWhatsNewUnread] = useState(false);
   const [apiKey, setApiKey] = useState("");
   const [appVersion, setAppVersion] = useState("");
   const [isMac, setIsMac] = useState(false);
   const [isWin, setIsWin] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const isNarrow = useSyncExternalStore(
+    subscribeNarrow,
+    () => window.matchMedia?.(NARROW_QUERY).matches ?? false,
+    () => false,
+  );
+  // The user's own collapse choice, remembered only for the context it was made
+  // in (see `collapsed` below).
+  const [manualCollapse, setManualCollapse] = useState<{
+    value: boolean;
+    auto: boolean;
+  } | null>(null);
+  // Nav target clicked but not yet rendered, so the highlight moves immediately.
+  const [pendingNav, setPendingNav] = useState<{
+    href: string;
+    from: string | null;
+  } | null>(null);
 
   const globalDebugMode = useUIStore((s) => s.globalDebugMode);
   const setGlobalDebugMode = useUIStore((s) => s.setGlobalDebugMode);
@@ -135,6 +218,38 @@ export function Sidebar() {
       setIsWin(window.electron.platform === "win32");
     }
   }, [setGlobalDebugMode]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const seen = readSeenWhatsNew();
+      if (seen === latestWhatsNewId()) return;
+      let hasData = false;
+      if (seen === null) {
+        try {
+          const [resumes, letters] = await Promise.all([getAllResumes(), getAllCoverLetters()]);
+          hasData = resumes.length + letters.length > 0;
+        } catch {
+          // No vault yet (desktop) or storage blocked: treat as a new user.
+        }
+        // A brand-new user has nothing to catch up on; start them at the latest notes.
+        if (!hasData) {
+          markWhatsNewSeen();
+          return;
+        }
+      }
+      if (!cancelled) setWhatsNewUnread(hasUnseenWhatsNew(seen, hasData));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function openWhatsNew() {
+    setWhatsNewOpen(true);
+    setWhatsNewUnread(false);
+    markWhatsNewSeen();
+  }
 
   async function saveSettings() {
     if (window.electron) {
@@ -173,10 +288,39 @@ export function Sidebar() {
   // serves both resumes and cover letters; highlight whichever is open.
   const path = pathname?.replace(/\/+$/, "") || "/";
   const inEditor = /^\/builder\/(?!cover-letter|jobs|interview-prep)[^/]+$/.test(path);
-  const isResumes = path === "/builder" || (inEditor && editingKind !== "coverLetter");
-  const isCover = path.startsWith("/builder/cover-letter") || (inEditor && editingKind === "coverLetter");
+  // The store can still hold the previously edited document for a frame, and is
+  // empty while the new one loads; only trust it once it matches the URL's id.
+  const editorId =
+    inEditor && typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("id") ?? path.split("/").pop()
+      : null;
+  const editingKind =
+    editingResume && editingResume.id === editorId
+      ? editingResume.kind === "coverLetter" ? "coverLetter" : "resume"
+      : null;
+  const isResumes = path === "/builder" || editingKind === "resume";
+  const isCover = path.startsWith("/builder/cover-letter") || editingKind === "coverLetter";
   const isJobs = path.startsWith("/builder/jobs");
   const isInterview = path.startsWith("/builder/interview-prep");
+
+  // Collapse automatically on narrow windows and in the editor, which needs the
+  // width. A manual toggle wins until that automatic state changes.
+  const autoCollapsed = isNarrow || inEditor;
+  const collapsed =
+    manualCollapse && manualCollapse.auto === autoCollapsed
+      ? manualCollapse.value
+      : autoCollapsed;
+  const setCollapsed = (value: boolean) =>
+    setManualCollapse({ value, auto: autoCollapsed });
+
+  const pendingHref = pendingNav?.from === pathname ? pendingNav.href : null;
+  const isActive = (href: string, routeActive: boolean) =>
+    pendingHref ? pendingHref === href : routeActive;
+  const navigate = (href: string, routeActive: boolean) => (e: React.MouseEvent) => {
+    // Let modified clicks (new tab/window) through without moving the highlight.
+    if (routeActive || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    setPendingNav({ href, from: pathname });
+  };
 
   return (
     <>
@@ -201,9 +345,15 @@ export function Sidebar() {
             )}
           >
             {!collapsed && (
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 no-drag">
-                Menu
-              </span>
+              <Link
+                href="/builder"
+                className="no-drag flex items-center gap-2 min-w-0 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+              >
+                <Logo />
+                <span className="font-bold text-sm tracking-tight truncate">
+                  DoomSSH
+                </span>
+              </Link>
             )}
 
             {/* Toggle button - only show in top row if not collapsed OR not Mac */}
@@ -255,43 +405,40 @@ export function Sidebar() {
         </div>
 
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          <NavItem
-            icon={<LayoutGrid size={18} />}
-            label="Resumes"
-            active={isResumes}
-            onClick={() => router.push("/builder")}
-            collapsed={collapsed}
-          />
-          <NavItem
-            icon={<Mail size={18} />}
-            label="Cover Letter"
-            active={isCover}
-            onClick={() => router.push("/builder/cover-letter")}
-            collapsed={collapsed}
-          />
-          <NavItem
-            icon={<Briefcase size={18} />}
-            label="Job Tracker"
-            active={isJobs}
-            onClick={() => router.push("/builder/jobs")}
-            collapsed={collapsed}
-          />
-          <NavItem
-            icon={<MessageSquare size={18} />}
-            label="Interview Prep"
-            active={isInterview}
-            onClick={() => router.push("/builder/interview-prep")}
-            collapsed={collapsed}
-          />
+          {[
+            { href: "/builder", label: "Resumes", icon: LayoutGrid, routeActive: isResumes },
+            { href: "/builder/cover-letter", label: "Cover Letter", icon: Mail, routeActive: isCover },
+            { href: "/builder/jobs", label: "Job Tracker", icon: Briefcase, routeActive: isJobs },
+            { href: "/builder/interview-prep", label: "Interview Prep", icon: MessageSquare, routeActive: isInterview },
+          ].map(({ href, label, icon: Icon, routeActive }) => (
+            <NavItem
+              key={href}
+              icon={<Icon size={18} />}
+              label={label}
+              href={href}
+              active={isActive(href, routeActive)}
+              onClick={navigate(href, routeActive)}
+              collapsed={collapsed}
+            />
+          ))}
         </nav>
 
         <div className="p-3 border-t border-border space-y-4">
+          <div className="space-y-1">
+          <NavItem
+            icon={<Sparkles size={18} />}
+            label="What's New"
+            onClick={openWhatsNew}
+            badge={whatsNewUnread}
+            collapsed={collapsed}
+          />
           <NavItem
             icon={<SettingsIcon size={18} />}
             label="Settings"
             onClick={() => setSettingsOpen(true)}
             collapsed={collapsed}
           />
+          </div>
 
           <div
             className={cn(
@@ -299,75 +446,33 @@ export function Sidebar() {
               collapsed && "flex-col",
             )}
           >
-            {!collapsed ? (
-              <>
+            {THEME_OPTIONS.map(({ value, label, icon: Icon }) => {
+              const selected = hydrated && theme === value;
+              const button = (
                 <button
-                  onClick={() => setTheme("light")}
-                  aria-label="Light Mode"
+                  type="button"
+                  onClick={() => setTheme(value)}
+                  aria-label={label}
+                  aria-pressed={selected}
                   className={cn(
                     "w-full flex items-center justify-center py-1.5 rounded-md transition-all",
-                    theme === "light"
-                      ? "bg-background shadow-sm"
-                      : "text-muted-foreground",
+                    selected
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  <Sun size={14} />
+                  <Icon size={14} />
                 </button>
-                <button
-                  onClick={() => setTheme("dark")}
-                  aria-label="Dark Mode"
-                  className={cn(
-                    "w-full flex items-center justify-center py-1.5 rounded-md transition-all",
-                    theme === "dark"
-                      ? "bg-background shadow-sm"
-                      : "text-muted-foreground",
-                  )}
-                >
-                  <Moon size={14} />
-                </button>
-              </>
-            ) : (
-              <>
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <button
-                        onClick={() => setTheme("light")}
-                        aria-label="Light Mode"
-                        className={cn(
-                          "w-full flex items-center justify-center py-1.5 rounded-md transition-all",
-                          theme === "light"
-                            ? "bg-background shadow-sm"
-                            : "text-muted-foreground",
-                        )}
-                      >
-                        <Sun size={14} />
-                      </button>
-                    }
-                  />
-                  <TooltipContent side="right">Light Mode</TooltipContent>
+              );
+              return (
+                <Tooltip key={value}>
+                  <TooltipTrigger render={button} />
+                  <TooltipContent side={collapsed ? "right" : "top"}>
+                    {label}
+                  </TooltipContent>
                 </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger
-                    render={
-                      <button
-                        onClick={() => setTheme("dark")}
-                        aria-label="Dark Mode"
-                        className={cn(
-                          "w-full flex items-center justify-center py-1.5 rounded-md transition-all",
-                          theme === "dark"
-                            ? "bg-background shadow-sm"
-                            : "text-muted-foreground",
-                        )}
-                      >
-                        <Moon size={14} />
-                      </button>
-                    }
-                  />
-                  <TooltipContent side="right">Dark Mode</TooltipContent>
-                </Tooltip>
-              </>
-            )}
+              );
+            })}
           </div>
 
           {!collapsed && (
@@ -385,6 +490,8 @@ export function Sidebar() {
           )}
         </div>
       </motion.aside>
+
+      <WhatsNewDialog open={whatsNewOpen} onOpenChange={setWhatsNewOpen} />
 
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
         <DialogContent className="sm:max-w-[425px]">

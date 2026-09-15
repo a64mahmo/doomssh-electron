@@ -20,7 +20,7 @@ export function ControlGroup({ title, children, className, rightElement }: { tit
     <div className={cn('space-y-3', className)}>
       {title && (
         <div className="flex items-center justify-between pb-1 border-b border-border/40">
-          <p className="text-[9px] font-bold text-muted-foreground/35 uppercase tracking-[0.12em]">
+          <p className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-[0.12em]">
             {title}
           </p>
           {rightElement}

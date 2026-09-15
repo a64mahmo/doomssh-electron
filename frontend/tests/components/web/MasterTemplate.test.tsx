@@ -39,6 +39,21 @@ const mockResume: Resume = {
 }
 
 describe('MasterTemplate Rendering', () => {
+  it('shows a placeholder name only in the live preview, never in print', () => {
+    const unnamed: Resume = {
+      ...mockResume,
+      sections: mockResume.sections.map((sec) =>
+        sec.type === 'header' ? { ...sec, items: { ...(sec.items as object), fullName: '' } } : sec,
+      ) as Resume['sections'],
+    }
+    const { unmount } = render(<MasterTemplate resume={unnamed} />)
+    expect(screen.queryByText('Your Name')).toBeNull()
+    unmount()
+
+    render(<MasterTemplate resume={unnamed} showPlaceholders />)
+    expect(screen.getByText('Your Name')).toBeInTheDocument()
+  })
+
   it('renders header name and title', () => {
     render(<MasterTemplate resume={mockResume} />)
     expect(screen.getByText('John Doe')).toBeInTheDocument()

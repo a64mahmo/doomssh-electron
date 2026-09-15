@@ -178,11 +178,11 @@ export const DEFAULT_SETTINGS: ResumeSettings = {
 }
 
 export const DEFAULT_HEADER: HeaderData = {
-  fullName: 'Your Name',
-  jobTitle: 'Your Job Title',
-  email: 'email@example.com',
-  phone: '+1 (555) 000-0000',
-  location: 'City, Country',
+  fullName: '',
+  jobTitle: '',
+  email: '',
+  phone: '',
+  location: '',
   website: '',
   linkedin: '',
   github: '',

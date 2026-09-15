@@ -183,6 +183,8 @@ const ABSTRACT_ICONS: Record<SectionType, React.ReactNode> = {
 };
 
 interface Props {
+  /** Live preview only: show a faded "Your Name" when the name is empty. Never in print/PDF. */
+  showPlaceholders?: boolean;
   resume: Resume;
   pads?: number[];
   hideFooter?: boolean;
@@ -476,6 +478,7 @@ export function MasterTemplate({
   hideHeader,
   isMeasurement,
   sectionsOverride,
+  showPlaceholders,
 }: Props) {
   const ctx = buildCtx(resume.settings);
   const {
@@ -494,6 +497,7 @@ export function MasterTemplate({
 
   const header = resume.sections.find((sec) => sec.type === "header");
   const h = header?.items as HeaderData | undefined;
+  const nameText = h?.fullName || (showPlaceholders ? <span style={{ opacity: 0.35 }}>Your Name</span> : null);
 
   const visibleSections =
     sectionsOverride ||
@@ -654,7 +658,7 @@ export function MasterTemplate({
               const nameEl = (
                 <div className={cn("flex flex-col", isCenter ? "items-center text-center" : isRight ? "items-end text-right" : "items-start text-left", s.jobTitlePlacement === "inline" && cn("flex-row flex-wrap items-baseline gap-x-[0.5em]", isCenter ? "justify-center" : isRight ? "justify-end" : "justify-start"))}>
                   <h1 className="m-0 font-bold tracking-tight print:text-black" style={{ fontSize: pt(fittedNameSize), color: s.themeColorStyle === 'advanced' ? advancedTextColor : (s.applyAccentName ? colors.accent : colors.text), lineHeight: 1.1 }}>
-                    {h?.fullName || "Your Name"}
+                    {nameText}
                   </h1>
                   {h?.jobTitle && (
                     <div className={cn("font-medium print:text-black print:opacity-100", s.jobTitlePlacement !== "inline" && "mt-1", !s.jobTitleStyle || s.jobTitleStyle === "caps" ? "uppercase tracking-[0.2em] opacity-70" : "opacity-90", s.jobTitleStyle === "italic" && "italic")} style={{ fontSize: pt(base * (!s.jobTitleStyle || s.jobTitleStyle === "caps" ? 1.1 : s.jobTitlePlacement === "inline" ? 1.9 : 1.3)), color: s.themeColorStyle === 'advanced' ? advancedTextColor : (s.applyAccentJobTitle ? colors.accent : colors.text) }}>
@@ -851,7 +855,7 @@ export function MasterTemplate({
                     lineHeight: 1.1,
                   }}
                 >
-                  {h?.fullName || "Your Name"}
+                  {nameText}
                 </h1>
                 {h?.jobTitle && (
                   <div
@@ -1123,7 +1127,7 @@ export function MasterTemplate({
                       color: s.applyAccentName ? sc.accent : sc.text,
                     }}
                   >
-                    {h?.fullName || "Your Name"}
+                    {nameText}
                   </div>
                   {h?.jobTitle && (
                     <div

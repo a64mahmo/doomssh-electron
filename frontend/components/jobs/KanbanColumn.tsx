@@ -74,7 +74,7 @@ function KanbanColumnImpl({ config, jobs, onSelectJob, onAddJob }: KanbanColumnP
                 'flex items-center justify-center h-20 text-[11px] border-2 border-dashed rounded-lg transition-colors',
                 isOver
                   ? 'border-primary bg-primary/10 text-primary'
-                  : 'border-border/50 text-muted-foreground/50'
+                  : 'border-border text-muted-foreground'
               )}>
                 {isOver ? 'Drop here!' : 'Drop here'}
               </div>

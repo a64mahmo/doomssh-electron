@@ -1,5 +1,5 @@
 "use client";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { useSection, useResume } from "@/hooks/useResume";
 import { Input } from "@/components/ui/input";
@@ -56,7 +56,9 @@ function Field({
         </div>
         {onRemove && (
           <button
+            type="button"
             onClick={onRemove}
+            aria-label={`Remove ${label}`}
             className="p-1 hover:bg-destructive/10 rounded transition-colors group/del"
           >
             <X
@@ -78,15 +80,20 @@ const PERSONAL_DETAILS = [
   { key: "visa", label: "Visa", icon: FileText },
   { key: "availability", label: "Availability", icon: Zap },
   { key: "genderPronoun", label: "Gender/Pronoun", icon: User },
-  { key: "disability", label: "Disability", icon: Heart },
   { key: "workMode", label: "Work Mode", icon: Briefcase },
   { key: "relocation", label: "Relocation", icon: MapPin },
   { key: "expectedSalary", label: "Expected Salary", icon: Globe },
   { key: "secondPhone", label: "Second Phone", icon: Smartphone },
   { key: "drivingLicense", label: "Driving License", icon: Car },
   { key: "securityClearance", label: "Security Clearance", icon: Shield },
-  { key: "maritalStatus", label: "Marital Status", icon: Heart },
   { key: "militaryService", label: "Military Service", icon: Shield },
+];
+
+// Details that are usually left off a resume (and discouraged in some regions).
+// Kept, so existing resumes stay editable, but tucked behind a toggle.
+const SENSITIVE_DETAILS = [
+  { key: "disability", label: "Disability", icon: Heart },
+  { key: "maritalStatus", label: "Marital Status", icon: Heart },
   { key: "smoking", label: "Smoking", icon: AlertCircle },
   { key: "height", label: "Height", icon: BarChart3 },
   { key: "weight", label: "Weight", icon: Scale },
@@ -105,11 +112,11 @@ const SOCIAL_PROFILES = [
   { key: "stackoverflow", label: "Stack Overflow", icon: Code2 },
   { key: "gitlab", label: "GitLab", icon: Code2 },
   { key: "bitbucket", label: "Bitbucket", icon: Code2 },
-  { key: "discord", label: "Link", icon: Link },
-  { key: "reddit", label: "Link", icon: Link },
-  { key: "bluesky", label: "Link", icon: Link },
-  { key: "threads", label: "Link", icon: Link },
-  { key: "mastodon", label: "Link", icon: Link },
+  { key: "discord", label: "Discord", icon: Link },
+  { key: "reddit", label: "Reddit", icon: Link },
+  { key: "bluesky", label: "Bluesky", icon: Link },
+  { key: "threads", label: "Threads", icon: Link },
+  { key: "mastodon", label: "Mastodon", icon: Link },
 ];
 
 export function HeaderSection({ sectionId }: Props) {
@@ -117,6 +124,7 @@ export function HeaderSection({ sectionId }: Props) {
   const { updateSettings } = useResume();
   const item = (section?.items as HeaderData) || {};
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const [showSensitive, setShowSensitive] = useState(false);
 
   function update(field: keyof HeaderData, value: string) {
     updateItems({ ...item, [field]: value });
@@ -157,11 +165,25 @@ export function HeaderSection({ sectionId }: Props) {
     reader.readAsDataURL(file);
   };
 
-  const activePersonalDetails = PERSONAL_DETAILS.filter(
-    (d) => item[d.key as keyof HeaderData] !== undefined,
-  );
-  const activeSocialProfiles = SOCIAL_PROFILES.filter(
-    (d) => item[d.key as keyof HeaderData] !== undefined,
+  const isActive = (d: { key: string }) =>
+    item[d.key as keyof HeaderData] !== undefined;
+  const activeFields = [
+    ...PERSONAL_DETAILS,
+    ...SENSITIVE_DETAILS,
+    ...SOCIAL_PROFILES,
+  ].filter(isActive);
+  const hiddenSensitive = SENSITIVE_DETAILS.filter((d) => !isActive(d));
+
+  const renderAddButton = (f: { key: string; label: string }) => (
+    <button
+      key={f.key}
+      type="button"
+      onClick={() => toggleField(f.key as keyof HeaderData)}
+      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted/40 border border-border/50 text-[10px] font-bold uppercase tracking-wider hover:bg-muted hover:border-border transition-all text-muted-foreground hover:text-foreground"
+    >
+      <Plus size={11} />
+      {f.label}
+    </button>
   );
 
   return (
@@ -257,9 +279,10 @@ export function HeaderSection({ sectionId }: Props) {
 
       {/* Socials & More */}
       <ControlGroup title="Social Profiles & Additional Details">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+        {activeFields.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 pb-8 mb-6 border-b border-border/30">
           {/* Active Custom Fields */}
-          {[...activePersonalDetails, ...activeSocialProfiles].map((f) => (
+          {activeFields.map((f) => (
             <Field
               key={f.key}
               label={f.label}
@@ -277,29 +300,42 @@ export function HeaderSection({ sectionId }: Props) {
             </Field>
           ))}
         </div>
+        )}
 
         {/* Add more buttons */}
-        <div className="pt-8 border-t border-border/30 mt-6">
-          <FieldLabel className="mb-4 text-muted-foreground/50 uppercase tracking-widest text-[9px]">
+        <div>
+          <FieldLabel className="mb-4 uppercase tracking-widest">
             Add Additional Fields
           </FieldLabel>
           <div className="flex flex-wrap gap-2">
-            {[...PERSONAL_DETAILS, ...SOCIAL_PROFILES].map((f) => {
-              const isActive =
-                item[f.key as keyof HeaderData] !== undefined;
-              if (isActive) return null;
-              return (
-                <button
-                  key={f.key}
-                  onClick={() => toggleField(f.key as keyof HeaderData)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted/40 border border-border/50 text-[10px] font-bold uppercase tracking-wider hover:bg-muted hover:border-border transition-all text-muted-foreground/70 hover:text-foreground"
-                >
-                  <Plus size={11} />
-                  {f.label}
-                </button>
-              );
-            })}
+            {[...PERSONAL_DETAILS, ...SOCIAL_PROFILES]
+              .filter((f) => !isActive(f))
+              .map(renderAddButton)}
           </div>
+          {hiddenSensitive.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <button
+                type="button"
+                onClick={() => setShowSensitive((v) => !v)}
+                aria-expanded={showSensitive}
+                className="text-[10px] font-semibold text-muted-foreground hover:text-foreground underline underline-offset-2 transition-colors"
+              >
+                {showSensitive
+                  ? "Hide sensitive details"
+                  : `More personal details (${hiddenSensitive.length})`}
+              </button>
+              {showSensitive && (
+                <>
+                  <p className="text-[10px] text-muted-foreground">
+                    Usually left off resumes, and discouraged in many regions.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {hiddenSensitive.map(renderAddButton)}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </ControlGroup>
     </div>

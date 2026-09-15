@@ -118,10 +118,10 @@ export function InterviewPrepClient() {
         <div className="flex-1 overflow-y-auto p-3 space-y-1">
           {sortedJobs.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
-              <Briefcase size={24} className="text-muted-foreground/20" />
+              <Briefcase size={24} className="text-muted-foreground/50" />
               <div>
-                <p className="text-xs font-bold text-muted-foreground/40 uppercase tracking-widest">No jobs yet</p>
-                <p className="text-[10px] text-muted-foreground/30 mt-1">Add jobs in the Job Tracker first</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">No jobs yet</p>
+                <p className="text-xs text-muted-foreground mt-1">Add jobs in the Job Tracker first</p>
               </div>
               <Button
                 variant="outline"
@@ -199,10 +199,10 @@ export function InterviewPrepClient() {
       <div className="flex-1 flex flex-col min-w-0">
         {!selectedJob ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center space-y-3">
-            <MessageSquare size={32} className="text-muted-foreground/15" />
+            <MessageSquare size={32} className="text-muted-foreground/50" />
             <div>
-              <p className="text-sm font-bold text-muted-foreground/40">Select a job to start prepping</p>
-              <p className="text-xs text-muted-foreground/30 mt-1">Pick a job from the left panel</p>
+              <p className="text-sm font-bold text-muted-foreground">Select a job to start prepping</p>
+              <p className="text-xs text-muted-foreground mt-1">Pick a job from the left panel</p>
             </div>
           </div>
         ) : (

@@ -50,8 +50,8 @@ export function createNewCoverLetter(name: string = 'Untitled Cover Letter'): Re
       },
       body: 'Dear Hiring Manager,\n\nI am writing to express my strong interest in the [Job Title] position at [Company Name]. With a background in [Your Field] and a proven track record of [Key Achievement], I am confident that I can bring significant value to your team.\n\nIn my previous role at [Previous Company], I successfully [Achievement 1] and [Achievement 2]. These experiences have equipped me with the skills necessary to excel in this role, specifically in [Skill 1] and [Skill 2].\n\nI have followed [Company Name] for some time and am impressed by your recent [Company Achievement/Value]. I am eager to contribute my expertise to help your team achieve its goals.\n\nThank you for your time and consideration. I look forward to the possibility of discussing my application with you further.\n\nSincerely,\n',
       signature: {
-        fullName: 'Your Name',
-        place: 'City, Country',
+        fullName: '',
+        place: '',
         date: new Date().toISOString().slice(0, 10),
       },
     },

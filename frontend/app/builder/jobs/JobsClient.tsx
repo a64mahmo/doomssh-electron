@@ -10,7 +10,7 @@ import { KanbanBoard } from '@/components/jobs/KanbanBoard'
 import { JobTable } from '@/components/jobs/JobTable'
 import { JobStats } from '@/components/jobs/JobStats'
 import { JobDetailDialog } from '@/components/jobs/JobDetailDialog'
-import { cn } from '@/lib/utils'
+import { PageHeader } from '@/components/PageHeader'
 
 export function JobsClient() {
   const router = useRouter()
@@ -19,14 +19,8 @@ export function JobsClient() {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null)
   const [isAddingNew, setIsAddingNew] = useState(false)
   const [initialStatus, setInitialStatus] = useState<any>(undefined)
-  const [isMac, setIsMac] = useState(false)
-  const [isWin, setIsWin] = useState(false)
 
   useEffect(() => {
-    if (window.electron) {
-      setIsMac(window.electron.platform === 'darwin')
-      setIsWin(window.electron.platform === 'win32')
-    }
     if (!isLoaded) loadJobs()
   }, [isLoaded, loadJobs])
 
@@ -52,22 +46,12 @@ export function JobsClient() {
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background overscroll-none select-none">
       {/* Header */}
-      <header
-        className={cn(
-          'h-11 flex items-center justify-between px-4 border-b border-border shrink-0 drag bg-background',
-          isWin && 'win32-padding'
-        )}
-      >
-        <div className="flex items-center gap-3 no-drag">
-          <h1 className="text-sm font-semibold tracking-tight">Job Tracker</h1>
-        </div>
-        <div className="no-drag">
-          <Button size="sm" onClick={() => handleAddJob()} className="h-7.5 gap-1.5 text-xs font-semibold px-4 rounded-lg">
-            <Plus size={13} />
-            Add Job
-          </Button>
-        </div>
-      </header>
+      <PageHeader title="Job Tracker">
+        <Button size="sm" onClick={() => handleAddJob()} className="h-7.5 gap-1.5 text-xs font-semibold px-4 rounded-lg">
+          <Plus size={13} />
+          Add Job
+        </Button>
+      </PageHeader>
 
       {/* Content */}
       <Tabs defaultValue="board" className="flex-1 min-h-0 flex flex-col">

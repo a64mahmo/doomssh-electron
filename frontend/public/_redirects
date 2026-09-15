@@ -1,0 +1,3 @@
+# Cloudflare Workers static assets: send the bare domain straight to the builder,
+# instead of loading the root page only to redirect in the browser.
+/ /builder/ 302

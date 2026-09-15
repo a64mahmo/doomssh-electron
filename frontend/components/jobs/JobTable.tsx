@@ -145,7 +145,9 @@ export function JobTable({ onSelectJob }: JobTableProps) {
         </div>
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? 'all')}>
           <SelectTrigger size="sm" className="text-xs">
-            <SelectValue placeholder="Status" />
+            <SelectValue>
+              {(v: string) => (v === 'all' ? 'All Statuses' : JOB_STATUS_CONFIG.find((s) => s.status === v)?.label ?? v)}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
@@ -156,7 +158,9 @@ export function JobTable({ onSelectJob }: JobTableProps) {
         </Select>
         <Select value={sourceFilter} onValueChange={(v) => setSourceFilter(v ?? 'all')}>
           <SelectTrigger size="sm" className="text-xs">
-            <SelectValue placeholder="Source" />
+            <SelectValue>
+              {(v: string) => (v === 'all' ? 'All Sources' : JOB_SOURCE_LABELS[v as keyof typeof JOB_SOURCE_LABELS] ?? v)}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Sources</SelectItem>
@@ -259,7 +263,7 @@ export function JobTable({ onSelectJob }: JobTableProps) {
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-muted-foreground/50">
+                  <td colSpan={8} className="py-12 text-center text-muted-foreground">
                     {search || statusFilter !== 'all' || sourceFilter !== 'all'
                       ? 'No jobs match your filters'
                       : 'No jobs yet — click "Add Job" to get started'}

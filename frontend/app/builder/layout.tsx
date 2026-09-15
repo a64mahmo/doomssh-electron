@@ -5,25 +5,31 @@ import { Database } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import { Sidebar } from '@/components/Sidebar'
 import { Button } from '@/components/ui/button'
+import { isElectron } from '@/lib/platform'
+
+type VaultState = 'checking' | 'ready' | 'missing'
 
 export default function BuilderLayout({ children }: { children: React.ReactNode }) {
-  const [vaultReady, setVaultReady] = useState(false)
+  // The browser build has no vault, so it renders the app straight away (also in
+  // the static HTML). Only the desktop app waits to learn whether a vault is set.
+  const [vault, setVault] = useState<VaultState>(() => (isElectron() ? 'checking' : 'ready'))
 
   useEffect(() => {
-    if (window.electron) {
-      window.electron.vault.getPath().then(p => { if (p) setVaultReady(true) })
-    } else {
-      setVaultReady(true)
-    }
+    if (!window.electron) return
+    window.electron.vault.getPath().then(p => setVault(p ? 'ready' : 'missing'))
   }, [])
 
   async function handlePickVault() {
     if (!window.electron) return
     const p = await window.electron.vault.setPath()
-    if (p) setVaultReady(true)
+    if (p) setVault('ready')
   }
 
-  if (!vaultReady) {
+  if (vault === 'checking') {
+    return <div className="h-screen bg-background" />
+  }
+
+  if (vault === 'missing') {
     return (
       <div className="h-screen flex flex-col items-center justify-center gap-6 bg-background text-foreground">
         <Logo className="size-10" />

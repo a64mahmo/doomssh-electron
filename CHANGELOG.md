@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **What's New panel** — A "What's New" item in the sidebar opens a dialog of user-facing release notes from `frontend/lib/whatsNew.ts` (hand-written, separate from this file). A dot marks unread notes; it is tracked per browser in `localStorage`, and brand-new users start caught up.
+- **First-run welcome** — An empty Resumes dashboard shows a welcome panel: start from scratch, or open a copy of the Product Manager, Designer or New Grad example (`createSampleResume*` in `lib/db/database.ts`). Nothing is created until the user picks.
+
 - **HTML → PDF export (desktop)** — The `export-pdf` IPC handler renders the resume on `/print?mode=export` in a hidden window and saves it with Chromium's `printToPDF`, so exported PDFs match the live preview.
 - **Live HTML preview** — The preview renders `MasterTemplate` directly, updating instantly without PDF regeneration or iframe reloads, with approximate page guides.
 - **Web build storage** — IndexedDB (Dexie) fallback for resumes, cover letters and jobs when running in a browser.
@@ -21,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Faster first load (web)** — `public/_headers` serves hashed `/_next/static/*` files as `immutable` for a year (they were `max-age=0, must-revalidate`, so every visit revalidated each chunk) and caches `/fonts/*` for a week. `public/_redirects` sends `/` to `/builder/` at the edge instead of loading the root page and redirecting in the browser.
+
 - **PDF export is HTML-only** — The web build now prints the same `/print` page through the browser's print dialog (Save as PDF) instead of generating a separate PDF. `@react-pdf/renderer`, `components/pdf/`, the render harness scripts and the unused `savePdf` IPC bridge were removed, so templates only need changing in one place.
 - **Template redesign** — Every preset now starts from a full layout reset and has its own page structure and photo treatment: solid sidebars (Blocks, Dublin, Berlin), header bands (Tokyo, Atlas), a framed page (Elite), warm paper (London) and more. Dublin and Milano were rebuilt around a dark photo sidebar and an inline italic job title.
 - **Browser Settings dialog** — Hides the Anthropic API key, Bug Mode and software updates; shows a storage note instead.
@@ -28,6 +33,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Persistence** — Resume and job saving use a shared debounced saver that watches the document instead of the `isDirty` flag.
 
 ### Fixed
+
+- **Vault screen flash on the web** — The builder layout rendered "Choose a Vault Folder" until an effect ran, so the static HTML and first paint showed it to every browser visitor. The browser build now renders the app immediately; the desktop app shows a blank frame while it checks for a vault.
+
+- **UI audit fixes (web builder)**
+  - Sidebar navigation items are real links (keyboard- and screen-reader-accessible, `aria-current` on the active page) and the highlight moves as soon as an item is clicked instead of after the route loads. In the editor the Resumes/Cover Letter highlight waits for the opened document instead of briefly showing Resumes.
+  - The sidebar collapses automatically on narrow windows (< 768px) and in the editor; a manual toggle still wins until that context changes. The DoomSSH logo moved into the sidebar, and Resumes, Cover Letters and Job Tracker share one `PageHeader`.
+  - Theme switcher gains a System option and marks the selected theme with `aria-pressed`, so something is always shown as selected.
+  - New resumes start with empty name, job title and contact fields (placeholders) instead of fake values that leaked into exports, and new cover letters no longer pre-fill the signature name and place. `MasterTemplate` shows a faded "Your Name" only in the live preview (`showPlaceholders`); print/PDF renders nothing for an empty name.
+  - Header editor: the five "Link" chips are now labelled Discord, Reddit, Bluesky, Threads and Mastodon; the empty "Social Profiles" grid is hidden; Disability, Marital Status, Smoking, Height and Weight moved behind a "More personal details" toggle (existing values stay editable).
+  - Editor: section rail buttons have accessible names, the redundant section-type badge is gone, a back link replaces the empty top bar, and the preview toolbar only shows Download in fullscreen (the page header already has it).
+  - Job Tracker: `ScrollArea` now renders a horizontal scrollbar and its scrollbar sizing classes match Base UI's `data-orientation`, so the Offer column is reachable; table filters show "All Statuses" / "All Sources" instead of `all`.
+  - Higher-contrast empty states and section labels (Interview Prep, Kanban drop zones, job table, editor group titles); dashboards no longer flash "Loading…" next to the create card.
 
 - **Job dialog in Safari** — The New Application / job details dialog collapsed its form in Safari, leaving the footer over the tabs so applications could not be saved. The dialog now has a definite height.
 - **Lost saves** — Edits and new jobs made within a second of a previous save, or while one was in flight, were never written.

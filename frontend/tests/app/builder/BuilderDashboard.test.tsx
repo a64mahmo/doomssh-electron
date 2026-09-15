@@ -26,6 +26,9 @@ vi.mock('@/lib/db/database', () => ({
   duplicateResume: vi.fn(),
   createNewResume: vi.fn(),
   saveResume: vi.fn(),
+  createSampleResumeProductManager: vi.fn(),
+  createSampleResumeDesigner: vi.fn(),
+  createSampleResumeRecentGrad: vi.fn(),
 }))
 
 // Mock sonner

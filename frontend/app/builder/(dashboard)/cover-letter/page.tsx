@@ -4,14 +4,13 @@ import { useRouter } from 'next/navigation'
 import {
   Plus, MoreHorizontal, Trash2, Pencil, FileText,
 } from 'lucide-react'
-import { Logo } from '@/components/Logo'
+import { PageHeader } from '@/components/PageHeader'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   getAllCoverLetters, createNewCoverLetter, saveResume, deleteResume,
 } from '@/lib/db/database'
 import type { Resume } from '@/lib/store/types'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -35,12 +34,8 @@ export default function CoverLetterDashboard() {
   const router = useRouter()
   const [letters, setLetters] = useState<Resume[]>([])
   const [loading, setLoading] = useState(true)
-  const [isWin, setIsWin] = useState(false)
 
   async function load() {
-    if (window.electron) {
-      setIsWin(window.electron.platform === 'win32')
-    }
     setLoading(true)
     setLetters(await getAllCoverLetters())
     setLoading(false)
@@ -66,32 +61,25 @@ export default function CoverLetterDashboard() {
 
   return (
     <>
-      <header className={cn(
-        "border-b border-border px-6 h-11 flex items-center justify-between shrink-0 bg-background drag",
-        isWin && "win32-padding"
-      )}>
-        <div className="flex items-center gap-2.5 no-drag">
-          <Logo />
-          <span className="font-bold text-sm tracking-tight">DoomSSH</span>
-        </div>
-        <div className="no-drag">
-          <Button
-            onClick={handleCreate}
-            size="sm"
-            className="h-7.5 bg-foreground text-background hover:bg-foreground/90 gap-1.5 font-semibold text-xs px-4 rounded-lg"
-          >
-            <Plus size={14} />
-            New Cover Letter
-          </Button>
-        </div>
-      </header>
+      <PageHeader title="Cover Letters">
+        <Button
+          onClick={handleCreate}
+          size="sm"
+          aria-label="New Cover Letter"
+          className="h-7.5 bg-foreground text-background hover:bg-foreground/90 gap-1.5 font-semibold text-xs px-3 sm:px-4 rounded-lg"
+        >
+          <Plus size={14} />
+          <span className="hidden sm:inline">New Cover Letter</span>
+        </Button>
+      </PageHeader>
 
-      <main className="flex-1 overflow-y-auto px-8 py-12">
+      <main className="flex-1 overflow-y-auto px-4 sm:px-8 py-8 sm:py-12">
         <div className="max-w-6xl mx-auto">
           <div className="mb-10">
-            <h1 className="text-2xl font-bold tracking-tight mb-1">My Cover Letters</h1>
+            <h2 className="text-2xl font-bold tracking-tight mb-1">My Cover Letters</h2>
             <p className="text-muted-foreground text-sm">
-              {loading ? 'Loading…' : `${letters.length} cover letter${letters.length !== 1 ? 's' : ''}`}
+              {/* Blank while loading, so the count doesn't flash "Loading…". */}
+              {loading ? '\u00a0' : `${letters.length} cover letter${letters.length !== 1 ? 's' : ''}`}
             </p>
           </div>
 

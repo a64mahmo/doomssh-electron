@@ -116,6 +116,14 @@ export function BuilderClient() {
               isWin && "win32-padding"
             )}
           >
+            <button
+              type="button"
+              onClick={() => router.push(resume.kind === 'coverLetter' ? '/builder/cover-letter' : '/builder')}
+              className="no-drag flex items-center gap-1.5 px-1.5 py-1 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            >
+              <ArrowLeft size={13} />
+              {resume.kind === 'coverLetter' ? 'Cover Letters' : 'Resumes'}
+            </button>
           </header>
 
           {/* Panel nav (Content/Style Tabs) */}

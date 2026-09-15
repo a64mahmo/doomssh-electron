@@ -37,6 +37,15 @@ This must be a **build** variable. `next build` inlines `NEXT_PUBLIC_*` values i
 
 If the variable is unset, the app detects the platform at runtime (no Electron bridge → web), so the site still works; setting it makes the intent explicit.
 
+### Caching and redirects
+
+`frontend/public/` is copied into `out/`, so two Cloudflare files there shape responses (the desktop app ignores them):
+
+- `_headers`: `/_next/static/*` is content-hashed, so it is served `public, max-age=31536000, immutable`; `/fonts/*` is cached for a week with background refresh. Without this, Workers assets default to `max-age=0, must-revalidate` and every visit revalidates each chunk.
+- `_redirects`: `/` → `/builder/` (302) at the edge, skipping the root page's in-browser redirect.
+
+Check after a deploy: `curl -sI https://<host>/_next/static/chunks/<any>.js | grep -i cache-control` and `curl -sI https://<host>/ | grep -i location`.
+
 ### What changes in the web build
 
 `isWeb()` / `isElectron()` from `frontend/lib/platform.ts` drive the differences:

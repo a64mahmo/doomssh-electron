@@ -92,6 +92,7 @@ export function EditorPanel() {
         <Tooltip>
           <TooltipTrigger
             type="button"
+            aria-label="Manage Sections"
             onClick={() => setActiveSectionId('list')}
             className={cn(
               'relative w-9 h-9 flex items-center justify-center rounded-xl transition-all mb-2',
@@ -118,6 +119,7 @@ export function EditorPanel() {
             <Tooltip key={section.id}>
               <TooltipTrigger
                 type="button"
+                aria-label={section.title}
                 onClick={() => setActiveSectionId(section.id)}
                 className={cn(
                   'relative w-9 h-9 flex items-center justify-center rounded-xl transition-all shrink-0',
@@ -140,15 +142,10 @@ export function EditorPanel() {
       {/* ── Content ───────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Header bar */}
-        <header className="px-4 h-10 border-b border-border flex items-center justify-between shrink-0 bg-background/60 backdrop-blur-sm">
-          <h3 className="text-[11px] font-bold uppercase tracking-widest text-foreground/70 truncate mr-2">
+        <header className="px-4 h-10 border-b border-border flex items-center shrink-0 bg-background/60 backdrop-blur-sm">
+          <h3 className="text-[11px] font-bold uppercase tracking-widest text-foreground/70 truncate">
             {activeSectionId === 'list' ? 'Manage Sections' : activeSection?.title}
           </h3>
-          {activeSectionId !== 'list' && activeSection && (
-            <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest border border-border/50 px-1.5 py-0.5 rounded">
-              {activeSection.type}
-            </span>
-          )}
         </header>
 
         {/* Scrollable content */}

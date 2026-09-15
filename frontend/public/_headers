@@ -1,0 +1,8 @@
+# Cloudflare Workers static assets: response headers (not used by the desktop app).
+# Next.js puts a content hash in every file name under /_next/static, so they never change.
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Template fonts keep stable names; cache for a week and refresh in the background.
+/fonts/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400

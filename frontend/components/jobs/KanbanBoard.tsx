@@ -104,7 +104,7 @@ export function KanbanBoard({ onSelectJob, onAddJob }: KanbanBoardProps) {
     <div className="flex flex-col h-full">
       {/* Board */}
       <div className="flex-1 min-h-0">
-        <ScrollArea className="h-full overflow-x-auto">
+        <ScrollArea className="h-full">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}

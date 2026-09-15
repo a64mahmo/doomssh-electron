@@ -86,15 +86,18 @@ function PreviewInner({ resume }: { resume: Resume }) {
             <TooltipContent>{isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}</TooltipContent>
           </Tooltip>
 
-          <Button
-            variant="default"
-            size="sm"
-            className="h-8 px-4 rounded-xl font-bold text-xs"
-            onClick={() => downloadResumePDF(resume)}
-          >
-            <Download size={14} className="mr-2" />
-            Export
-          </Button>
+          {/* Fullscreen covers the page header's Download button, so offer it here instead. */}
+          {isFullscreen && (
+            <Button
+              variant="default"
+              size="sm"
+              className="h-8 px-4 rounded-xl font-bold text-xs"
+              onClick={() => downloadResumePDF(resume)}
+            >
+              <Download size={14} className="mr-2" />
+              Download
+            </Button>
+          )}
         </div>
 
         {/* Page */}
@@ -109,7 +112,7 @@ function PreviewInner({ resume }: { resume: Resume }) {
               className="absolute top-0 left-0 bg-white shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] dark:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] border border-border/30"
               style={{ width: pageWidth, transform: `scale(${previewZoom})`, transformOrigin: 'top left' }}
             >
-              <MasterTemplate resume={resume} />
+              <MasterTemplate resume={resume} showPlaceholders />
 
               {Array.from({ length: pageCount - 1 }, (_, i) => (
                 <div
