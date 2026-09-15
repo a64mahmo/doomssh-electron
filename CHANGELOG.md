@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **What's New panel** — A "What's New" item in the sidebar opens a dialog of user-facing release notes from `frontend/lib/whatsNew.ts` (hand-written, separate from this file). A dot marks unread notes; it is tracked per browser in `localStorage`, and brand-new users start caught up.
-- **First-run welcome** — An empty Resumes dashboard shows a welcome panel: start from scratch, or open a copy of the Product Manager, Designer or New Grad example (`createSampleResume*` in `lib/db/database.ts`). Nothing is created until the user picks.
+- **Example resumes** — The Resumes dashboard has a "Start from an example" section under the grid (`components/ExampleResumes.tsx`): open a copy of the Product Manager, Designer or New Grad example (`createSampleResume*` in `lib/db/database.ts`), plus short tips. It keeps the same layout before and after the first resume, so nothing disappears when a new user comes back; "Hide" stores a per-browser preference and "Browse examples" brings it back. An empty dashboard adds a short intro line. Nothing is created until the user picks.
 
 - **HTML → PDF export (desktop)** — The `export-pdf` IPC handler renders the resume on `/print?mode=export` in a hidden window and saves it with Chromium's `printToPDF`, so exported PDFs match the live preview.
 - **Live HTML preview** — The preview renders `MasterTemplate` directly, updating instantly without PDF regeneration or iframe reloads, with approximate page guides.

@@ -21,7 +21,7 @@ export const WHATS_NEW: WhatsNewEntry[] = [
     date: 'September 2026',
     title: 'A friendlier start',
     items: [
-      { tag: 'new', text: 'Start from an example resume (product manager, designer or new grad) on your first visit.' },
+      { tag: 'new', text: 'Start from an example resume (product manager, designer or new grad) on the Resumes page.' },
       { tag: 'new', text: 'This What’s New panel, so you can see what changed.' },
       { tag: 'new', text: 'A System option in the theme switcher that follows your device.' },
       { tag: 'improved', text: 'Pages open faster: the builder loads directly and files are cached between visits.' },
