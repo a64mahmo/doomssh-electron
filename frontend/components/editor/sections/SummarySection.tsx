@@ -2,7 +2,7 @@
 import { useSection } from '@/hooks/useResume'
 import { DebouncedRichTextArea } from '@/components/ui/rich-text-area'
 import type { SummaryItem } from '@/lib/store/types'
-import { useAI } from '@/hooks/useAI'
+import { useAI, aiAvailable } from '@/hooks/useAI'
 import { toast } from 'sonner'
 import { ControlGroup, FieldLabel } from '../EditorPrimitives'
 import { Sparkles } from 'lucide-react'
@@ -34,9 +34,11 @@ export function SummarySection({ sectionId }: Props) {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <FieldLabel className="mb-0">Bio / Summary</FieldLabel>
-            <div className="flex items-center gap-1 text-[10px] text-primary font-bold uppercase tracking-wider">
+            {aiAvailable() && (
+              <div className="flex items-center gap-1 text-[10px] text-primary font-bold uppercase tracking-wider">
               <Sparkles size={10} /> AI Enhanced
             </div>
+            )}
           </div>
           <DebouncedRichTextArea
             rows={8}

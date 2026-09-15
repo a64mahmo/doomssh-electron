@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **PDF export is HTML-only** — The web build now prints the same `/print` page through the browser's print dialog (Save as PDF) instead of generating a separate PDF. `@react-pdf/renderer`, `components/pdf/`, the render harness scripts and the unused `savePdf` IPC bridge were removed, so templates only need changing in one place.
 - **Template redesign** — Every preset now starts from a full layout reset and has its own page structure and photo treatment: solid sidebars (Blocks, Dublin, Berlin), header bands (Tokyo, Atlas), a framed page (Elite), warm paper (London) and more. Dublin and Milano were rebuilt around a dark photo sidebar and an inline italic job title.
 - **Browser Settings dialog** — Hides the Anthropic API key, Bug Mode and software updates; shows a storage note instead.
+- **AI is desktop-only** — The browser build hides every AI control: Improve with AI on description fields, the AI Enhanced badges, the cover letter AI Assistant, and AI Generate in interview prep (page and job dialog). AI copy is replaced with plain guidance. `useAI` refuses to run outside Electron, and its unused HTTP fallback to `/api/ai/*` (routes that never existed in the static export) was removed.
 - **Persistence** — Resume and job saving use a shared debounced saver that watches the document instead of the `isDirty` flag.
 
 ### Fixed

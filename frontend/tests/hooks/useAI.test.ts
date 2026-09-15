@@ -11,19 +11,13 @@ describe('useAI hook', () => {
     global.fetch = vi.fn()
   })
 
-  it('should add an error to uiStore when HTTP call fails', async () => {
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: false,
-      status: 500,
-      text: () => Promise.resolve('API Error'),
-    } as any)
-
+  it('refuses to run in the browser build without calling any API', async () => {
     const { result } = renderHook(() => useAI())
-    
-    await expect(result.current.improveText('test text')).rejects.toThrow('API Error')
-    
-    const errors = useUIStore.getState().errors
-    expect(errors).toContain('AI Error: API Error')
+
+    await expect(result.current.improveText('test text')).rejects.toThrow('only available in the desktop app')
+
+    expect(fetch).not.toHaveBeenCalled()
+    await waitFor(() => expect(result.current.hasApiKey).toBe(false))
   })
 
   it('should add an error to uiStore when Electron IPC fails', async () => {

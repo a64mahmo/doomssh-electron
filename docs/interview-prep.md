@@ -10,7 +10,7 @@ The Interview Prep feature is DoomSSH's interview preparation suite, integrated 
 
 ![Company notes, cheat sheet and reflections](images/interview-prep-sections.png)
 
-> **Web vs desktop:** everything except AI question generation works in both builds. The **AI Generate** button needs an Anthropic API key, which only the desktop app stores, so it is disabled in the browser build. Prep data is saved with the job — to the vault on desktop, IndexedDB in the browser.
+> **Web vs desktop:** everything except AI question generation works in both builds. AI needs an Anthropic API key, which only the desktop app stores, so the **AI Generate** button is hidden in the browser build. Prep data is saved with the job — to the vault on desktop, IndexedDB in the browser.
 
 ## Architecture
 

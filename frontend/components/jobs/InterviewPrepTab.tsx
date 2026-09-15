@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
-import { useAI } from '@/hooks/useAI'
+import { useAI, aiAvailable } from '@/hooks/useAI'
 import { generateId } from '@/lib/utils/ids'
 import type {
   InterviewPrep,
@@ -196,6 +196,7 @@ function QuestionsSection({
     <div className="space-y-4">
       {/* Action bar */}
       <div className="flex gap-2 flex-wrap">
+        {aiAvailable() && (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger render={<span className="inline-flex" />}>
@@ -215,6 +216,7 @@ function QuestionsSection({
             )}
           </Tooltip>
         </TooltipProvider>
+        )}
         <Button
           variant="ghost"
           size="sm"
@@ -334,7 +336,7 @@ function QuestionsSection({
       </div>
 
       {questions.length === 0 && !adding && !aiLoading && (
-        <EmptyState icon={MessageSquare} label="No questions yet" subtitle="Generate with AI or add manually" />
+        <EmptyState icon={MessageSquare} label="No questions yet" subtitle={aiAvailable() ? "Generate with AI or add manually" : "Add the questions you expect"} />
       )}
     </div>
   )

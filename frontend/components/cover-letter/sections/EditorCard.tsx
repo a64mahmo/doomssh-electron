@@ -4,7 +4,7 @@ import { FileText, Sparkles, Loader2, Wand2, ChevronDown, Info } from 'lucide-re
 import { RichTextArea } from '@/components/editor/RichTextArea'
 import { useResumeStore } from '@/lib/store/resumeStore'
 import { useJobStore } from '@/lib/store/jobStore'
-import { useAI } from '@/hooks/useAI'
+import { useAI, aiAvailable } from '@/hooks/useAI'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import {
@@ -115,6 +115,7 @@ export function EditorCard() {
         }
       >
         <div className="space-y-4">
+          {aiAvailable() && (
           <div className="flex items-center gap-2">
             <TooltipProvider>
               <Tooltip>
@@ -162,6 +163,7 @@ export function EditorCard() {
               </Tooltip>
             </TooltipProvider>
           </div>
+          )}
 
           <div className="relative group/editor">
             <RichTextArea
@@ -172,7 +174,7 @@ export function EditorCard() {
               className="bg-muted/10 border-border/40 focus:bg-background transition-all min-h-[500px] rounded-2xl p-6 text-[13px] leading-relaxed"
             />
             
-            {!cl.body.trim() && !aiBusy && (
+            {!cl.body.trim() && !aiBusy && aiAvailable() && (
               <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center pointer-events-none animate-in fade-in zoom-in-95">
                 <div className="w-16 h-16 rounded-3xl bg-primary/5 flex items-center justify-center mb-6 border border-primary/10 shadow-sm">
                   <Sparkles size={32} className="text-primary/30" />
@@ -201,7 +203,7 @@ export function EditorCard() {
           <div className="flex items-start gap-3 p-4 rounded-2xl bg-primary/5 border border-primary/10 shadow-sm">
             <Info size={14} className="text-primary mt-0.5 shrink-0" />
             <p className="text-[11px] leading-relaxed text-primary/70">
-              <strong className="font-bold text-primary">Writing Tip:</strong> Aim for a narrative that highlights your impact. Use the AI to discover powerful phrasing, then personalize it to reflect your true voice. Optimal length is {WORD_TARGET.min}–{WORD_TARGET.max} words.
+              <strong className="font-bold text-primary">Writing Tip:</strong> Aim for a narrative that highlights your impact. {aiAvailable() ? 'Use the AI to discover powerful phrasing, then personalize it to reflect your true voice.' : 'Lead with results, and write in your own voice.'} Optimal length is {WORD_TARGET.min}–{WORD_TARGET.max} words.
             </p>
           </div>
         </div>

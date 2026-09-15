@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { DebouncedInput } from "@/components/ui/debounced-input";
 import { DebouncedRichTextArea } from "@/components/ui/rich-text-area";
 
-import { useAI } from "@/hooks/useAI";
+import { useAI, aiAvailable } from "@/hooks/useAI";
 import { toast } from "sonner";
 import { FieldLabel, ToggleRow, EntryCard } from "../EditorPrimitives";
 import type { ExperienceItem } from "@/lib/store/types";
@@ -176,9 +176,11 @@ export function ExperienceSection({ sectionId }: Props) {
                   <FieldLabel className="mb-0">
                     Description & Achievements
                   </FieldLabel>
-                  <div className="flex items-center gap-1 text-[10px] text-primary font-bold uppercase tracking-wider">
+                  {aiAvailable() && (
+                    <div className="flex items-center gap-1 text-[10px] text-primary font-bold uppercase tracking-wider">
                     <Sparkles size={10} /> AI Enhanced
                   </div>
+                  )}
                 </div>
                 <DebouncedRichTextArea
                   placeholder="• Reduced system latency by 40% through query optimization..."

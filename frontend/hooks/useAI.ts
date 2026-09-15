@@ -6,6 +6,14 @@ import {
   type CoverLetterGenInput,
 } from '@/lib/ai/prompts'
 import { useUIStore } from '@/lib/store/uiStore'
+import { isElectron } from '@/lib/platform'
+
+/**
+ * AI runs only in the desktop app: the Anthropic key lives in the OS keychain
+ * and requests go through the main process. The browser build has neither, so
+ * every AI control is hidden there and `run` refuses as a backstop.
+ */
+export const aiAvailable = (): boolean => isElectron()
 
 // Detect Electron renderer — window.electron is injected by preload.ts
 function getElectron() {
@@ -42,7 +50,7 @@ export function useAI({ onChunk }: UseAIOptions = {}) {
   // Check API key availability on mount
   useEffect(() => {
     const electron = getElectron()
-    if (electron) {
+    if (electron && aiAvailable()) {
       electron.getApiKey().then(key => setHasApiKey(!!key))
     } else {
       setHasApiKey(false)
@@ -68,53 +76,16 @@ export function useAI({ onChunk }: UseAIOptions = {}) {
     [onChunk],
   )
 
-  // ── HTTP path (browser / dev server) ──────────────────────────────────────
-  const streamViaHTTP = useCallback(
-    async (endpoint: string, body: Record<string, unknown>): Promise<string> => {
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-      if (!res.ok) throw new Error(await res.text() || `HTTP ${res.status}`)
-      const reader = res.body?.getReader()
-      if (!reader) throw new Error('No response body')
-      let result = ''
-      const decoder = new TextDecoder()
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        const chunk = decoder.decode(value, { stream: true })
-        for (const line of chunk.split('\n')) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6))
-              if (data.type === 'content_block_delta' && data.delta?.text) {
-                result += data.delta.text
-                onChunk?.(data.delta.text)
-              }
-            } catch { /* ignore */ }
-          }
-        }
-      }
-      return result
-    },
-    [onChunk],
-  )
-
   const run = useCallback(
     async (
       messages: Array<{ role: 'user' | 'assistant'; content: string }>,
-      httpEndpoint: string,
-      httpBody: Record<string, unknown>,
       maxTokens = 1024,
     ): Promise<string> => {
+      if (!aiAvailable()) throw new Error('AI features are only available in the desktop app')
       setLoading(true)
       setError(null)
       try {
-        return getElectron()
-          ? await streamViaIPC(messages, maxTokens)
-          : await streamViaHTTP(httpEndpoint, httpBody)
+        return await streamViaIPC(messages, maxTokens)
       } catch (err) {
         const raw = err instanceof Error ? err.message : String(err)
         const msg = raw.trim() || 'No API key configured. Add your Anthropic API key in Settings.'
@@ -126,14 +97,13 @@ export function useAI({ onChunk }: UseAIOptions = {}) {
         setLoading(false)
       }
     },
-    [streamViaIPC, streamViaHTTP],
+    [streamViaIPC],
   )
 
   const generateBullets = useCallback(
     (jobTitle: string, company: string, responsibilities: string) =>
       run(
         [{ role: 'user', content: bulletPrompt(jobTitle, company, responsibilities) }],
-        '/api/ai/bullets', { jobTitle, company, responsibilities },
       ),
     [run],
   )
@@ -142,7 +112,6 @@ export function useAI({ onChunk }: UseAIOptions = {}) {
     (text: string, context?: string) =>
       run(
         [{ role: 'user', content: improvePrompt(text, context) }],
-        '/api/ai/improve', { text, context },
       ),
     [run],
   )
@@ -151,7 +120,7 @@ export function useAI({ onChunk }: UseAIOptions = {}) {
     (data: { name: string; jobTitle: string; yearsExperience: string; skills: string[]; highlights: string }) =>
       run(
         [{ role: 'user', content: summaryPrompt(data) }],
-        '/api/ai/summary', data, 512,
+        512,
       ),
     [run],
   )
@@ -162,7 +131,6 @@ export function useAI({ onChunk }: UseAIOptions = {}) {
         [
           { role: 'user', content: interviewQuestionsPrompt(jobTitle, company, jobDescription, resumeContext) },
         ],
-        '/api/ai/interview', { jobTitle, company, jobDescription, resumeContext },
         2048,
       ),
     [run],
@@ -172,7 +140,7 @@ export function useAI({ onChunk }: UseAIOptions = {}) {
     (input: CoverLetterGenInput) =>
       run(
         [{ role: 'user', content: coverLetterGeneratePrompt(input) }],
-        '/api/ai/cover-letter', { ...input, op: 'generate' }, 1536,
+        1536,
       ),
     [run],
   )
@@ -181,7 +149,7 @@ export function useAI({ onChunk }: UseAIOptions = {}) {
     (body: string, context?: string) =>
       run(
         [{ role: 'user', content: coverLetterImprovePrompt(body, context) }],
-        '/api/ai/cover-letter', { body, context, op: 'improve' }, 1536,
+        1536,
       ),
     [run],
   )
@@ -190,7 +158,7 @@ export function useAI({ onChunk }: UseAIOptions = {}) {
     (body: string, tone: string) =>
       run(
         [{ role: 'user', content: coverLetterTonePrompt(body, tone) }],
-        '/api/ai/cover-letter', { body, tone, op: 'tone' }, 1536,
+        1536,
       ),
     [run],
   )
@@ -199,7 +167,7 @@ export function useAI({ onChunk }: UseAIOptions = {}) {
     (body: string) =>
       run(
         [{ role: 'user', content: coverLetterShortenPrompt(body) }],
-        '/api/ai/cover-letter', { body, op: 'shorten' }, 1024,
+        1024,
       ),
     [run],
   )

@@ -288,32 +288,79 @@ export function Sidebar() {
 
           <div
             className={cn(
-              "flex bg-accent/50 rounded-lg p-1",
+              "flex w-full items-center justify-center bg-accent/50 rounded-lg p-1",
               collapsed && "flex-col",
             )}
           >
-            <button
-              onClick={() => setTheme("light")}
-              className={cn(
-                "flex-1 flex items-center justify-center py-1.5 rounded-md transition-all",
-                theme === "light"
-                  ? "bg-background shadow-sm"
-                  : "text-muted-foreground",
-              )}
-            >
-              <Sun size={14} />
-            </button>
-            <button
-              onClick={() => setTheme("dark")}
-              className={cn(
-                "flex-1 flex items-center justify-center py-1.5 rounded-md transition-all",
-                theme === "dark"
-                  ? "bg-background shadow-sm"
-                  : "text-muted-foreground",
-              )}
-            >
-              <Moon size={14} />
-            </button>
+            {!collapsed ? (
+              <>
+                <button
+                  onClick={() => setTheme("light")}
+                  aria-label="Light Mode"
+                  className={cn(
+                    "w-full flex items-center justify-center py-1.5 rounded-md transition-all",
+                    theme === "light"
+                      ? "bg-background shadow-sm"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  <Sun size={14} />
+                </button>
+                <button
+                  onClick={() => setTheme("dark")}
+                  aria-label="Dark Mode"
+                  className={cn(
+                    "w-full flex items-center justify-center py-1.5 rounded-md transition-all",
+                    theme === "dark"
+                      ? "bg-background shadow-sm"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  <Moon size={14} />
+                </button>
+              </>
+            ) : (
+              <>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <button
+                        onClick={() => setTheme("light")}
+                        aria-label="Light Mode"
+                        className={cn(
+                          "w-full flex items-center justify-center py-1.5 rounded-md transition-all",
+                          theme === "light"
+                            ? "bg-background shadow-sm"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        <Sun size={14} />
+                      </button>
+                    }
+                  />
+                  <TooltipContent side="right">Light Mode</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger
+                    render={
+                      <button
+                        onClick={() => setTheme("dark")}
+                        aria-label="Dark Mode"
+                        className={cn(
+                          "w-full flex items-center justify-center py-1.5 rounded-md transition-all",
+                          theme === "dark"
+                            ? "bg-background shadow-sm"
+                            : "text-muted-foreground",
+                        )}
+                      >
+                        <Moon size={14} />
+                      </button>
+                    }
+                  />
+                  <TooltipContent side="right">Dark Mode</TooltipContent>
+                </Tooltip>
+              </>
+            )}
           </div>
 
           {!collapsed && (

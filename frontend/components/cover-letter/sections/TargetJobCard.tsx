@@ -6,6 +6,7 @@ import { useResumeStore } from '@/lib/store/resumeStore'
 import { useJobStore } from '@/lib/store/jobStore'
 import { useMemo } from 'react'
 import { ControlGroup, FieldLabel } from '@/components/editor/EditorPrimitives'
+import { aiAvailable } from '@/hooks/useAI'
 
 export function TargetJobCard() {
   const cl = useResumeStore(s => s.resume?.coverLetter)
@@ -46,7 +47,7 @@ export function TargetJobCard() {
             <div className="space-y-1">
               <p className="text-[11px] font-bold text-sky-700 dark:text-sky-400 uppercase tracking-wider">Target Application</p>
               <p className="text-[10px] text-sky-600/70 leading-relaxed">
-                Linking a job application allows the AI to tailor your letter specifically to the role's requirements and company culture.
+                {aiAvailable() ? "Linking a job application allows the AI to tailor your letter specifically to the role's requirements and company culture." : 'Linking a job application keeps this letter with the role it was written for.'}
               </p>
             </div>
           </div>

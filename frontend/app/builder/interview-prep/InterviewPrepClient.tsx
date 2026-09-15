@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import { useJobStore } from '@/lib/store/jobStore'
-import { useAI } from '@/hooks/useAI'
+import { useAI, aiAvailable } from '@/hooks/useAI'
 import { generateId } from '@/lib/utils/ids'
 import { cn } from '@/lib/utils'
 import type {
@@ -350,11 +350,12 @@ function QuestionsSection({
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-bold tracking-tight">Interview Questions</h3>
-          <p className="text-[11px] text-muted-foreground mt-0.5">Generate with AI or add your own. Draft answers for each.</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">{aiAvailable() ? 'Generate with AI or add your own.' : 'Add the questions you expect.'} Draft answers for each.</p>
         </div>
       </div>
 
       <div className="flex gap-2 flex-wrap">
+        {aiAvailable() && (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger render={<span className="inline-flex" />}>
@@ -374,6 +375,7 @@ function QuestionsSection({
             )}
           </Tooltip>
         </TooltipProvider>
+        )}
         <Button
           variant="ghost"
           size="sm"
@@ -487,7 +489,7 @@ function QuestionsSection({
       </div>
 
       {questions.length === 0 && !adding && !aiLoading && (
-        <EmptyState icon={MessageSquare} label="No questions yet" subtitle="Generate with AI or add manually" />
+        <EmptyState icon={MessageSquare} label="No questions yet" subtitle={aiAvailable() ? "Generate with AI or add manually" : "Add the questions you expect"} />
       )}
     </div>
   )

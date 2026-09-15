@@ -8,7 +8,7 @@ import type { CustomItem } from '@/lib/store/types'
 import { generateId } from '@/lib/utils/ids'
 import { MonthYearPicker } from '../MonthYearPicker'
 import { DebouncedRichTextArea } from '@/components/ui/debounced-rich-text-area'
-import { useAI } from '@/hooks/useAI'
+import { useAI, aiAvailable } from '@/hooks/useAI'
 import { toast } from 'sonner'
 import { FieldLabel, EntryCard } from '../EditorPrimitives'
 
@@ -119,9 +119,11 @@ export function CustomSection({ sectionId }: Props) {
               <div className="pt-2 space-y-3">
                 <div className="flex items-center justify-between px-1">
                   <FieldLabel className="mb-0">Description</FieldLabel>
-                  <div className="flex items-center gap-1 text-[10px] text-primary font-bold uppercase tracking-wider">
+                  {aiAvailable() && (
+                    <div className="flex items-center gap-1 text-[10px] text-primary font-bold uppercase tracking-wider">
                     <Sparkles size={10} /> AI Enhanced
                   </div>
+                  )}
                 </div>
                 <DebouncedRichTextArea
                   placeholder="Additional details..."

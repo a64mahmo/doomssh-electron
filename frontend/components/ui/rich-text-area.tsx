@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Bold, Italic, List, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { aiAvailable } from '@/hooks/useAI'
 
 const toolbarBtn = "h-7 w-7 rounded-md inline-flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
 
@@ -149,7 +150,7 @@ export function RichTextArea({
             </Tooltip>
           </div>
 
-          {onAIImprove && !hideAI && (
+          {onAIImprove && !hideAI && aiAvailable() && (
             <Button
               variant="ghost"
               size="sm"
