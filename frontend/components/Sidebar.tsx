@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { useResumeStore } from "@/lib/store/resumeStore";
 import { useTheme } from "next-themes";
 import {
   Mail,
@@ -103,6 +104,7 @@ function NavItem({
 export function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
+  const editingKind = useResumeStore((s) => s.resume?.kind);
   const { theme, setTheme } = useTheme();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [apiKey, setApiKey] = useState("");
@@ -166,10 +168,15 @@ export function Sidebar() {
     }
   }
 
-  const isResumes = pathname === "/builder";
-  const isCover = pathname?.startsWith("/builder/cover-letter");
-  const isJobs = pathname?.startsWith("/builder/jobs");
-  const isInterview = pathname?.startsWith("/builder/interview-prep");
+  // trailingSlash is on, so the dashboard is "/builder/" — compare without it,
+  // or the Resumes tab never matches. The editor route (/builder/new?id=…)
+  // serves both resumes and cover letters; highlight whichever is open.
+  const path = pathname?.replace(/\/+$/, "") || "/";
+  const inEditor = /^\/builder\/(?!cover-letter|jobs|interview-prep)[^/]+$/.test(path);
+  const isResumes = path === "/builder" || (inEditor && editingKind !== "coverLetter");
+  const isCover = path.startsWith("/builder/cover-letter") || (inEditor && editingKind === "coverLetter");
+  const isJobs = path.startsWith("/builder/jobs");
+  const isInterview = path.startsWith("/builder/interview-prep");
 
   return (
     <>

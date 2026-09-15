@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Job dialog in Safari** — The New Application / job details dialog collapsed its form in Safari, leaving the footer over the tabs so applications could not be saved. The dialog now has a definite height.
 - **Lost saves** — Edits and new jobs made within a second of a previous save, or while one was in flight, were never written.
+- **Sidebar Resumes tab** — The Resumes tab never showed the active pill: with trailing slashes the dashboard path is `/builder/`, which failed an exact `/builder` match. The editor now also highlights Resumes or Cover Letter depending on what is open.
 - **Photos in templates** — A photo beside a centred name was positioned absolutely and could overlap long names; it now sits in flow beside the name. Photos never showed when the header was in the sidebar in the preview or desktop export. Name fitting now leaves room for the photo.
 - **Skill text on dark sidebars** — Skills shown with levels rendered in the page's dark text colour on a dark panel.
 - **Missing section content** — Award titles and dates, volunteering roles, reference names and positions, and certification/publication dates did not render.
