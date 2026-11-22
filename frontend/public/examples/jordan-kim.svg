@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <title>Jordan Kim (illustration)</title>
+  <rect width="240" height="240" fill="#dbe7f0"/>
+  <!-- jacket and collar -->
+  <path d="M32 240c4-46 36-70 88-70s84 24 88 70z" fill="#1f3a5a"/>
+  <path d="M96 172l24 36 24-36z" fill="#f4f6f8"/>
+  <path d="M120 208l-8 32h16z" fill="#2c5d8a"/>
+  <!-- neck -->
+  <path d="M104 142h32v34c0 9-32 9-32 0z" fill="#d9a77e"/>
+  <!-- head -->
+  <ellipse cx="120" cy="108" rx="40" ry="46" fill="#e8b98f"/>
+  <ellipse cx="80" cy="112" rx="7" ry="11" fill="#d9a77e"/>
+  <ellipse cx="160" cy="112" rx="7" ry="11" fill="#d9a77e"/>
+  <!-- short hair, side part -->
+  <path d="M78 104c-4-40 22-60 50-58 26 2 40 20 38 52-6-14-16-22-30-24-10 10-34 16-58 30z" fill="#1d1a19"/>
+</svg>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <title>Liam Chen (illustration)</title>
+  <rect width="240" height="240" fill="#e1e8de"/>
+  <!-- sweater -->
+  <path d="M34 240c4-44 34-68 86-68s82 24 86 68z" fill="#4b5d46"/>
+  <path d="M98 174c8 12 36 12 44 0" fill="none" stroke="#3a4a36" stroke-width="6" stroke-linecap="round"/>
+  <!-- neck -->
+  <path d="M105 142h30v32c0 8-30 8-30 0z" fill="#dcae86"/>
+  <!-- head -->
+  <ellipse cx="120" cy="108" rx="38" ry="45" fill="#eec29b"/>
+  <ellipse cx="82" cy="112" rx="6" ry="10" fill="#dcae86"/>
+  <ellipse cx="158" cy="112" rx="6" ry="10" fill="#dcae86"/>
+  <!-- glasses -->
+  <rect x="92" y="104" width="24" height="16" rx="6" fill="none" stroke="#2e2a28" stroke-width="3"/>
+  <rect x="124" y="104" width="24" height="16" rx="6" fill="none" stroke="#2e2a28" stroke-width="3"/>
+  <path d="M116 110h8" stroke="#2e2a28" stroke-width="3"/>
+  <!-- messy short hair -->
+  <path d="M80 102c-2-36 18-56 42-56 28 0 44 22 38 54-4-10-10-16-18-18 2 6 0 10-4 12-6-8-16-12-26-12 2 6 0 10-6 12-6-6-14-6-26 8z" fill="#151312"/>
+</svg>

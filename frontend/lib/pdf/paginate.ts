@@ -11,6 +11,10 @@
  *    taller than a page, so the page still breaks between lines).
  * A page ends at the lowest point that cuts no interval and fits the page.
  *
+ * With "Keep entries together" (`keepEntries`), each entry (`data-entry`) and
+ * the summary (`data-unit`) is one more keep-together block: a page never ends
+ * inside one, so the whole entry moves to the next page.
+ *
  * With a sidebar (`data-column` on both columns) each column is its own flow:
  * it breaks wherever suits it and continues on the next page from there. The
  * page shows each column through its own window, so neither column waits for
@@ -76,9 +80,11 @@ export function findBreak(start: number, limit: number, intervals: Interval[]): 
   for (const maxLevel of [1, 0]) {
     let best = -1
     if (canBreakAt(limit, intervals, maxLevel)) best = limit
+    // A page can end just after a block or just before one.
     for (const iv of intervals) {
-      const y = iv.bottom
-      if (y > start + EPS && y <= limit && y > best && canBreakAt(y, intervals, maxLevel)) best = y
+      for (const y of [iv.bottom, iv.top]) {
+        if (y > start + EPS && y <= limit && y > best && canBreakAt(y, intervals, maxLevel)) best = y
+      }
     }
     if (best > start + EPS) return best
   }
@@ -155,7 +161,11 @@ function measurer(root: HTMLElement) {
  * The intervals of everything inside `scope` (default: the whole flow), in px
  * from the top of `root`, unscaled.
  */
-export function collectIntervals(root: HTMLElement, scope: HTMLElement = root): Interval[] {
+export function collectIntervals(
+  root: HTMLElement,
+  scope: HTMLElement = root,
+  { keepEntries = false }: { keepEntries?: boolean } = {},
+): Interval[] {
   const toY = measurer(root).y
   const intervals: Interval[] = []
   const add = (top: number, bottom: number, level: 0 | 1) => {
@@ -165,7 +175,11 @@ export function collectIntervals(root: HTMLElement, scope: HTMLElement = root): 
   for (const r of lineRects(scope)) add(r.top, r.bottom, 0)
 
   const blocks = Array.from(
-    scope.querySelectorAll<HTMLElement>('[data-keep], [data-entry-desc] > div, [data-header]'),
+    scope.querySelectorAll<HTMLElement>(
+      keepEntries
+        ? '[data-keep], [data-entry-desc] > div, [data-header], [data-entry], [data-unit]'
+        : '[data-keep], [data-entry-desc] > div, [data-header]',
+    ),
   )
   for (const el of blocks) {
     const r = el.getBoundingClientRect()
@@ -229,7 +243,12 @@ export function readInsets(root: HTMLElement): Insets {
  */
 export function paginate(
   root: HTMLElement,
-  { pageHeight, footerReserve, footerColumn = 'main' }: { pageHeight: number; footerReserve: number; footerColumn?: string },
+  {
+    pageHeight,
+    footerReserve,
+    footerColumn = 'main',
+    keepEntries = false,
+  }: { pageHeight: number; footerReserve: number; footerColumn?: string; keepEntries?: boolean },
 ): { pages: PageLayout[]; regions: Region[]; insets: Insets } {
   const insets = readInsets(root)
   const contentEnd = root.offsetHeight - insets.bottom
@@ -239,7 +258,7 @@ export function paginate(
 
   const columns = Array.from(root.querySelectorAll<HTMLElement>('[data-column]'))
   if (columns.length < 2) {
-    const pages = splitPages(collectIntervals(root), contentEnd, firstCapacity, capacity)
+    const pages = splitPages(collectIntervals(root, root, { keepEntries }), contentEnd, firstCapacity, capacity)
     return { pages: pages.map((p) => ({ slices: [p] })), regions: [{ left: 0, right: root.offsetWidth }], insets }
   }
 
@@ -263,7 +282,7 @@ export function paginate(
   const perColumn = placed.map((c) => {
     const end = Math.min(contentEnd, m.y(c.rect.bottom))
     const reserve = c.el.dataset.column === footerColumn ? footerReserve : 0
-    return splitPages(collectIntervals(root, c.el), end, firstCapacity + footerReserve - reserve, capacity + footerReserve - reserve)
+    return splitPages(collectIntervals(root, c.el, { keepEntries }), end, firstCapacity + footerReserve - reserve, capacity + footerReserve - reserve)
   })
   const count = Math.max(...perColumn.map((p) => p.length))
   const pages: PageLayout[] = Array.from({ length: count }, (_, i) => ({

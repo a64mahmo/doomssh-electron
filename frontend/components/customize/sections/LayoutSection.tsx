@@ -391,6 +391,23 @@ export function LayoutSection({
       {!isCoverLetter && (
         <>
           <Separator className="opacity-30" />
+          <ControlGroup title="Page Breaks">
+            <ToggleRow
+              id="keep-entries-together"
+              label="Keep entries together"
+              checked={s.keepEntriesTogether === true}
+              onCheckedChange={(v) => upd({ keepEntriesTogether: v })}
+            />
+            <p className="text-[11px] text-muted-foreground/70 leading-relaxed -mt-1">
+              A job, degree or project that does not fit moves to the next page as a whole, instead of splitting between pages.
+            </p>
+          </ControlGroup>
+        </>
+      )}
+
+      {!isCoverLetter && (
+        <>
+          <Separator className="opacity-30" />
           <ControlGroup title="Section Placement">
             {s.columnLayout === 'one' ? (
               <div className="py-8 px-3 rounded-2xl bg-muted/20 border border-dashed border-border/40 text-center space-y-2">

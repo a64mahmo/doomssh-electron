@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { findBreak, splitPages, type Interval } from '@/lib/pdf/paginate'
+import { collectIntervals, findBreak, splitPages, type Interval } from '@/lib/pdf/paginate'
 
 /** `n` lines of height `h` starting at `top`, separated by `gap`. */
 function lines(n: number, h = 20, gap = 0, top = 0): Interval[] {
@@ -40,8 +40,8 @@ describe('splitPages', () => {
     // page starts at the next block, not in the gap.
     const iv = lines(20, 20, 10)
     const pages = splitPages(iv, 590, 100, 80)
-    // The break is after the block ending at 80; the window runs 4px into the gap.
-    expect(pages[0]).toEqual({ start: 0, end: 84 })
+    // The break is just before the block starting at 90, after the gap.
+    expect(pages[0]).toEqual({ start: 0, end: 90 })
     expect(pages[1].start).toBe(90)
     for (const p of pages) expect(p.end).toBeGreaterThan(p.start)
     expect(pages[pages.length - 1].end).toBe(590)
@@ -68,5 +68,40 @@ describe('splitPages', () => {
 
   it('caps the page count', () => {
     expect(splitPages(lines(10000, 20), 200000, 100, 100).length).toBeLessThanOrEqual(30)
+  })
+})
+
+describe('keep entries together', () => {
+  /** A flow with one entry spanning 100..300px, its lines 20px apart. */
+  function flow() {
+    document.body.innerHTML = `
+      <div id="root">
+        <div data-entry id="entry">
+          <div id="head">Engineer</div>
+          <div data-entry-desc><div id="l1">One</div><div id="l2">Two</div></div>
+        </div>
+      </div>`
+    const rect = (top: number, bottom: number) => ({ top, bottom, left: 0, right: 100, width: 100, height: bottom - top, x: 0, y: top, toJSON() {} }) as DOMRect
+    const at: Record<string, [number, number]> = { root: [0, 1000], entry: [100, 300], head: [100, 140], l1: [150, 220], l2: [230, 300] }
+    for (const [id, [t, b]] of Object.entries(at)) {
+      document.getElementById(id)!.getBoundingClientRect = () => rect(t, b)
+    }
+    const root = document.getElementById('root')!
+    Object.defineProperty(root, 'offsetHeight', { value: 1000 })
+    return root
+  }
+
+  it('adds the whole entry as one block when on', () => {
+    const iv = collectIntervals(flow(), undefined, { keepEntries: true })
+    expect(iv).toContainEqual({ top: 100, bottom: 300, level: 1 })
+    // A page that could end after the first bullet ends before the entry instead.
+    expect(findBreak(0, 250, iv)).toBe(100)
+  })
+
+  it('is off by default, so the entry can split between bullets', () => {
+    const iv = collectIntervals(flow())
+    expect(iv).not.toContainEqual({ top: 100, bottom: 300, level: 1 })
+    // Between the two bullets (the gap runs from 220 to 230).
+    expect(findBreak(0, 250, iv)).toBe(230)
   })
 })

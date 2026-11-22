@@ -59,14 +59,16 @@ export function PagedResume({
   const paper = paperSizePx(resume)
   const chrome = getPageChrome(resume)
 
+  const keepEntries = resume.settings.keepEntriesTogether === true
+
   const measure = useCallback(() => {
     const host = measureRef.current
     const root = host?.querySelector<HTMLElement>('[data-resume-page]')
     if (!root) return
     const footerReserve = footerRef.current?.offsetHeight ? footerRef.current.offsetHeight + FOOTER_GAP : 0
-    const next = { ...paginate(root, { pageHeight: paper.height, footerReserve }), footerReserve }
+    const next = { ...paginate(root, { pageHeight: paper.height, footerReserve, keepEntries }), footerReserve }
     setLayout((prev) => (prev && JSON.stringify(prev) === JSON.stringify(next) ? prev : next))
-  }, [paper.height])
+  }, [paper.height, keepEntries])
 
   // Re-measure after every render: any edit can move a break.
   useLayoutEffect(() => {

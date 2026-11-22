@@ -19,7 +19,8 @@ export function SummarySection({ section, ctx, renderHeading }: SectionProps) {
   return (
     <div>
       {renderHeading(viewModel.title)}
-      <div className="print:text-black">{renderMd(text, ctx)}</div>
+      {/* data-unit: kept whole when "Keep entries together" is on (lib/pdf/paginate). */}
+      <div data-unit className="print:text-black">{renderMd(text, ctx)}</div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 /**
  * Dev fixtures: a resume carrying every section type, so the render harness and
  * the preview smoke test exercise every section renderer. The sample resumes
- * only cover header, summary, experience, education, skills and projects.
+ * cover most section types too; the fixture's own entries take precedence.
  */
 import { createSampleResumes } from '@/lib/db/database'
 import { SECTION_LABELS } from '@/lib/store/types'
@@ -12,15 +12,8 @@ const extra = (type: SectionType, items: unknown[]): ResumeSection =>
 
 export function allSectionsResume(): Resume {
   const [base, ...rest] = createSampleResumes()
-  const seen = new Set(base.sections.map((sec) => sec.type))
-  for (const r of rest) {
-    for (const sec of r.sections) {
-      if (!seen.has(sec.type)) {
-        seen.add(sec.type)
-        base.sections.push(sec)
-      }
-    }
-  }
+  // The fixture's own sections come first, so the smoke test's expected text
+  // stays put however the example resumes change; the examples fill the rest.
   const more: ResumeSection[] = [
     extra('certifications', [
       { id: 'c1', name: 'AWS Certified Solutions Architect – Associate', issuer: 'Amazon Web Services', date: '2023-05', url: 'aws.amazon.com/certification' },
@@ -48,6 +41,20 @@ export function allSectionsResume(): Resume {
       { id: 'x1', title: 'Open Source Maintainer', subtitle: 'dexie-sync-helpers', date: '2023-02', description: 'Maintain a small library used by 400+ projects.' },
     ]),
   ]
-  base.sections.push(...more.filter((sec) => !seen.has(sec.type)))
+  const seen = new Set(base.sections.map((sec) => sec.type))
+  for (const sec of more) {
+    if (!seen.has(sec.type)) {
+      seen.add(sec.type)
+      base.sections.push(sec)
+    }
+  }
+  for (const r of rest) {
+    for (const sec of r.sections) {
+      if (!seen.has(sec.type)) {
+        seen.add(sec.type)
+        base.sections.push(sec)
+      }
+    }
+  }
   return base
 }

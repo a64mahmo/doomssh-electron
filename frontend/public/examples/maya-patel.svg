@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <title>Maya Patel (illustration)</title>
+  <rect width="240" height="240" fill="#f1e3d9"/>
+  <!-- long hair behind -->
+  <path d="M70 112c-6-52 22-80 52-80s58 26 50 82c-2 30 8 52 8 76H62c0-26 10-46 8-78z" fill="#2b1b16"/>
+  <!-- top -->
+  <path d="M36 240c4-44 34-66 84-66s80 22 84 66z" fill="#c2563a"/>
+  <path d="M100 174c6 14 34 14 40 0z" fill="#a8452c"/>
+  <!-- neck -->
+  <path d="M106 144h28v30c0 8-28 8-28 0z" fill="#a8714f"/>
+  <!-- head -->
+  <ellipse cx="120" cy="108" rx="37" ry="44" fill="#b98060"/>
+  <!-- fringe -->
+  <path d="M82 106c2-36 20-56 42-56 24 0 38 20 38 52-14-6-28-22-36-38-8 20-24 34-44 42z" fill="#2b1b16"/>
+  <circle cx="84" cy="122" r="3.5" fill="#e7c36b"/>
+  <circle cx="156" cy="122" r="3.5" fill="#e7c36b"/>
+</svg>

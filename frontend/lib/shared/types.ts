@@ -304,6 +304,12 @@ export interface ResumeSettings {
   /** Hairline between the main column and the sidebar. Default on. */
   /** No longer drawn; kept so saved resumes still type-check. */
   columnDivider?: boolean
+  /**
+   * Page breaks never split an entry (a job, a degree, a project...) or the
+   * summary: if any of it does not fit, all of it moves to the next page. An
+   * entry taller than a page still splits between lines. Off by default.
+   */
+  keepEntriesTogether?: boolean
   sidebarTextColor?: string
   columnReverse: boolean
   lineHeight: number

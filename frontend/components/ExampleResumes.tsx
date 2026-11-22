@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils'
 
 const EXAMPLES: { key: string; title: string; subtitle: string; accent: string; create: () => Resume }[] = [
   { key: 'pm', title: 'Product Manager', subtitle: 'Modern template', accent: 'from-violet-500 to-indigo-600', create: createSampleResumeProductManager },
-  { key: 'designer', title: 'Designer', subtitle: 'Crisp template', accent: 'from-sky-500 to-blue-600', create: createSampleResumeDesigner },
+  { key: 'designer', title: 'Designer', subtitle: 'Aspen template', accent: 'from-sky-500 to-blue-600', create: createSampleResumeDesigner },
   { key: 'grad', title: 'New Grad', subtitle: 'Minimal template', accent: 'from-zinc-400 to-zinc-600', create: createSampleResumeRecentGrad },
 ]
 
