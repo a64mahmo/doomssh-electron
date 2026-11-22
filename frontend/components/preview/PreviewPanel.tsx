@@ -6,19 +6,19 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { ZoomIn, ZoomOut, Maximize2, Minimize2, Download } from 'lucide-react'
 import { useUIStore } from '@/lib/store/uiStore'
 import { downloadResumePDF } from '@/lib/utils/export'
-import { MasterTemplate } from '@/components/web'
+import { PagedResume, paperSizePx } from '@/components/web'
 import type { Resume } from '@/lib/store/types'
 import { cn } from '@/lib/utils'
 
-const MM_TO_PX = 96 / 25.4
+/** Space between pages in the preview, in px at 100% zoom. */
+const PAGE_GAP = 24
 
 // ─── Inner (client-only) ──────────────────────────────────────────────────────
 
 /**
- * Live preview: the HTML template itself, re-rendered on every change. Desktop
- * export prints this same HTML with Chromium (app/print), so what you see is what
- * you get. The dashed page guides are approximate — printing moves a heading or
- * an entry's first line to the next page rather than splitting it.
+ * Live preview: the same paged HTML that export prints (app/print), re-rendered
+ * on every change. Measured at the screen's scale, so on a Retina display a
+ * break can occasionally land one line differently from the exported PDF.
  */
 function PreviewInner({ resume }: { resume: Resume }) {
   const { previewZoom, setPreviewZoom } = useUIStore()
@@ -26,11 +26,9 @@ function PreviewInner({ resume }: { resume: Resume }) {
   const [contentHeight, setContentHeight] = useState(0)
   const contentRef = useRef<HTMLDivElement | null>(null)
 
-  const isA4 = resume.settings.paperSize === 'a4'
-  const pageWidth = (isA4 ? 210 : 215.9) * MM_TO_PX
-  const pageHeight = (isA4 ? 297 : 279.4) * MM_TO_PX
+  const { width: pageWidth, height: pageHeight } = paperSizePx(resume)
 
-  // Track the rendered height (unaffected by the zoom transform) to place page guides.
+  // Track the rendered height of all pages (unaffected by the zoom transform).
   useEffect(() => {
     const el = contentRef.current
     if (!el) return
@@ -38,8 +36,6 @@ function PreviewInner({ resume }: { resume: Resume }) {
     observer.observe(el)
     return () => observer.disconnect()
   }, [])
-
-  const pageCount = Math.max(1, Math.ceil((contentHeight - 1) / pageHeight))
 
   const handleZoom = (delta: number) =>
     setPreviewZoom(Number(Math.min(2, Math.max(0.3, previewZoom + delta)).toFixed(2)))
@@ -109,23 +105,15 @@ function PreviewInner({ resume }: { resume: Resume }) {
           >
             <div
               ref={contentRef}
-              className="absolute top-0 left-0 bg-white shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] dark:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] border border-border/30"
+              className="absolute top-0 left-0"
               style={{ width: pageWidth, transform: `scale(${previewZoom})`, transformOrigin: 'top left' }}
             >
-              <MasterTemplate resume={resume} showPlaceholders />
-
-              {Array.from({ length: pageCount - 1 }, (_, i) => (
-                <div
-                  key={i}
-                  aria-hidden
-                  className="absolute left-0 right-0 border-t border-dashed border-rose-400/70 pointer-events-none"
-                  style={{ top: pageHeight * (i + 1) }}
-                >
-                  <span className="absolute right-2 -top-5 text-[10px] font-semibold text-rose-500/80 bg-white/90 px-1.5 rounded">
-                    Page {i + 2}
-                  </span>
-                </div>
-              ))}
+              <PagedResume
+                resume={resume}
+                showPlaceholders
+                pageGap={PAGE_GAP}
+                pageClassName="shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] dark:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.6)] outline outline-1 outline-border/30"
+              />
             </div>
           </div>
         </div>

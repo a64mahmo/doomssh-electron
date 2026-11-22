@@ -459,6 +459,11 @@ ipcMain.handle('export-pdf', async (_event, { resume, fileName }: { resume: Resu
     // Not the main window's transparent/vibrancy setup — printed pages need a solid ground.
     backgroundColor: '#ffffff',
     webPreferences: {
+      // Lays out at a device scale of 1, as printing does. A normal hidden
+      // window takes the display's scale (2 on Retina), where text metrics
+      // round differently, so the page breaks measured on screen drift from
+      // the printed layout by a pixel or so per entry and cut lines in half.
+      offscreen: true,
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,

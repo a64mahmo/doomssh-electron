@@ -38,7 +38,7 @@ DoomSSH is designed to simplify the resume creation process by leveraging AI (An
 -   **AI Integration:** Anthropic SDK via Electron IPC (Claude Opus 4.6), desktop only
 
 ### Desktop
--   **Runtime:** Electron 34
+-   **Runtime:** Electron 45
 -   **Security:** `safeStorage` for credentials
 
 ---

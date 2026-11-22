@@ -287,7 +287,8 @@ export interface ResumeSettings {
 
   // Layout & Spacing
   columnLayout: ColumnLayout
-  headerLayout?: 'top' | 'sidebar'
+  /** Two columns only: which column the header heads. 'top' (the old full-width header) reads as 'main'. */
+  headerLayout?: 'top' | 'main' | 'sidebar'
   sidebarTheme?: 'none' | 'accent' | 'custom'
   sidebarBackgroundColor?: string
   /** tint: a pale wash behind normal text. solid: the full colour, with light text on a dark pick. */

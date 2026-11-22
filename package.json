@@ -91,7 +91,7 @@
     "@types/electron": "^1.6.10",
     "@types/node": "^20",
     "concurrently": "^9.1.2",
-    "electron": "^34.0.0",
+    "electron": "^45.2.3",
     "electron-builder": "^25.1.8",
     "tailwindcss": "^4",
     "typescript": "^5",

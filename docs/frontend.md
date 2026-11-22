@@ -56,7 +56,7 @@ The `resumeStore` is the heart of the frontend. It maintains the `Resume` object
 
 -   **Builder Page (`/app/builder/[id]`):** The main workspace, split into:
     -   `EditorPanel`: Left side. Contains input fields for each resume section. Features a simplified sidebar with square selection backgrounds and interactive **tooltips** powered by `@base-ui/react`.
-    -   `PreviewPanel`: Right side. Renders the resume as live HTML with zoom, fullscreen and approximate dashed page guides. **Export** calls `downloadResumePDF`.
+    -   `PreviewPanel`: Right side. Renders the resume as live HTML pages (the same pages export prints) with zoom and fullscreen. **Export** calls `downloadResumePDF`.
     -   `CustomizePanel`: Sidebar for adjusting fonts, colors, and layout settings. Also utilizes the standardized tooltip-enabled sidebar.
     -   `AIPanel`: Interactive assistant for generating and improving content.
 

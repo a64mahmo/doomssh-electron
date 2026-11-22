@@ -154,6 +154,8 @@ export function TemplateVisual({ id }: { id: TemplateId }) {
   const solid = themed && settings.sidebarFill === 'solid'
   const tint = themed && !solid
   const headerInSidebar = isSidebar && settings.headerLayout === 'sidebar'
+  // Two columns: the header heads one column, never both (see resolveHeaderPlacement).
+  const headerInMain = isSidebar && !headerInSidebar
   const detailsBeside = settings.detailsPosition === 'beside' && headerAlign !== 'center'
   const photo = !!settings.photoEnabled
   const photoTop = headerAlign === 'center' && settings.photoPosition !== 'beside'
@@ -194,7 +196,7 @@ export function TemplateVisual({ id }: { id: TemplateId }) {
         />
       )}
 
-      {!headerInSidebar && (
+      {!isSidebar && (
         <div
           className={cn(
             'relative flex gap-2',
@@ -221,8 +223,24 @@ export function TemplateVisual({ id }: { id: TemplateId }) {
         </div>
       )}
 
-      <div className={cn('relative flex-1 flex gap-3 px-4', headerInSidebar ? 'pt-0' : 'pt-3', isReverse && 'flex-row-reverse')}>
-        <div className={cn('flex-1 flex flex-col gap-3', headerInSidebar ? 'pt-4' : 'pt-1')}>
+      <div className={cn('relative flex-1 flex gap-3 px-4', isSidebar ? 'pt-0' : 'pt-3', isReverse && 'flex-row-reverse')}>
+        <div className={cn('flex-1 flex flex-col gap-3', headerInMain ? 'pt-0' : isSidebar ? 'pt-4' : 'pt-1')}>
+          {headerInMain && (
+            <div
+              className={cn(
+                'flex gap-2 items-center pt-4 pb-2',
+                band && cn('pb-3', isReverse ? '-mr-4 pr-4 -ml-3 pl-3' : '-ml-4 pl-4 -mr-3 pr-3'),
+                headerAlign === 'right' && 'flex-row-reverse',
+              )}
+              style={{ backgroundColor: band ? accent : undefined }}
+            >
+              {photoEl()}
+              <div className={cn('flex flex-col gap-1.5 flex-1', headerAlign === 'center' && 'items-center', headerAlign === 'right' && 'items-end')}>
+                <div className="h-2.5 w-2/3 rounded-full" style={{ backgroundColor: band ? '#ffffff' : accent }} />
+                {contacts(band ? '#ffffff99' : '#d1d5db', headerAlign === 'center' ? 'justify-center' : headerAlign === 'right' ? 'justify-end' : 'justify-start')}
+              </div>
+            </div>
+          )}
           <div className="space-y-2">
             <div className="h-1.5 w-1/3 rounded-full" style={{ backgroundColor: settings.applyAccentHeadings ? accent : '#9ca3af' }} />
             {lines(3)}
@@ -237,7 +255,7 @@ export function TemplateVisual({ id }: { id: TemplateId }) {
           <div
             className={cn(
               'w-1/3 flex flex-col gap-3',
-              solid || tint ? cn('pt-3', isReverse ? 'pr-1' : 'pl-1') : cn('pt-1 border-gray-200', isReverse ? 'border-r pr-3' : 'border-l pl-3'),
+              solid || tint ? cn('pt-4', isReverse ? 'pr-1' : 'pl-1') : cn('pt-4 border-gray-200', isReverse ? 'border-r pr-3' : 'border-l pl-3'),
             )}
           >
             {headerInSidebar && (

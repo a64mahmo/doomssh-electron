@@ -6,25 +6,29 @@ This document describes the rendering architecture for resumes and cover letters
 
 The HTML template is the **source of truth**:
 
-1. **Live preview** — `components/preview/PreviewPanel.tsx` renders `MasterTemplate.tsx` directly.
-2. **PDF export** — `app/print/[resumeId]/PrintClient.tsx` renders the same `MasterTemplate.tsx`. Electron captures it with Chromium's `printToPDF`; the browser build prints it from a hidden iframe (`lib/utils/export.tsx`) through the print dialog.
+1. **Live preview** — `components/preview/PreviewPanel.tsx` renders `PagedResume.tsx`.
+2. **PDF export** — `app/print/[resumeId]/PrintClient.tsx` renders the same `PagedResume.tsx`. Electron captures it with Chromium's `printToPDF`; the browser build prints it from a hidden iframe (`lib/utils/export.tsx`) through the print dialog.
 
 There is no second renderer: a change here is the change to every output.
 
-## Print Hooks
+## Pages
 
-The print CSS in `PrintClient.tsx` targets these attributes. Keep them when restructuring markup:
+`PagedResume` lays `MasterTemplate` out once, hidden, as one continuous flow, and `lib/pdf/paginate.ts` picks where each page ends. Every page is a frame of exact paper size (`contain: strict`, one sheet each) that paints its own background, sidebar panel, border and numbered footer, and shows its slice of the flow through a clipped window inset by the page margins. So every page has its margin on all four sides. Breaks are measured where the pages are rendered: desktop export uses an offscreen window at device scale 1 so the measurement matches print; the preview, at the screen's scale, can occasionally break one line differently on a Retina display.
 
-| Attribute | Element | Print behaviour |
-|-----------|---------|-----------------|
-| `data-resume-page` | Page root (resume and cover letter) | No full-page `min-height`; padding cloned onto every page as the margin |
-| `data-sidebar-panel` | Tinted or solid sidebar background | `position: fixed`, repeats on every page |
-| `data-footer-fixed` | Footer | Fixed and inset by the page margins |
-| `data-section-heading` | Section heading | `break-after: avoid` |
-| `data-section` | Section wrapper | The last one's final entry drops its bottom margin (prevents a blank trailing page) |
-| `data-entry` | Entry (`sections/shared.tsx`) | Its head block stays with its first line |
-| `data-entry-desc` | Entry description | Each line / bullet never splits |
-| `data-keep` | Skills, languages, references | Printed as one block |
+Breaks never cut a line of text or an image. These attributes add keep-together rules on top (dropped only when a block is taller than a page). Keep them when restructuring markup:
+
+| Attribute | Element | Rule |
+|-----------|---------|------|
+| `data-resume-page` | Flow root (resume and cover letter) | Its padding and border are the page margins |
+| `data-header` | Header | Kept whole |
+| `data-section` / `data-section-heading` | Section / its heading | The heading stays with the first line or block below it |
+| `data-entry` | Entry (`sections/shared.tsx`) | Its head stays with its first description line |
+| `data-entry-desc` | Entry description | Each line / bullet kept whole |
+| `data-keep` | Skills, languages, references | Kept whole |
+
+With a sidebar, the two columns (`data-column="main"` / `"sidebar"`) are paginated separately: each breaks where it suits and continues on the next page from there, and each page shows them through one window per column. The header never spans both columns: it heads one of them (`resolveHeaderPlacement`; the Customize panel offers Left / Right), so both columns, the sidebar panel and the divider run the full height of every page.
+
+`MasterTemplate`'s `paged` prop renders the flow without page height, fill, sidebar panel, divider colour, border or footer; `getPageChrome` gives the frames those, and the frames draw the divider from the top margin to the footer on every page.
 
 ## File Map
 
@@ -58,4 +62,5 @@ See `docs/template-customization.md` for details.
 
 ### Verifying Output
 - `npx vitest run tests/components/web/templateSmoke.test.tsx` — HTML renders for every preset with every section type.
-- Load `/print/new/?mode=export` (or export a PDF) to check page breaks, with and without a photo.
+- `npx vitest run tests/lib/pdf/paginate.test.ts` — break selection.
+- Export a PDF (or load `/print/new/?mode=export`) to check page breaks, with and without a photo.

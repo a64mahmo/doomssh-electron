@@ -1,8 +1,8 @@
 'use client'
-import { useEffect, useState, use } from 'react'
+import { useCallback, useEffect, useRef, useState, use } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { getResume } from '@/lib/db/database'
-import { MasterTemplate } from '@/components/web'
+import { PagedResume } from '@/components/web'
 import type { Resume } from '@/lib/store/types'
 
 declare global {
@@ -23,6 +23,7 @@ export function PrintClient({ params }: { params: Promise<{ resumeId: string }> 
   const searchParams = useSearchParams()
   const resumeId = searchParams.get('id') || resolvedParams.resumeId
   const exportMode = searchParams.get('mode') === 'export'
+  const printedRef = useRef(false)
   const [resume, setResume] = useState<Resume | null>(() =>
     exportMode && typeof window !== 'undefined' ? window.__DOOMSSH_PRINT_RESUME__ ?? null : null,
   )
@@ -44,68 +45,37 @@ export function PrintClient({ params }: { params: Promise<{ resumeId: string }> 
     })
   }, [resumeId, exportMode])
 
-  useEffect(() => {
-    if (!resume) return
-    let cancelled = false
-    document.fonts.ready.then(() => {
-      // Two frames so layout has settled with the loaded fonts.
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        if (cancelled) return
-        if (exportMode) document.documentElement.dataset.printReady = 'true'
-        else window.print()
-      }))
-    })
-    return () => { cancelled = true }
-  }, [resume, exportMode])
+  // Once the pages reflect the loaded fonts, give layout two frames to settle.
+  const handleReady = useCallback(() => {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (exportMode) document.documentElement.dataset.printReady = 'true'
+      else if (!printedRef.current) {
+        printedRef.current = true
+        window.print()
+      }
+    }))
+  }, [exportMode])
 
   if (!resume) {
     return <div style={{ padding: 32, fontFamily: 'sans-serif' }}>Loading…</div>
   }
 
   const s = resume.settings
-  const hasFooter = s.footerPageNumbers || s.footerEmail || s.footerName
 
   return (
     <>
       <style>{`
-        /* The template's own padding is the page margin, cloned onto every page,
-           so the paper margin is zero. Full-bleed bands and panels need that. */
+        /* Every page frame paints its own margins, background and footer, so
+           the paper has no margin and each frame is exactly one sheet. */
         @page {
           size: ${s.paperSize === 'a4' ? 'A4' : 'letter'};
           margin: 0;
         }
         html, body { margin: 0; padding: 0; background: ${s.backgroundColor}; }
         * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        @media print {
-          [data-resume-page] {
-            /* A full-page min-height plus the cloned padding spills onto a blank page. */
-            min-height: auto !important;
-            -webkit-box-decoration-break: clone;
-            box-decoration-break: clone;
-            ${hasFooter ? `padding-bottom: calc(${s.marginVertical}mm + 24pt) !important;` : ''}
-          }
-          /* Fixed elements repeat on every printed page. */
-          [data-sidebar-panel] { position: fixed !important; }
-          [data-footer-fixed] {
-            position: fixed;
-            left: ${s.marginHorizontal}mm;
-            right: ${s.marginHorizontal}mm;
-            bottom: ${s.marginVertical}mm;
-            padding-bottom: 0 !important;
-          }
-          /* Page breaks: headings stay with what follows, an entry's head stays
-             with its first line, and bullets and short sections never split. */
-          [data-section-heading] { break-after: avoid; }
-          [data-entry] > :first-child { break-inside: avoid; break-after: avoid; }
-          [data-entry-desc] > div { break-inside: avoid; }
-          [data-keep] { break-inside: avoid; }
-          /* A bottom margin below the last content in a column would push the
-             page a few pixels past the paper and start a blank page. */
-          [data-section]:last-child [data-entry]:last-child,
-          [data-section]:last-child > div > :last-child { margin-bottom: 0 !important; }
-        }
+        [data-page]:not(:last-child) { break-after: page; }
       `}</style>
-      <MasterTemplate resume={resume} />
+      <PagedResume resume={resume} onReady={handleReady} />
     </>
   )
 }

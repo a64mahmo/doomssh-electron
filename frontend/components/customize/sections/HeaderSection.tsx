@@ -45,38 +45,47 @@ export function HeaderSection({ s, upd, sections }: HeaderSectionProps) {
   return (
     <>
       <ControlGroup title="Header Layout">
-        {/* Only offered when there is a sidebar to place the header in —
-            mirrors how Details Position is gated below. */}
-        {!isCoverLetter && s.columnLayout !== 'one' && (
-          <div>
-            <FieldLabel>Header Position</FieldLabel>
-            <VisualSegmentGroup
-              columns={2}
-              value={s.headerLayout ?? 'top'}
-              onChange={(v) => upd({ headerLayout: v as 'top' | 'sidebar' })}
-              options={[
-                { value: 'top', label: 'Top', render: () => (
-                  <div className="flex flex-col gap-1 w-10 text-muted-foreground/40">
-                    <div className="h-1.5 w-full bg-current rounded-sm" />
-                    <div className="flex gap-1">
-                      <div className="h-3 flex-1 bg-current/50 rounded-sm" />
-                      <div className="h-3 w-1/3 bg-current/30 rounded-sm" />
-                    </div>
-                  </div>
-                ) },
-                { value: 'sidebar', label: 'Sidebar', render: () => (
-                  <div className="flex gap-1 w-10 text-muted-foreground/40">
-                    <div className="h-4 flex-1 bg-current/50 rounded-sm" />
-                    <div className="flex flex-col gap-0.5 w-1/3">
-                      <div className="h-1.5 w-full bg-current rounded-sm" />
-                      <div className="h-2 w-full bg-current/30 rounded-sm" />
-                    </div>
-                  </div>
-                ) },
-              ]}
-            />
-          </div>
-        )}
+        {/* Two columns: the header heads one column, never both, so the
+            columns run the full height of the page. Offered as the side it
+            lands on; which column that is follows the column order. */}
+        {!isCoverLetter && s.columnLayout !== 'one' && (() => {
+          const leftValue = s.columnReverse ? 'sidebar' : 'main'
+          const rightValue = s.columnReverse ? 'main' : 'sidebar'
+          const current = s.headerLayout === 'sidebar' ? 'sidebar' : 'main'
+          // The header bar sits atop the column on that side: the wide main
+          // column or the narrow sidebar.
+          const thumb = (side: 'left' | 'right', headed: 'main' | 'sidebar') => {
+            const col = (wide: boolean, withHeader: boolean) => (
+              <div className={cn('flex flex-col gap-0.5', wide ? 'flex-1' : 'w-1/3')}>
+                {withHeader && <div className="h-1.5 w-full bg-current rounded-sm" />}
+                <div className={cn('w-full rounded-sm', wide ? 'bg-current/50' : 'bg-current/30', withHeader ? 'h-2.5' : 'h-4')} />
+              </div>
+            )
+            const main = col(true, headed === 'main')
+            const sidebar = col(false, headed === 'sidebar')
+            const leftIsMain = !s.columnReverse
+            return (
+              <div className="flex gap-1 w-10 text-muted-foreground/40">
+                {leftIsMain ? main : sidebar}
+                {leftIsMain ? sidebar : main}
+              </div>
+            )
+          }
+          return (
+            <div>
+              <FieldLabel>Header Position</FieldLabel>
+              <VisualSegmentGroup
+                columns={2}
+                value={current}
+                onChange={(v) => upd({ headerLayout: v as 'main' | 'sidebar' })}
+                options={[
+                  { value: leftValue, label: 'Left', render: () => thumb('left', leftValue) },
+                  { value: rightValue, label: 'Right', render: () => thumb('right', rightValue) },
+                ]}
+              />
+            </div>
+          )
+        })()}
 
         <div>
           <FieldLabel>Text Alignment</FieldLabel>

@@ -86,7 +86,7 @@ Most modern resume builders lock your data behind a subscription or a cloud acco
 
 | Layer          | Technology                                                 |
 | :------------- | :--------------------------------------------------------- |
-| **Runtime**    | **Electron 34** (Native OS integration & Security)         |
+| **Runtime**    | **Electron 45** (Native OS integration & Security)         |
 | **Frontend**   | **Next.js 16** (App Router, React 19, Static Export)       |
 | **State**      | **Zustand + Immer** (High-performance immutable state)     |
 | **Storage**    | **Local Vault** (JSON files) · **IndexedDB** in the browser |

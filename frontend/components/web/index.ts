@@ -22,13 +22,14 @@ export const TEMPLATE_META: Record<TemplateId, { label: string; description: str
   aspen:   { label: 'Aspen',   description: 'Soft green sidebar with a large round photo, name and details' },
   vega:    { label: 'Vega',    description: 'Dense single column that fits a long history on one page' },
   lumen:   { label: 'Lumen',   description: 'Spacious centred layout with a large portrait for a first-job resume' },
-  atlas:   { label: 'Atlas',   description: 'Full-bleed navy header band with the photo over a two-column body' },
+  atlas:   { label: 'Atlas',   description: 'Navy header band with the photo atop the main column, beside a full-height sidebar' },
   sierra:  { label: 'Sierra',  description: 'Creative left sidebar in warm orange, knockout icons and a big name' },
   nova:    { label: 'Nova',    description: 'Executive serif with the portrait and name centred as one group' },
   custom:  { label: 'Custom',  description: 'Your unique vision — fully adjustable settings for a bespoke experience' },
 }
 
-export { MasterTemplate, TemplateFooter } from './MasterTemplate'
+export { MasterTemplate, TemplateFooter, getPageChrome } from './MasterTemplate'
+export { PagedResume, paperSizePx } from './PagedResume'
 export interface TemplateProps {
   resume: Resume
   pads?: number[]
@@ -595,7 +596,7 @@ export function getTemplateSettings(id: TemplateId): Partial<ResumeSettings> {
         sectionSpacing:               1.2,
       }
 
-    // Full-bleed navy band with the photo, two-column body.
+    // Navy band with the photo atop the main column; the sidebar runs full height.
     case 'atlas':
       return {
         ...base('#1e3a8a'),

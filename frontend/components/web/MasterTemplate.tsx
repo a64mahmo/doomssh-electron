@@ -1,5 +1,5 @@
 import React from "react";
-import type { Resume, ResumeSection, SectionType, HeaderData } from "@/lib/store/types";
+import type { Resume, ResumeSection, ResumeSettings, SectionType, HeaderData } from "@/lib/store/types";
 import { buildCtx, sidebarCtx, isSolidSidebar } from "@/lib/pdf/templateCtx";
 import { SectionRenderer, ContactLine } from "./sections";
 import { SECTION_ICONS } from "@/lib/icons/sectionIcons";
@@ -191,6 +191,117 @@ interface Props {
   hideHeader?: boolean;
   isMeasurement?: boolean;
   sectionsOverride?: ResumeSection[];
+  /**
+   * Rendered as the content of PagedResume's page windows: no page height, no
+   * background, sidebar panel, border or footer. The page frames paint those
+   * per page instead. The border keeps its width, transparent, so the content
+   * sits where it would on a real page.
+   */
+  paged?: boolean;
+}
+
+const SIDEBAR_TYPES = ["skills", "education", "languages", "certifications", "awards", "references"];
+const MIX_MAIN_TYPES = ["summary", "experience", "projects", "volunteering", "publications", "custom"];
+
+/** Which visible sections go in the main column and which in the sidebar. */
+function splitColumns(resume: Resume, sectionsOverride?: ResumeSection[]) {
+  const s = resume.settings;
+  const visibleSections =
+    sectionsOverride ||
+    resume.sections.filter((sec) => sec.visible !== false && sec.type !== "header");
+  const mainSections: ResumeSection[] = [];
+  const sidebarSections: ResumeSection[] = [];
+  if (s.columnLayout === "one") {
+    mainSections.push(...visibleSections);
+    return { mainSections, sidebarSections };
+  }
+  visibleSections.forEach((sec) => {
+    const assigned = s.sectionColumns?.[sec.id];
+    if (assigned === "sidebar") sidebarSections.push(sec);
+    else if (assigned === "main") mainSections.push(sec);
+    else if (s.sidebarSectionTypes) {
+      if (s.sidebarSectionTypes.includes(sec.type)) sidebarSections.push(sec);
+      else mainSections.push(sec);
+    } else if (s.columnLayout === "mix") {
+      if (MIX_MAIN_TYPES.includes(sec.type)) mainSections.push(sec);
+      else sidebarSections.push(sec);
+    } else if (SIDEBAR_TYPES.includes(sec.type)) sidebarSections.push(sec);
+    else mainSections.push(sec);
+  });
+  return { mainSections, sidebarSections };
+}
+
+/**
+ * Where the header goes. One column (or no sidebar content): across the top.
+ * Two columns: at the head of one column, never across both, so the columns
+ * and the sidebar panel run the full height of the page. A saved "top" from
+ * before this rule reads as the main column.
+ */
+export function resolveHeaderPlacement(
+  s: Pick<ResumeSettings, "columnLayout" | "headerLayout">,
+  hasSidebar: boolean,
+): "top" | "main" | "sidebar" {
+  if (s.columnLayout === "one" || !hasSidebar) return "top";
+  return s.headerLayout === "sidebar" ? "sidebar" : "main";
+}
+
+/** The fill behind the sidebar column: a solid colour, a tint, or "transparent". */
+function sidebarFillFor(ctx: ReturnType<typeof buildCtx>) {
+  const { s, colors } = ctx;
+  const sidebarThemed =
+    s.sidebarTheme === "accent" ||
+    (s.sidebarTheme === "custom" && !!s.sidebarBackgroundColor);
+  return isSolidSidebar(s)
+    ? colors.sidebarBg
+    : sidebarThemed
+    ? (isLight(colors.sidebarBg) ? colors.sidebarBg : `${colors.sidebarBg}1a`)
+    : (s.applyAccentDotsBarsBubbles ? `${colors.accent}0a` : "transparent");
+}
+
+function pageBackground(ctx: ReturnType<typeof buildCtx>) {
+  const { s, colors } = ctx;
+  return s.themeColorStyle === 'advanced' && s.backgroundColor === '#ffffff' ? `${colors.accent}05` : colors.background;
+}
+
+/**
+ * What every printed page paints regardless of its content: the background,
+ * the sidebar panel reaching the paper edges, and the border theme's frame.
+ */
+export function getPageChrome(resume: Resume) {
+  const ctx = buildCtx(resume.settings);
+  const { s, colors } = ctx;
+  const padH = `${s.marginHorizontal}mm`;
+  let sidebarPanel: React.CSSProperties | null = null;
+  let dividerColor: string | null = null;
+  if (resume.kind !== 'coverLetter' && s.columnLayout !== "one") {
+    const { sidebarSections } = splitColumns(resume);
+    // The column divider, drawn by each page frame from the top margin to the
+    // footer so it never stops where a column's text happens to end.
+    if (sidebarSections.length > 0 && !isSolidSidebar(s) && s.columnDivider !== false) {
+      dividerColor = s.applyAccentDotsBarsBubbles ? colors.accent : (s.colorMode === 'basic' ? colors.text : colors.heading);
+    }
+    const fill = sidebarFillFor(ctx);
+    const sidebarWidth = s.columnWidthMode === "manual" ? s.columnWidth : 32;
+    if (sidebarSections.length > 0 && fill !== "transparent") {
+      sidebarPanel = {
+        position: "absolute",
+        top: 0,
+        bottom: 0,
+        [s.columnReverse ? "left" : "right"]: 0,
+        // The template's width (216mm Letter) is a touch wider than the paper,
+        // so the panel is sized against it, as the in-flow panel is.
+        width: `calc((${s.paperSize === "a4" ? "210mm" : "216mm"} - ${padH} - ${padH}) * ${sidebarWidth / 100} + ${padH})`,
+        backgroundColor: fill,
+      };
+    }
+  }
+  return {
+    background: pageBackground(ctx),
+    sidebarPanel,
+    /** Divider colour, or null for none. It sits where the columns meet, on the main column's side. */
+    divider: dividerColor ? { color: dividerColor, mainOnLeft: !s.columnReverse } : null,
+    borderColor: s.themeColorStyle === 'border' ? colors.accent : null,
+  };
 }
 
 function SectionHeading({
@@ -479,6 +590,7 @@ export function MasterTemplate({
   isMeasurement,
   sectionsOverride,
   showPlaceholders,
+  paged,
 }: Props) {
   const ctx = buildCtx(resume.settings);
   const {
@@ -499,55 +611,12 @@ export function MasterTemplate({
   const h = header?.items as HeaderData | undefined;
   const nameText = h?.fullName || (showPlaceholders ? <span style={{ opacity: 0.35 }}>Your Name</span> : null);
 
-  const visibleSections =
-    sectionsOverride ||
-    resume.sections.filter(
-      (sec) => sec.visible !== false && sec.type !== "header",
-    );
-
-  const sidebarTypes = [
-    "skills",
-    "education",
-    "languages",
-    "certifications",
-    "awards",
-    "references",
-  ];
-  const mixMainTypes = [
-    "summary",
-    "experience",
-    "projects",
-    "volunteering",
-    "publications",
-    "custom",
-  ];
-
-  const mainSections: ResumeSection[] = [];
-  const sidebarSections: ResumeSection[] = [];
-
-  if (s.columnLayout === "one") {
-    mainSections.push(...visibleSections);
-  } else {
-    visibleSections.forEach((sec) => {
-      const assigned = s.sectionColumns?.[sec.id];
-      if (assigned === "sidebar") {
-        sidebarSections.push(sec);
-      } else if (assigned === "main") {
-        mainSections.push(sec);
-      } else {
-        if (s.sidebarSectionTypes) {
-          if (s.sidebarSectionTypes.includes(sec.type)) sidebarSections.push(sec);
-          else mainSections.push(sec);
-        } else if (s.columnLayout === "mix") {
-          if (mixMainTypes.includes(sec.type)) mainSections.push(sec);
-          else sidebarSections.push(sec);
-        } else {
-          if (sidebarTypes.includes(sec.type)) sidebarSections.push(sec);
-          else mainSections.push(sec);
-        }
-      }
-    });
-  }
+  const { mainSections, sidebarSections } = splitColumns(resume, sectionsOverride);
+  // Paged content: the page frames own the page height, fill, panel, border and footer.
+  if (paged) hideFooter = true;
+  const pageMinHeight = isMeasurement || paged ? "auto" : s.paperSize === "a4" ? "297mm" : "279mm";
+  const rootBackground = paged ? "transparent" : pageBackground(ctx);
+  const rootBorder = s.themeColorStyle === 'border' ? `12pt solid ${paged ? 'transparent' : colors.accent}` : 'none';
 
   const padH = `${s.marginHorizontal}mm`;
   const padV = `${s.marginVertical}mm`;
@@ -560,30 +629,28 @@ export function MasterTemplate({
   // pick instead of filling it so the sidebar text stays legible. Must resolve
   // to a real colour or the literal "transparent": the old `${tint}05` form
   // produced "transparent05", which only worked because it was invalid CSS.
-  // The header can sit at the top of the sidebar instead of across the page,
-  // but only when there is a sidebar to hold it. Details always stack there.
-  const headerInSidebar =
-    s.headerLayout === "sidebar" && s.columnLayout !== "one" && sidebarSections.length > 0;
+  // With two columns the header never spans both: it heads one column, so
+  // both columns (and the sidebar panel) run the full height of the page.
+  // Details always stack in the sidebar.
+  const hasSidebarColumn = s.columnLayout !== "one" && sidebarSections.length > 0;
+  const showDivider = hasSidebarColumn && !isSolidSidebar(s) && s.columnDivider !== false;
+  const headerPlacement = resolveHeaderPlacement(s, sidebarSections.length > 0);
+  const headerInSidebar = headerPlacement === "sidebar";
+  const headerInMain = headerPlacement === "main";
 
   // Contact details always stack in the narrow sidebar column.
   const sCtx = sidebarCtx(ctx);
   const solidSidebar = isSolidSidebar(s);
   const sidebarHeaderCtx = { ...sCtx, s: { ...s, detailsArrangement: "column" as const, detailsPosition: "below" as const } };
 
-  const sidebarThemed =
-    s.sidebarTheme === "accent" ||
-    (s.sidebarTheme === "custom" && !!s.sidebarBackgroundColor);
-  const sidebarFill = solidSidebar
-    ? colors.sidebarBg
-    : sidebarThemed
-    ? (isLight(colors.sidebarBg) ? colors.sidebarBg : `${colors.sidebarBg}1a`)
-    : (s.applyAccentDotsBarsBubbles ? `${colors.accent}0a` : "transparent");
-  const bleedHeader =
-    s.themeColorStyle === "advanced" ||
-    (s.columnLayout !== "one" && sidebarSections.length > 0 && sidebarFill !== "transparent");
+  const sidebarFill = sidebarFillFor(ctx);
+  // Only a header across a one-column page bleeds to both edges.
+  const bleedHeader = !headerInMain && s.themeColorStyle === "advanced";
+  const headerBand = s.themeColorStyle === "advanced";
   // Shrink a name whose longest word
   // would otherwise run past its column.
-  const headerNameWidth = contentWidth(s) * (s.detailsPosition === "beside" && s.headerAlignment !== "center" ? 0.5 : 1);
+  const headerColumnWidth = headerInMain ? contentWidth(s) * (mainWidth / 100) - 20 : contentWidth(s);
+  const headerNameWidth = headerColumnWidth * (s.detailsPosition === "beside" && s.headerAlignment !== "center" ? 0.5 : 1);
   // The photo shares the name's row unless it sits above or below a centred name.
   const photoReserve = s.photoEnabled && h?.photo &&
     (s.headerAlignment !== "center" || s.photoPosition === "beside")
@@ -598,12 +665,12 @@ export function MasterTemplate({
         data-resume-page
         style={{
           width: s.paperSize === "a4" ? "210mm" : "216mm",
-          minHeight: isMeasurement ? "auto" : (s.paperSize === "a4" ? "297mm" : "279mm"),
+          minHeight: pageMinHeight,
           fontFamily: font,
           fontSize: pt(base),
           lineHeight: lh,
           boxSizing: "border-box",
-          backgroundColor: (s.themeColorStyle === 'advanced' && s.backgroundColor === '#ffffff') ? `${colors.accent}05` : colors.background,
+          backgroundColor: rootBackground,
           color: colors.text,
           display: "flex",
           flexDirection: "column",
@@ -611,7 +678,7 @@ export function MasterTemplate({
           paddingRight: padH,
           paddingTop: padV,
           paddingBottom: padV,
-          border: s.themeColorStyle === 'border' ? `12pt solid ${colors.accent}` : 'none',
+          border: rootBorder,
           position: 'relative',
         }}
       >
@@ -726,16 +793,260 @@ export function MasterTemplate({
     );
   }
 
+  // A band header (themeColorStyle "advanced") reaches the paper edges: both
+  // sides and the top across a one-column page; heading the main column, the
+  // outer side and the top, and inward to the column divider.
+  const mainOnLeft = !s.columnReverse;
+  const headerBleed: React.CSSProperties = !headerBand
+    ? {}
+    : headerInMain
+      ? {
+          marginTop: `calc(-${padV} - 5pt)`,
+          paddingTop: padV,
+          [mainOnLeft ? "marginLeft" : "marginRight"]: `-${padH}`,
+          [mainOnLeft ? "paddingLeft" : "paddingRight"]: padH,
+          [mainOnLeft ? "marginRight" : "marginLeft"]: "-20pt",
+          [mainOnLeft ? "paddingRight" : "paddingLeft"]: "20pt",
+        }
+      : bleedHeader
+        ? { marginLeft: `-${padH}`, marginRight: `-${padH}`, marginTop: `-${padV}`, paddingLeft: padH, paddingRight: padH, paddingTop: padV }
+        : {};
+
+  const headerEl = !hideHeader && !headerInSidebar ? (
+      <div
+        style={{
+          backgroundColor: headerBand ? colors.accent : 'transparent',
+          color: headerBand ? (isLight(colors.accent) ? '#1a1a1a' : '#ffffff') : 'inherit',
+          ...headerBleed,
+          paddingBottom: headerBand ? "15pt" : 0,
+          marginBottom: headerBand ? "15pt" : headerInMain ? "5pt" : 0,
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        {(() => {
+          const align = s.headerAlignment;
+          const showPhoto = s.photoEnabled && h?.photo;
+          const sizeMap = { XS: 28, S: 36, M: 48, L: 64, XL: 80 };
+          const photoPx = sizeMap[s.photoSize] || 48;
+          const photoBr = s.photoShape === "circle" ? "50%" : s.photoShape === "rounded" ? "6pt" : "0";
+          const photoPos = s.photoPosition;
+          const isRight = align === "right";
+          const isCenter = align === "center";
+          const photoGap = s.photoGap || 12;
+
+          const isLightBg = s.themeColorStyle === 'advanced' && isLight(colors.accent);
+          const advancedTextColor = isLightBg ? '#1a1a1a' : '#ffffff';
+
+          const borderWidth = s.photoBorderStyle === 'none' ? 0 
+            : s.photoBorderStyle === 'thin' ? 0.5 
+            : s.photoBorderStyle === 'medium' ? 1 
+            : 1.5;
+
+          const photoEl = showPhoto ? (
+            <img
+              src={h!.photo}
+              alt={h?.fullName || "Profile"}
+              style={{
+                width: `${photoPx}pt`,
+                height: `${photoPx}pt`,
+                borderRadius: photoBr,
+                objectFit: "cover",
+                flexShrink: 0,
+                borderWidth: `${borderWidth}pt`,
+                borderColor: s.photoBorderColor || '#e5e7eb',
+                borderStyle: 'solid',
+              }}
+            />
+          ) : null;
+
+          const nameEl = (
+            <div
+              className={cn(
+                "flex flex-col",
+                isCenter
+                  ? "items-center text-center"
+                  : isRight
+                    ? "items-end text-right"
+                    : "items-start text-left",
+                // Job title on the name's line, sharing its baseline.
+                s.jobTitlePlacement === "inline" &&
+                  cn("flex-row flex-wrap items-baseline gap-x-[0.5em]", isCenter ? "justify-center" : isRight ? "justify-end" : "justify-start"),
+              )}
+            >
+              <h1
+                className="m-0 font-bold tracking-tight print:text-black"
+                style={{
+                  fontSize: pt(fittedNameSize),
+                  color: s.themeColorStyle === 'advanced' ? advancedTextColor : (s.applyAccentName ? colors.accent : colors.text),
+                  lineHeight: 1.1,
+                }}
+              >
+                {nameText}
+              </h1>
+              {h?.jobTitle && (
+                <div
+                  className={cn("font-medium print:text-black print:opacity-100", s.jobTitlePlacement !== "inline" && "mt-1", !s.jobTitleStyle || s.jobTitleStyle === "caps" ? "uppercase tracking-[0.2em] opacity-70" : "opacity-90", s.jobTitleStyle === "italic" && "italic")}
+                  style={{ 
+                    fontSize: pt(base * (!s.jobTitleStyle || s.jobTitleStyle === "caps" ? 1.1 : s.jobTitlePlacement === "inline" ? 1.9 : 1.3)),
+                    color: s.themeColorStyle === 'advanced' ? advancedTextColor : (s.applyAccentJobTitle ? colors.accent : colors.text),
+                  }}
+                >
+                  {h.jobTitle}
+                </div>
+              )}
+            </div>
+          );
+
+          const contactTextColor = s.themeColorStyle === 'advanced' ? advancedTextColor : (s.applyAccentName ? colors.accent : colors.text);
+          const contactEl = h ? <ContactLine h={h} ctx={ctx} textColorOverride={contactTextColor} /> : null;
+
+          // Center Alignment (Absolute centering for Name)
+          if (isCenter) {
+            return (
+              <div
+                data-header
+                className="flex flex-col items-center text-center pb-1 mb-1 w-full"
+                style={{
+                  color: s.themeColorStyle === 'advanced' ? advancedTextColor : colors.text,
+                }}
+              >
+                {/* Identity Unit (Photo + Name) */}
+                {/* Beside a centred name the
+                    photo and name form one centred group, in flow so a long name
+                    never runs underneath the photo. */}
+                <div className="flex items-center justify-center max-w-full" style={{ gap: photoPos === "beside" && photoEl ? `${photoGap}pt` : 0 }}>
+                  {photoPos === "beside" && photoEl}
+
+                  <div className={cn("flex flex-col min-w-0", photoPos === "beside" && photoEl ? "items-start text-left [&>div]:items-start [&>div]:text-left" : "items-center")}>
+                    {photoPos === "top" && photoEl && (
+                      <div style={{ marginBottom: `${photoGap / 2}pt` }}>{photoEl}</div>
+                    )}
+                    {nameEl}
+                    {photoPos === "bottom" && photoEl && (
+                      <div style={{ marginTop: `${photoGap / 2}pt` }}>{photoEl}</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-2 flex justify-center w-full">
+                  <ContactLine h={h!} ctx={ctx} textColorOverride={contactTextColor} />
+                </div>
+              </div>
+            );
+          }
+
+          // Left / Right Alignment (Structural Split)
+          const isBeside = s.detailsPosition === "beside";
+
+          const photoAlignment = s.photoAlignment || 'left';
+          const photoVAlign = s.photoVerticalAlign || 'center';
+          const vAlignClass = photoVAlign === 'top' ? 'items-start' : photoVAlign === 'bottom' ? 'items-end' : 'items-center';
+
+          if (isBeside) {
+            const photoOnRight = photoAlignment === 'right' || (photoAlignment === 'center' && isRight);
+            return (
+              <div
+                data-header
+                className={cn(
+                  "grid grid-cols-2 pb-1 mb-1 gap-x-6 w-full",
+                )}
+                style={{
+                  color: s.themeColorStyle === 'advanced' ? advancedTextColor : colors.text,
+                }}
+              >
+                {/* Side A: Identity (Left-aligned if on left, Right-aligned if on right) */}
+                <div
+                  className={cn(
+                    "flex min-w-0 gap-x-6",
+                    vAlignClass,
+                    isRight ? "justify-end" : "justify-start",
+                    photoOnRight ? "flex-row-reverse" : "flex-row",
+                  )}
+                >
+                  {!photoOnRight && photoEl}
+                  <div className={cn(
+                    "flex flex-col",
+                    isRight ? "items-end text-right" : "items-start text-left",
+                  )}>
+                    {nameEl}
+                  </div>
+                  {photoOnRight && photoEl}
+                </div>
+
+                {/* Side B: Contacts (Respects detailsTextAlignment) */}
+                <div
+                  className={cn(
+                    "flex min-w-0",
+                    vAlignClass,
+                    s.detailsTextAlignment === "left"
+                      ? "justify-start"
+                      : s.detailsTextAlignment === "right"
+                        ? "justify-end"
+                        : "justify-center",
+                  )}
+                >
+                  <ContactLine h={h!} ctx={ctx} textColorOverride={contactTextColor} />
+                </div>
+              </div>
+            );
+          }
+
+          // Below Arrangement
+          const photoOnRight = photoAlignment === 'right' || (photoAlignment === 'center' && isRight);
+          return (
+            <div
+              data-header
+              className={cn(
+                "flex pb-1 mb-1 w-full",
+                photoOnRight ? "flex-row-reverse" : "flex-row",
+                vAlignClass,
+              )}
+              style={{
+                color: s.themeColorStyle === 'advanced' ? advancedTextColor : colors.text,
+              }}
+            >
+              {/* Photo Side */}
+              {photoEl && (
+                <div style={{ 
+                  marginRight: !photoOnRight ? `${photoGap}pt` : 0,
+                  marginLeft: photoOnRight ? `${photoGap}pt` : 0,
+                }}>{photoEl}</div>
+              )}
+
+              {/* Text Side (Identity + Contacts Stack) */}
+              <div
+                className={cn(
+                  "flex flex-col flex-1 min-w-0 gap-y-2",
+                  isRight ? "items-end text-right" : "items-start text-left",
+                )}
+              >
+                {nameEl}
+                <div
+                  className={cn(
+                    "w-full",
+                    s.detailsTextAlignment === "right"
+                      ? "text-right flex justify-end"
+                      : s.detailsTextAlignment === "center"
+                        ? "text-center flex justify-center"
+                        : "text-left flex justify-start",
+                  )}
+                >
+                  <ContactLine h={h!} ctx={ctx} textColorOverride={contactTextColor} availableWidth={headerNameWidth - (photoEl ? photoPx + photoGap : 0)} />
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+  ) : null;
+
   return (
     <div
       data-resume-page
       style={{
         width: s.paperSize === "a4" ? "210mm" : "216mm",
-        minHeight: isMeasurement
-          ? "auto"
-          : s.paperSize === "a4"
-            ? "297mm"
-            : "279mm",
+        minHeight: pageMinHeight,
         fontFamily: font,
         fontSize: pt(base),
         lineHeight: lh,
@@ -744,7 +1055,7 @@ export function MasterTemplate({
         // hyphen.
         overflowWrap: "anywhere",
         boxSizing: "border-box",
-        backgroundColor: (s.themeColorStyle === 'advanced' && s.backgroundColor === '#ffffff') ? `${colors.accent}05` : colors.background,
+        backgroundColor: rootBackground,
         color: colors.text,
         display: "flex",
         flexDirection: "column",
@@ -752,7 +1063,7 @@ export function MasterTemplate({
         paddingRight: padH,
         paddingTop: padV,
         paddingBottom: padV,
-        border: s.themeColorStyle === 'border' ? `12pt solid ${colors.accent}` : 'none',
+        border: rootBorder,
         position: 'relative',
       }}
     >
@@ -761,7 +1072,7 @@ export function MasterTemplate({
       {/* ── Sidebar panel ────────────────────────────────────────── */}
       {/* Painted as a page-level layer so
           it reaches the page edges without changing what columnWidth means. */}
-      {s.columnLayout !== "one" && sidebarSections.length > 0 && sidebarFill !== "transparent" && (
+      {!paged && s.columnLayout !== "one" && sidebarSections.length > 0 && sidebarFill !== "transparent" && (
         <div
           aria-hidden
           data-sidebar-panel
@@ -778,241 +1089,8 @@ export function MasterTemplate({
       )}
 
       {/* ── Header ───────────────────────────────────────────────── */}
-      {/* Over a tinted sidebar panel the
-          header is painted in the page colour out to the edges. */}
-      {!hideHeader && !headerInSidebar && (
-        <div
-          style={{
-            backgroundColor: s.themeColorStyle === 'advanced' ? colors.accent : (bleedHeader ? colors.background : 'transparent'),
-            color: s.themeColorStyle === 'advanced' ? (isLight(colors.accent) ? '#1a1a1a' : '#ffffff') : 'inherit',
-            marginLeft: bleedHeader ? `-${padH}` : 0,
-            marginRight: bleedHeader ? `-${padH}` : 0,
-            marginTop: bleedHeader ? `-${padV}` : 0,
-            paddingLeft: bleedHeader ? padH : 0,
-            paddingRight: bleedHeader ? padH : 0,
-            paddingTop: bleedHeader ? padV : 0,
-            paddingBottom: bleedHeader ? "15pt" : 0,
-            marginBottom: s.themeColorStyle === 'advanced' ? "15pt" : 0,
-            position: "relative",
-            zIndex: 1,
-          }}
-        >
-          {(() => {
-            const align = s.headerAlignment;
-            const showPhoto = s.photoEnabled && h?.photo;
-            const sizeMap = { XS: 28, S: 36, M: 48, L: 64, XL: 80 };
-            const photoPx = sizeMap[s.photoSize] || 48;
-            const photoBr = s.photoShape === "circle" ? "50%" : s.photoShape === "rounded" ? "6pt" : "0";
-            const photoPos = s.photoPosition;
-            const isRight = align === "right";
-            const isCenter = align === "center";
-            const photoGap = s.photoGap || 12;
-
-            const isLightBg = s.themeColorStyle === 'advanced' && isLight(colors.accent);
-            const advancedTextColor = isLightBg ? '#1a1a1a' : '#ffffff';
-
-            const borderWidth = s.photoBorderStyle === 'none' ? 0 
-              : s.photoBorderStyle === 'thin' ? 0.5 
-              : s.photoBorderStyle === 'medium' ? 1 
-              : 1.5;
-
-            const photoEl = showPhoto ? (
-              <img
-                src={h!.photo}
-                alt={h?.fullName || "Profile"}
-                style={{
-                  width: `${photoPx}pt`,
-                  height: `${photoPx}pt`,
-                  borderRadius: photoBr,
-                  objectFit: "cover",
-                  flexShrink: 0,
-                  borderWidth: `${borderWidth}pt`,
-                  borderColor: s.photoBorderColor || '#e5e7eb',
-                  borderStyle: 'solid',
-                }}
-              />
-            ) : null;
-
-            const nameEl = (
-              <div
-                className={cn(
-                  "flex flex-col",
-                  isCenter
-                    ? "items-center text-center"
-                    : isRight
-                      ? "items-end text-right"
-                      : "items-start text-left",
-                  // Job title on the name's line, sharing its baseline.
-                  s.jobTitlePlacement === "inline" &&
-                    cn("flex-row flex-wrap items-baseline gap-x-[0.5em]", isCenter ? "justify-center" : isRight ? "justify-end" : "justify-start"),
-                )}
-              >
-                <h1
-                  className="m-0 font-bold tracking-tight print:text-black"
-                  style={{
-                    fontSize: pt(fittedNameSize),
-                    color: s.themeColorStyle === 'advanced' ? advancedTextColor : (s.applyAccentName ? colors.accent : colors.text),
-                    lineHeight: 1.1,
-                  }}
-                >
-                  {nameText}
-                </h1>
-                {h?.jobTitle && (
-                  <div
-                    className={cn("font-medium print:text-black print:opacity-100", s.jobTitlePlacement !== "inline" && "mt-1", !s.jobTitleStyle || s.jobTitleStyle === "caps" ? "uppercase tracking-[0.2em] opacity-70" : "opacity-90", s.jobTitleStyle === "italic" && "italic")}
-                    style={{ 
-                      fontSize: pt(base * (!s.jobTitleStyle || s.jobTitleStyle === "caps" ? 1.1 : s.jobTitlePlacement === "inline" ? 1.9 : 1.3)),
-                      color: s.themeColorStyle === 'advanced' ? advancedTextColor : (s.applyAccentJobTitle ? colors.accent : colors.text),
-                    }}
-                  >
-                    {h.jobTitle}
-                  </div>
-                )}
-              </div>
-            );
-
-            const contactTextColor = s.themeColorStyle === 'advanced' ? advancedTextColor : (s.applyAccentName ? colors.accent : colors.text);
-            const contactEl = h ? <ContactLine h={h} ctx={ctx} textColorOverride={contactTextColor} /> : null;
-
-            // Center Alignment (Absolute centering for Name)
-            if (isCenter) {
-              return (
-                <div
-                  data-header
-                  className="flex flex-col items-center text-center pb-1 mb-1 w-full"
-                  style={{
-                    color: s.themeColorStyle === 'advanced' ? advancedTextColor : colors.text,
-                  }}
-                >
-                  {/* Identity Unit (Photo + Name) */}
-                  {/* Beside a centred name the
-                      photo and name form one centred group, in flow so a long name
-                      never runs underneath the photo. */}
-                  <div className="flex items-center justify-center max-w-full" style={{ gap: photoPos === "beside" && photoEl ? `${photoGap}pt` : 0 }}>
-                    {photoPos === "beside" && photoEl}
-
-                    <div className={cn("flex flex-col min-w-0", photoPos === "beside" && photoEl ? "items-start text-left [&>div]:items-start [&>div]:text-left" : "items-center")}>
-                      {photoPos === "top" && photoEl && (
-                        <div style={{ marginBottom: `${photoGap / 2}pt` }}>{photoEl}</div>
-                      )}
-                      {nameEl}
-                      {photoPos === "bottom" && photoEl && (
-                        <div style={{ marginTop: `${photoGap / 2}pt` }}>{photoEl}</div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="mt-2 flex justify-center w-full">
-                    <ContactLine h={h!} ctx={ctx} textColorOverride={contactTextColor} />
-                  </div>
-                </div>
-              );
-            }
-
-            // Left / Right Alignment (Structural Split)
-            const isBeside = s.detailsPosition === "beside";
-
-            const photoAlignment = s.photoAlignment || 'left';
-            const photoVAlign = s.photoVerticalAlign || 'center';
-            const vAlignClass = photoVAlign === 'top' ? 'items-start' : photoVAlign === 'bottom' ? 'items-end' : 'items-center';
-
-            if (isBeside) {
-              const photoOnRight = photoAlignment === 'right' || (photoAlignment === 'center' && isRight);
-              return (
-                <div
-                  data-header
-                  className={cn(
-                    "grid grid-cols-2 pb-1 mb-1 gap-x-6 w-full",
-                  )}
-                  style={{
-                    color: s.themeColorStyle === 'advanced' ? advancedTextColor : colors.text,
-                  }}
-                >
-                  {/* Side A: Identity (Left-aligned if on left, Right-aligned if on right) */}
-                  <div
-                    className={cn(
-                      "flex min-w-0 gap-x-6",
-                      vAlignClass,
-                      isRight ? "justify-end" : "justify-start",
-                      photoOnRight ? "flex-row-reverse" : "flex-row",
-                    )}
-                  >
-                    {!photoOnRight && photoEl}
-                    <div className={cn(
-                      "flex flex-col",
-                      isRight ? "items-end text-right" : "items-start text-left",
-                    )}>
-                      {nameEl}
-                    </div>
-                    {photoOnRight && photoEl}
-                  </div>
-
-                  {/* Side B: Contacts (Respects detailsTextAlignment) */}
-                  <div
-                    className={cn(
-                      "flex min-w-0",
-                      vAlignClass,
-                      s.detailsTextAlignment === "left"
-                        ? "justify-start"
-                        : s.detailsTextAlignment === "right"
-                          ? "justify-end"
-                          : "justify-center",
-                    )}
-                  >
-                    <ContactLine h={h!} ctx={ctx} textColorOverride={contactTextColor} />
-                  </div>
-                </div>
-              );
-            }
-
-            // Below Arrangement
-            const photoOnRight = photoAlignment === 'right' || (photoAlignment === 'center' && isRight);
-            return (
-              <div
-                data-header
-                className={cn(
-                  "flex pb-1 mb-1 w-full",
-                  photoOnRight ? "flex-row-reverse" : "flex-row",
-                  vAlignClass,
-                )}
-                style={{
-                  color: s.themeColorStyle === 'advanced' ? advancedTextColor : colors.text,
-                }}
-              >
-                {/* Photo Side */}
-                {photoEl && (
-                  <div style={{ 
-                    marginRight: !photoOnRight ? `${photoGap}pt` : 0,
-                    marginLeft: photoOnRight ? `${photoGap}pt` : 0,
-                  }}>{photoEl}</div>
-                )}
-
-                {/* Text Side (Identity + Contacts Stack) */}
-                <div
-                  className={cn(
-                    "flex flex-col flex-1 min-w-0 gap-y-2",
-                    isRight ? "items-end text-right" : "items-start text-left",
-                  )}
-                >
-                  {nameEl}
-                  <div
-                    className={cn(
-                      "w-full",
-                      s.detailsTextAlignment === "right"
-                        ? "text-right flex justify-end"
-                        : s.detailsTextAlignment === "center"
-                          ? "text-center flex justify-center"
-                          : "text-left flex justify-start",
-                    )}
-                  >
-                    <ContactLine h={h!} ctx={ctx} textColorOverride={contactTextColor} availableWidth={headerNameWidth - (photoEl ? photoPx + photoGap : 0)} />
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
-      )}
+      {/* Across the page with one column; otherwise it heads the main column. */}
+      {!headerInMain && headerEl}
 
       {/* Body Content */}
       <div
@@ -1025,7 +1103,9 @@ export function MasterTemplate({
         }}
       >
         {/* Main Column */}
+        {/* data-column: with a sidebar, each column is paginated on its own. */}
         <div
+          data-column={hasSidebarColumn ? "main" : undefined}
           style={{
             flex: 1,
             paddingLeft: s.columnReverse ? "20pt" : 0,
@@ -1036,24 +1116,19 @@ export function MasterTemplate({
                 : 0,
             paddingTop: "5pt",
             paddingBottom: 0,
+            // Paged, the page frames draw the divider the full height of every
+            // page; the border keeps its width so the columns don't move.
             borderRight:
-              !s.columnReverse &&
-              s.columnLayout !== "one" &&
-              sidebarSections.length > 0 &&
-              !solidSidebar &&
-              s.columnDivider !== false
-                ? `0.5pt solid ${dividerColor}`
+              !s.columnReverse && showDivider
+                ? `0.5pt solid ${paged ? "transparent" : dividerColor}`
                 : "none",
             borderLeft:
-              s.columnReverse &&
-              s.columnLayout !== "one" &&
-              sidebarSections.length > 0 &&
-              !solidSidebar &&
-              s.columnDivider !== false
-                ? `0.5pt solid ${dividerColor}`
+              s.columnReverse && showDivider
+                ? `0.5pt solid ${paged ? "transparent" : dividerColor}`
                 : "none",
           }}
         >
+          {headerInMain && headerEl}
           {mainSections.map((section, i) => (
             <React.Fragment key={section.id}>
               {(pads?.[i] ?? 0) > 0 && <div style={{ height: pads![i] }} />}
@@ -1076,8 +1151,9 @@ export function MasterTemplate({
         </div>
 
         {/* Sidebar Column */}
-        {s.columnLayout !== "one" && sidebarSections.length > 0 && (
+        {hasSidebarColumn && (
           <div
+            data-column="sidebar"
             style={{
               width: `${sidebarWidth}%`,
               paddingLeft: s.columnReverse ? 0 : "20pt",
@@ -1197,9 +1273,12 @@ export function MasterTemplate({
 export function TemplateFooter({
   resume,
   pageNumber,
+  paged,
 }: {
   resume: Resume;
   pageNumber?: number;
+  /** Placed by a page frame: nothing scrolls under it, so no fill over the sidebar panel. */
+  paged?: boolean;
 }) {
   const ctx = buildCtx(resume.settings);
   const { colors, base, pt, s } = ctx;
@@ -1223,7 +1302,7 @@ export function TemplateFooter({
         alignItems: "center",
         fontSize: pt(base * 0.75),
         color: colors.subtitle,
-        backgroundColor: colors.background,
+        backgroundColor: paged ? "transparent" : colors.background,
       }}
     >
       <div>
