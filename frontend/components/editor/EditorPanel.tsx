@@ -1,8 +1,11 @@
 'use client'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useResume } from '@/hooks/useResume'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { RailNav, RailItem, RailDivider } from '@/components/ui/rail-nav'
+import { SearchButton } from '@/components/settings-search/SettingsPalette'
+import { useRevealSetting } from '@/components/settings-search/useRevealSetting'
 import {
   User,
   FileText,
@@ -20,11 +23,6 @@ import {
   LayoutList,
   type LucideIcon
 } from 'lucide-react'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
 import type { SectionType } from '@/lib/store/types'
 import { SectionList } from './SectionList'
 
@@ -78,6 +76,14 @@ const SECTION_COMPONENTS: Record<SectionType, React.ComponentType<{ sectionId: s
 export function EditorPanel() {
   const { resume } = useResume()
   const [activeSectionId, setActiveSectionId] = useState<string>('header')
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  // Builder search: open the section, then highlight and focus the field.
+  useRevealSetting(
+    scrollRef,
+    (entry) => entry.tab === 'content' && !!entry.contentSection,
+    (entry) => setActiveSectionId(entry.contentSection!),
+  )
 
   if (!resume) return null
 
@@ -87,57 +93,32 @@ export function EditorPanel() {
   return (
     <div className="flex h-full overflow-hidden bg-background">
       {/* ── Icon Nav ──────────────────────────────────────────────── */}
-      <nav className="w-12 border-r border-border flex flex-col items-center py-3 gap-1 shrink-0 bg-sidebar overflow-y-auto no-scrollbar">
+      <RailNav label="Resume sections">
         {/* Special 'List' nav to see all sections & reorder */}
-        <Tooltip>
-          <TooltipTrigger
-            type="button"
-            aria-label="Manage Sections"
-            onClick={() => setActiveSectionId('list')}
-            className={cn(
-              'relative w-9 h-9 flex items-center justify-center rounded-xl transition-all mb-2',
-              activeSectionId === 'list'
-                ? 'bg-foreground text-background shadow-sm'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted',
-            )}
-          >
-            <LayoutList size={16} strokeWidth={activeSectionId === 'list' ? 2.5 : 1.8} />
-          </TooltipTrigger>
-          <TooltipContent side="right">
-            Manage Sections
-          </TooltipContent>
-        </Tooltip>
+        <RailItem
+          icon={LayoutList}
+          label="Manage Sections"
+          active={activeSectionId === 'list'}
+          onClick={() => setActiveSectionId('list')}
+        />
 
-        <div className="w-6 h-px bg-border/50 mb-2" />
+        <RailDivider />
 
         {sections.map((section) => {
           const Icon = SECTION_ICONS[section.type] || Settings
-          const active = activeSectionId === section.id
           if (!Icon) return null
-          
           return (
-            <Tooltip key={section.id}>
-              <TooltipTrigger
-                type="button"
-                aria-label={section.title}
-                onClick={() => setActiveSectionId(section.id)}
-                className={cn(
-                  'relative w-9 h-9 flex items-center justify-center rounded-xl transition-all shrink-0',
-                  active
-                    ? 'bg-foreground text-background shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted',
-                  !section.visible && !active && 'opacity-40'
-                )}
-              >
-                <Icon size={16} strokeWidth={active ? 2.5 : 1.8} />
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                {section.title}
-              </TooltipContent>
-            </Tooltip>
+            <RailItem
+              key={section.id}
+              icon={Icon}
+              label={section.title}
+              active={activeSectionId === section.id}
+              muted={!section.visible}
+              onClick={() => setActiveSectionId(section.id)}
+            />
           )
         })}
-      </nav>
+      </RailNav>
 
       {/* ── Content ───────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -146,10 +127,11 @@ export function EditorPanel() {
           <h3 className="text-[11px] font-bold uppercase tracking-widest text-foreground/70 truncate">
             {activeSectionId === 'list' ? 'Manage Sections' : activeSection?.title}
           </h3>
+          <SearchButton className="ml-auto" />
         </header>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeSectionId}

@@ -3,7 +3,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Search, CornerDownLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useSettingsSearch } from '@/lib/store/settingsSearchStore'
-import { searchSettings, settingsFor, TAB_LABELS } from '@/lib/settings/settingsIndex'
+import { contentEntries, searchSettings, settingsFor, TAB_LABELS } from '@/lib/settings/settingsIndex'
+import type { Resume } from '@/lib/store/types'
 
 export function isMacPlatform() {
   return typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform)
@@ -28,11 +29,13 @@ function Highlighted({ text, positions }: { text: string; positions: number[] })
 }
 
 /**
- * Quick search over every Customize setting, like VS Code's ⌘P. Opens with
+ * Quick search over the builder, like VS Code's ⌘P: this document's sections
+ * and fields (Content) and every Customize setting (Style). Opens with
  * ⌘P / Ctrl+P anywhere in the builder (taking that key from the browser's
  * print dialog). Arrow keys move, Enter opens the setting, Escape closes.
  */
-export function SettingsPalette({ kind }: { kind: 'resume' | 'coverLetter' }) {
+export function SettingsPalette({ resume }: { resume: Pick<Resume, 'kind' | 'sections'> }) {
+  const kind = resume.kind === 'coverLetter' ? 'coverLetter' : 'resume'
   const { open, setOpen, reveal } = useSettingsSearch()
   const [query, setQuery] = useState('')
   const [index, setIndex] = useState(0)
@@ -40,7 +43,11 @@ export function SettingsPalette({ kind }: { kind: 'resume' | 'coverLetter' }) {
   const listRef = useRef<HTMLDivElement>(null)
   const returnFocus = useRef<HTMLElement | null>(null)
 
-  const entries = useMemo(() => settingsFor(kind), [kind])
+  // Content (this document's sections and fields) first, then Style settings.
+  const entries = useMemo(
+    () => [...contentEntries(resume), ...settingsFor(kind)],
+    [resume.kind, resume.sections, kind], // eslint-disable-line react-hooks/exhaustive-deps
+  )
   const results = useMemo(() => searchSettings(entries, query), [entries, query])
 
   // ⌘P / Ctrl+P toggles the palette.
@@ -119,7 +126,7 @@ export function SettingsPalette({ kind }: { kind: 'resume' | 'coverLetter' }) {
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search settings…"
+            placeholder="Search sections, fields and settings…"
             aria-label="Search settings"
             aria-controls="settings-search-results"
             aria-activedescendant={results[index] ? `setting-${results[index].entry.id}` : undefined}
@@ -181,5 +188,25 @@ export function SettingsPalette({ kind }: { kind: 'resume' | 'coverLetter' }) {
         </div>
       </div>
     </div>
+  )
+}
+
+/** The "Search ⌘P" button in a panel header, for people who do not know the shortcut. */
+export function SearchButton({ className }: { className?: string }) {
+  const setOpen = useSettingsSearch((s) => s.setOpen)
+  return (
+    <button
+      type="button"
+      onClick={() => setOpen(true)}
+      aria-label="Search the builder"
+      className={cn(
+        'flex items-center gap-1.5 h-6 px-2 rounded-md text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shrink-0',
+        className,
+      )}
+    >
+      <Search size={11} />
+      Search
+      <kbd className="font-mono text-[9px] border border-border rounded px-1 py-px">{settingsSearchShortcut()}</kbd>
+    </button>
   )
 }

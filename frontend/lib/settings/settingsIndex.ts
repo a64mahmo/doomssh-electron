@@ -1,5 +1,9 @@
+import type { Resume } from '@/lib/store/types'
+import { SECTION_LABELS } from '@/lib/store/types'
+
 /**
- * Every setting in the Customize panel, for the settings search (⌘P / Ctrl+P).
+ * Every setting in the Customize panel, and every section and main field of
+ * the Content panel, for the builder search (⌘P / Ctrl+P).
  *
  * `label` and `group` must match the text the panel shows: the search finds the
  * control by its `data-setting-label` inside the `data-control-group` of that
@@ -11,7 +15,11 @@
 
 export type CustomizeTab = 'templates' | 'layout' | 'typography' | 'entry' | 'colors' | 'header' | 'sections'
 
-export const TAB_LABELS: Record<CustomizeTab, string> = {
+/** 'content' is the Content panel; the rest are Customize tabs in the Style panel. */
+export type SearchTab = CustomizeTab | 'content'
+
+export const TAB_LABELS: Record<SearchTab, string> = {
+  content: 'Content',
   templates: 'Templates',
   layout: 'Layout',
   typography: 'Typography',
@@ -25,7 +33,9 @@ export interface SettingEntry {
   /** Stable key. */
   id: string
   label: string
-  tab: CustomizeTab
+  tab: SearchTab
+  /** Content entries: the editor section to open (a resume section id, or a cover letter card id). */
+  contentSection?: string
   /** The ControlGroup title it sits under, if any. */
   group?: string
   /** Other words people may type for it. */
@@ -134,6 +144,104 @@ export const SETTINGS_INDEX: SettingEntry[] = [
 
 export function settingsFor(kind: 'resume' | 'coverLetter'): SettingEntry[] {
   return SETTINGS_INDEX.filter((e) => (e.scope ?? 'both') === 'both' || e.scope === kind)
+}
+
+// ── Content panel ─────────────────────────────────────────────────────────────
+
+/** Header fields always shown in the resume header editor (components/editor/sections/HeaderSection). */
+const HEADER_FIELDS: { label: string; group: string; keywords?: string[] }[] = [
+  { label: 'Full Name', group: 'Profile Image & Identity', keywords: ['name'] },
+  { label: 'Job Title', group: 'Profile Image & Identity', keywords: ['role', 'headline', 'position'] },
+  { label: 'Photo', group: 'Profile Image & Identity', keywords: ['picture', 'headshot', 'upload image', 'avatar'] },
+  { label: 'Email', group: 'Contact Information', keywords: ['mail', 'contact'] },
+  { label: 'Phone', group: 'Contact Information', keywords: ['mobile', 'telephone', 'contact'] },
+  { label: 'Location', group: 'Contact Information', keywords: ['city', 'address'] },
+  { label: 'Website', group: 'Contact Information', keywords: ['portfolio', 'url', 'link'] },
+  {
+    label: 'Social Profiles & Additional Details',
+    group: 'Social Profiles & Additional Details',
+    keywords: ['linkedin', 'github', 'twitter', 'instagram', 'passport', 'nationality', 'visa', 'date of birth', 'driving license', 'pronoun'],
+  },
+]
+
+/** Cover letter cards (components/cover-letter/CoverLetterEditorPanel) and their main fields. */
+const COVER_LETTER_CONTENT: { card: string; title: string; keywords?: string[]; fields: { label: string; group?: string; keywords?: string[] }[] }[] = [
+  { card: 'target', title: 'Target Job', keywords: ['job', 'application', 'role'], fields: [{ label: 'Select Saved Job', group: 'Application Context', keywords: ['job tracker'] }] },
+  {
+    card: 'letterhead', title: 'Letterhead', keywords: ['your details', 'contact'],
+    fields: [
+      { label: 'Full Name', keywords: ['name'] },
+      { label: 'Job Title', keywords: ['role'] },
+      { label: 'Email Address', keywords: ['mail'] },
+      { label: 'Phone Number', keywords: ['mobile'] },
+    ],
+  },
+  {
+    card: 'recipient', title: 'Recipient', keywords: ['hiring manager', 'to'],
+    fields: [
+      { label: 'Letter Date', group: 'Date & Timing', keywords: ['date'] },
+      { label: 'Contact Person', group: 'Target Recipient', keywords: ['hiring manager', 'name'] },
+      { label: 'Company Name', group: 'Target Recipient', keywords: ['employer'] },
+      { label: 'Office Address', group: 'Target Recipient', keywords: ['address'] },
+    ],
+  },
+  { card: 'body', title: 'Letter Body', keywords: ['text', 'write', 'paragraphs', 'letter'], fields: [] },
+  {
+    card: 'signature', title: 'Signature', keywords: ['sign off', 'closing'],
+    fields: [
+      { label: 'Sign-off Name', group: 'Closing & Details', keywords: ['sincerely', 'name'] },
+      { label: 'Location (Place)', group: 'Closing & Details', keywords: ['city'] },
+      { label: 'Signing Date', group: 'Closing & Details', keywords: ['date'] },
+      { label: 'Visual Signature', group: 'Visual Signature', keywords: ['signature image', 'upload', 'handwritten'] },
+    ],
+  },
+]
+
+/**
+ * Content panel entries for this document: each resume section by its current
+ * title (renamed and custom sections too), Manage Sections and the header
+ * fields; or the cover letter's cards and fields.
+ */
+export function contentEntries(resume: Pick<Resume, 'kind' | 'sections'>): SettingEntry[] {
+  if (resume.kind === 'coverLetter') {
+    return COVER_LETTER_CONTENT.flatMap((c) => [
+      { id: `content-${c.card}`, label: c.title, tab: 'content' as const, contentSection: c.card, keywords: c.keywords },
+      ...c.fields.map((f) => ({
+        id: `content-${c.card}-${f.label}`,
+        label: f.label,
+        tab: 'content' as const,
+        contentSection: c.card,
+        group: f.group ?? c.title,
+        keywords: f.keywords,
+      })),
+    ])
+  }
+  const entries: SettingEntry[] = [
+    { id: 'content-list', label: 'Manage Sections', tab: 'content', contentSection: 'list', keywords: ['add section', 'reorder', 'hide section', 'show section', 'remove section'] },
+  ]
+  for (const sec of resume.sections) {
+    const typeLabel = SECTION_LABELS[sec.type]
+    entries.push({
+      id: `content-${sec.id}`,
+      label: sec.title || typeLabel,
+      tab: 'content',
+      contentSection: sec.id,
+      keywords: [typeLabel, sec.type].filter((k) => k && k !== sec.title),
+    })
+    if (sec.type === 'header') {
+      for (const f of HEADER_FIELDS) {
+        entries.push({
+          id: `content-header-${f.label}`,
+          label: f.label,
+          tab: 'content',
+          contentSection: sec.id,
+          group: f.group,
+          keywords: f.keywords,
+        })
+      }
+    }
+  }
+  return entries
 }
 
 /**

@@ -1,8 +1,11 @@
 'use client'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useResumeStore } from '@/lib/store/resumeStore'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { RailNav, RailItem } from '@/components/ui/rail-nav'
+import { SearchButton } from '@/components/settings-search/SettingsPalette'
+import { useRevealSetting } from '@/components/settings-search/useRevealSetting'
 import {
   User,
   Briefcase,
@@ -11,11 +14,6 @@ import {
   PenLine,
   type LucideIcon
 } from 'lucide-react'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
 
 import { TargetJobCard } from './sections/TargetJobCard'
 import { LetterheadCard } from './sections/LetterheadCard'
@@ -36,6 +34,14 @@ const SECTIONS: { id: CLSection; title: string; icon: LucideIcon }[] = [
 export function CoverLetterEditorPanel() {
   const resume = useResumeStore(s => s.resume)
   const [activeSectionId, setActiveSectionId] = useState<CLSection>('body')
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  // Builder search: open the card, then highlight and focus the field.
+  useRevealSetting(
+    scrollRef,
+    (entry) => entry.tab === 'content' && SECTIONS.some((s) => s.id === entry.contentSection),
+    (entry) => setActiveSectionId(entry.contentSection as CLSection),
+  )
 
   if (!resume || !resume.coverLetter) return null
 
@@ -44,33 +50,17 @@ export function CoverLetterEditorPanel() {
   return (
     <div className="flex h-full overflow-hidden bg-background">
       {/* ── Icon Nav ──────────────────────────────────────────────── */}
-      <nav className="w-12 border-r border-border flex flex-col items-center py-3 gap-1 shrink-0 bg-sidebar overflow-y-auto no-scrollbar">
-        {SECTIONS.map((section) => {
-          const Icon = section.icon
-          const active = activeSectionId === section.id
-          
-          return (
-            <Tooltip key={section.id}>
-              <TooltipTrigger
-                type="button"
-                aria-label={section.title}
-                onClick={() => setActiveSectionId(section.id)}
-                className={cn(
-                  'relative w-9 h-9 flex items-center justify-center rounded-xl transition-all shrink-0',
-                  active
-                    ? 'bg-foreground text-background shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted',
-                )}
-              >
-                <Icon size={16} strokeWidth={active ? 2.5 : 1.8} />
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                {section.title}
-              </TooltipContent>
-            </Tooltip>
-          )
-        })}
-      </nav>
+      <RailNav label="Cover letter sections">
+        {SECTIONS.map((section) => (
+          <RailItem
+            key={section.id}
+            icon={section.icon}
+            label={section.title}
+            active={activeSectionId === section.id}
+            onClick={() => setActiveSectionId(section.id)}
+          />
+        ))}
+      </RailNav>
 
       {/* ── Content ───────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -79,13 +69,16 @@ export function CoverLetterEditorPanel() {
           <h3 className="text-[11px] font-bold uppercase tracking-widest text-foreground/70 truncate mr-2">
             {activeSection?.title}
           </h3>
-          <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest border border-border/50 px-1.5 py-0.5 rounded">
-            Cover Letter
-          </span>
+          <div className="flex items-center gap-2">
+            <SearchButton />
+            <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-widest border border-border/50 px-1.5 py-0.5 rounded">
+              Cover Letter
+            </span>
+          </div>
         </header>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto custom-scrollbar">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeSectionId}

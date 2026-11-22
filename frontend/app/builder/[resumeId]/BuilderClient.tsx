@@ -32,10 +32,10 @@ export function BuilderClient() {
   const { resume, setResume, updateResumeName, isDirty } = useResumeStore()
   const [editingName, setEditingName] = useState(false)
   const [panel, setPanel] = useState<Panel>('content')
-  // A setting picked in the settings search lives in the Style tab.
+  // A result picked in the builder search opens the panel it lives in.
   const settingTarget = useSettingsSearch((st) => st.target)
   useEffect(() => {
-    if (settingTarget) setPanel('style')
+    if (settingTarget) setPanel(settingTarget.tab === 'content' ? 'content' : 'style')
   }, [settingTarget])
   const [sideW, setSideW] = useState(DEFAULT_W)
   const [isMac, setIsMac] = useState(false)
@@ -107,7 +107,7 @@ export function BuilderClient() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background overscroll-none" style={{ overscrollBehavior: 'none' }}>
-      <SettingsPalette kind={resume.kind === 'coverLetter' ? 'coverLetter' : 'resume'} />
+      <SettingsPalette resume={resume} />
 
       {/* ── Main ────────────────────────────────────────────────────── */}
       <div className="flex flex-1 min-h-0">
