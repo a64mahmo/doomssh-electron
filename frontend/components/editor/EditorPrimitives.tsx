@@ -7,9 +7,15 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/component
 import { ChevronDown, Trash2, Copy, GripVertical } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
+// data-setting-label / data-setting-row / data-control-group: anchors the
+// settings search (components/settings-search) scrolls to and highlights.
+
 export function FieldLabel({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <Label className={cn('block text-[10px] font-bold text-muted-foreground/80 mb-1.5 tracking-wide', className)}>
+    <Label
+      data-setting-label={typeof children === 'string' ? children : undefined}
+      className={cn('block text-[10px] font-bold text-muted-foreground/80 mb-1.5 tracking-wide', className)}
+    >
       {children}
     </Label>
   )
@@ -17,7 +23,7 @@ export function FieldLabel({ children, className }: { children: React.ReactNode;
 
 export function ControlGroup({ title, children, className, rightElement }: { title?: string; children: React.ReactNode; className?: string; rightElement?: React.ReactNode }) {
   return (
-    <div className={cn('space-y-3', className)}>
+    <div data-control-group={title} className={cn('space-y-3', className)}>
       {title && (
         <div className="flex items-center justify-between pb-1 border-b border-border/40">
           <p className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-[0.12em]">
@@ -153,7 +159,7 @@ export function SliderRow({
 }) {
   const display = unit ? `${value}${unit}` : value.toString()
   return (
-    <div>
+    <div data-setting-row data-setting-label={label}>
       <div className="flex items-center justify-between mb-2">
         <div>
           <label htmlFor={id} className="text-[10px] font-bold text-muted-foreground/80 tracking-wide cursor-pointer">{label}</label>
@@ -192,7 +198,7 @@ export function ToggleRow({
   onCheckedChange: (v: boolean) => void
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 h-8 px-1 rounded-md hover:bg-accent/50 transition-colors cursor-pointer group">
+    <div data-setting-row data-setting-label={label} className="flex items-center justify-between gap-3 h-8 px-1 rounded-md hover:bg-accent/50 transition-colors cursor-pointer group">
       <div className="flex flex-col justify-center overflow-hidden">
         <label htmlFor={id} className="text-xs font-medium cursor-pointer select-none leading-tight truncate">
           {label}

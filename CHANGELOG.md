@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Settings search** — ⌘P / Ctrl+P in the builder opens a VS Code style quick search over every Customize setting (`components/settings-search/SettingsPalette.tsx`). Fuzzy matching on labels, groups and keywords; picking a result opens the Style tab and the setting's Customize tab, scrolls to the control, flashes it and focuses it. The index is hand-written in `lib/settings/settingsIndex.ts`; `ControlGroup`, `FieldLabel`, `ToggleRow` and `SliderRow` carry `data-control-group` / `data-setting-label` anchors, and a test fails if an index entry's label or group is missing from the panel. A "Search" button in the Customize header opens it too. In the browser the shortcut replaces the print dialog while in the builder.
+- **Keep entries together** — `settings.keepEntriesTogether` (Customize → Layout → Page Breaks, off by default) treats each `data-entry` and the summary text (`data-unit`) as one keep-together block, so a page never ends inside one. An entry taller than a page still splits between lines.
+- **Paged layout** — `components/web/PagedResume.tsx` and `lib/pdf/paginate.ts`. The template is laid out once, hidden; page breaks are chosen from measured lines and keep-together blocks (never through a line, headings stay with what follows, an entry head stays with its first line). Each page is an exact paper-size frame (`contain: strict`) that paints its own background, sidebar panel, border and numbered footer and shows its slice of the flow through clipped windows inset by the margins. With a sidebar each column (`data-column`) is paginated separately and gets its own window. The preview and `/print` both render it.
+- **Header placement for two columns** — `resolveHeaderPlacement`: with two columns the header heads the main column or the sidebar, never both. Customize → Header → Header Position offers Left / Right. A saved `headerLayout: 'top'` reads as the main column.
+
 - **What's New panel** — A "What's New" item in the sidebar opens a dialog of user-facing release notes from `frontend/lib/whatsNew.ts` (hand-written, separate from this file). A dot marks unread notes; it is tracked per browser in `localStorage`, and brand-new users start caught up.
 - **Example resumes** — The Resumes dashboard has a "Start from an example" section under the grid (`components/ExampleResumes.tsx`): open a copy of the Product Manager, Designer or New Grad example (`createSampleResume*` in `lib/db/database.ts`), plus short tips. It keeps the same layout before and after the first resume, so nothing disappears when a new user comes back; "Hide" stores a per-browser preference and "Browse examples" brings it back. Both give feedback: the section collapses and expands (instant with reduced motion), hiding shows a toast with Undo and moves focus to "Browse examples", and showing scrolls to and focuses the section heading. An empty dashboard adds a short intro line. Nothing is created until the user picks.
 
@@ -24,6 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Electron 34 → 45.2.3** — and the PDF export window renders offscreen (`webPreferences.offscreen`), i.e. at device scale 1 like printing. A normal hidden window on a Retina display measured text a pixel or so per entry shorter than print, which drifted page breaks into lines.
+- **Print CSS** — Reduced to `@page { margin: 0 }` plus `break-after: page` between page frames. The `box-decoration-break: clone` margins, fixed sidebar panel / footer and print break hints are gone.
+- **No column divider or footer rule** — The column divider and its Customize toggle were removed (`columnDivider` stays in the type so saved resumes load). The footer keeps its name, email and page number without a rule; with columns it sits under the main column only.
+- **Example resumes** — Rewritten in `lib/db/exampleResumes.ts` (re-exported from `database.ts`): fictional people and companies, ASD-STE100 style text with no dashes, two pages each, the real Modern / Aspen / Minimal presets with photos (illustrated SVG portraits in `public/examples/`). The all-sections fixture now adds its own sections before borrowing from the examples.
+- **Preview** — Shows the paged layout (separate pages with gaps) instead of one flow with dashed page guides.
+
 - **Faster first load (web)** — `public/_headers` serves hashed `/_next/static/*` files as `immutable` for a year (they were `max-age=0, must-revalidate`, so every visit revalidated each chunk) and caches `/fonts/*` for a week. `public/_redirects` sends `/` to `/builder/` at the edge instead of loading the root page and redirecting in the browser.
 
 - **PDF export is HTML-only** — The web build now prints the same `/print` page through the browser's print dialog (Save as PDF) instead of generating a separate PDF. `@react-pdf/renderer`, `components/pdf/`, the render harness scripts and the unused `savePdf` IPC bridge were removed, so templates only need changing in one place.
@@ -33,6 +44,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Persistence** — Resume and job saving use a shared debounced saver that watches the document instead of the `isDirty` flag.
 
 ### Fixed
+
+- **PDF bottom margin** — Pages could print with no space at the bottom; every page now has its margin on all four sides.
+- **Footer page numbers** — The footer printed an empty page number (Chrome never fills `counter(page)` in a fixed element); each page frame now passes its number.
+- **Lines cut at page breaks** — Fixed by the offscreen export window (see Changed).
 
 - **Vault screen flash on the web** — The builder layout rendered "Choose a Vault Folder" until an effect ran, so the static HTML and first paint showed it to every browser visitor. The browser build now renders the app immediately; the desktop app shows a blank frame while it checks for a vault.
 

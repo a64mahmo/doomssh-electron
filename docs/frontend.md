@@ -56,7 +56,8 @@ The `resumeStore` is the heart of the frontend. It maintains the `Resume` object
 
 -   **Builder Page (`/app/builder/[id]`):** The main workspace, split into:
     -   `EditorPanel`: Left side. Contains input fields for each resume section. Features a simplified sidebar with square selection backgrounds and interactive **tooltips** powered by `@base-ui/react`.
-    -   `PreviewPanel`: Right side. Renders the resume as live HTML pages (the same pages export prints) with zoom and fullscreen. **Export** calls `downloadResumePDF`.
+    -   `PreviewPanel`: Right side. Renders the resume as live HTML pages (the same pages export prints) with zoom and fullscreen.
+    -   **Settings search** (`components/settings-search/SettingsPalette.tsx`): ⌘P / Ctrl+P anywhere in the builder opens a VS Code style quick search over every Customize setting. Picking one opens the Style tab and the right Customize tab, scrolls to the control, highlights it and focuses it. The searchable list is `lib/settings/settingsIndex.ts`; add an entry there when you add a control (a test fails if an entry's label or group is not in the panel). **Export** calls `downloadResumePDF`.
     -   `CustomizePanel`: Sidebar for adjusting fonts, colors, and layout settings. Also utilizes the standardized tooltip-enabled sidebar.
     -   `AIPanel`: Interactive assistant for generating and improving content.
 

@@ -9,6 +9,8 @@ import { EditorPanel } from '@/components/editor/EditorPanel'
 import { PreviewPanel } from '@/components/preview/PreviewPanel'
 import { CustomizePanel } from '@/components/customize/CustomizePanel'
 import { CoverLetterEditorPanel } from '@/components/cover-letter/CoverLetterEditorPanel'
+import { SettingsPalette } from '@/components/settings-search/SettingsPalette'
+import { useSettingsSearch } from '@/lib/store/settingsSearchStore'
 import { useResumeStore } from '@/lib/store/resumeStore'
 import { getResume } from '@/lib/db/database'
 import { downloadResumePDF } from '@/lib/utils/export'
@@ -30,6 +32,11 @@ export function BuilderClient() {
   const { resume, setResume, updateResumeName, isDirty } = useResumeStore()
   const [editingName, setEditingName] = useState(false)
   const [panel, setPanel] = useState<Panel>('content')
+  // A setting picked in the settings search lives in the Style tab.
+  const settingTarget = useSettingsSearch((st) => st.target)
+  useEffect(() => {
+    if (settingTarget) setPanel('style')
+  }, [settingTarget])
   const [sideW, setSideW] = useState(DEFAULT_W)
   const [isMac, setIsMac] = useState(false)
   const [isWin, setIsWin] = useState(false)
@@ -100,6 +107,7 @@ export function BuilderClient() {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-background overscroll-none" style={{ overscrollBehavior: 'none' }}>
+      <SettingsPalette kind={resume.kind === 'coverLetter' ? 'coverLetter' : 'resume'} />
 
       {/* ── Main ────────────────────────────────────────────────────── */}
       <div className="flex flex-1 min-h-0">

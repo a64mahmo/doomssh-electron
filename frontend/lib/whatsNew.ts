@@ -17,6 +17,22 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-22-real-pages',
+    date: 'November 2026',
+    title: 'Real pages, and a faster way to find settings',
+    items: [
+      { tag: 'new', text: 'Search every setting: press ⌘P (Ctrl+P on Windows) in the builder, type, and press Enter to jump straight to it.' },
+      { tag: 'new', text: 'Keep entries together (Style › Layout › Page Breaks): a job, degree or project that does not fit moves to the next page as a whole instead of splitting.' },
+      { tag: 'improved', text: 'The preview shows real pages, the same ones your PDF gets, with a margin at the top and bottom of every page.' },
+      { tag: 'improved', text: 'Two-column resumes: the header sits at the top of the left or right column, and both columns and the sidebar colour run the full height of every page.' },
+      { tag: 'improved', text: 'Each column continues onto the next page on its own, so a long sidebar no longer leaves gaps in the main column.' },
+      { tag: 'improved', text: 'The example resumes are longer, written in plain language, and come with photos.' },
+      { tag: 'improved', text: 'A cleaner page: no line between the columns and no line above the footer.' },
+      { tag: 'fixed', text: 'Page numbers in the footer now appear in your PDF.' },
+      { tag: 'fixed', text: 'Text no longer runs to the bottom edge of the paper or gets cut in half at a page break.' },
+    ],
+  },
+  {
     id: '2026-09-14-builder-polish',
     date: 'September 2026',
     title: 'A friendlier start',

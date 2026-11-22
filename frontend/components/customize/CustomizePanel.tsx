@@ -1,5 +1,5 @@
 'use client'
-import { useRef, useState, useMemo } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import { useResume } from '@/hooks/useResume'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -33,6 +33,24 @@ import { EntrySection } from './sections/EntrySection'
 import { ColorsSection } from './sections/ColorsSection'
 import { HeaderSection } from './sections/HeaderSection'
 import { SectionsSection } from './sections/SectionsSection'
+import { useSettingsSearch } from '@/lib/store/settingsSearchStore'
+import { settingsSearchShortcut } from '@/components/settings-search/SettingsPalette'
+import { Search } from 'lucide-react'
+
+/**
+ * The control for a setting the search picked: its row inside its group, or
+ * the group when the control is not shown right now (it depends on another
+ * setting), or null while the tab is still rendering.
+ */
+function findSettingElement(root: HTMLElement, group: string | undefined, label: string, settled: boolean) {
+  const esc = (v: string) => (typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(v) : v.replace(/"/g, '\\"'))
+  const groupEl = group ? root.querySelector<HTMLElement>(`[data-control-group="${esc(group)}"]`) : null
+  const scope = groupEl ?? root
+  const labelEl = scope.querySelector<HTMLElement>(`[data-setting-label="${esc(label)}"]`)
+  if (labelEl) return labelEl.closest<HTMLElement>('[data-setting-row]') ?? labelEl.parentElement ?? labelEl
+  if (settled) return groupEl
+  return null
+}
 
 const PANEL_SECTIONS = [
   { id: 'templates', label: 'Templates', description: 'Choose a base template', icon: LayoutTemplate },
@@ -59,6 +77,43 @@ export function CustomizePanel() {
   const [activeSection, setActiveSection] = useState<PanelSectionId>('templates')
   const [dragActiveId, setDragActiveId] = useState<string | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  // Settings search: open the setting's tab, then scroll to it, highlight it
+  // and focus its control. The tab change animates, so look for the control
+  // over a few frames before settling for its group.
+  const { target, clearTarget, setOpen: openSearch } = useSettingsSearch()
+  useEffect(() => {
+    if (!target) return
+    setActiveSection(target.tab as PanelSectionId)
+    let frame = 0
+    let raf = 0
+    const tick = () => {
+      const root = scrollRef.current
+      frame++
+      if (root) {
+        const el = target.group || target.label !== 'Templates'
+          ? findSettingElement(root, target.group, target.label, frame > 45)
+          : root
+        if (el) {
+          if (el === root) root.scrollTo({ top: 0, behavior: 'smooth' })
+          else el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+          if (el !== root) {
+            el.classList.remove('setting-flash')
+            void el.offsetWidth // restart the animation
+            el.classList.add('setting-flash')
+            window.setTimeout(() => el.classList.remove('setting-flash'), 1800)
+            el.querySelector<HTMLElement>('button, input, [role="switch"], [role="slider"], [tabindex="0"]')?.focus({ preventScroll: true })
+          }
+          clearTarget()
+          return
+        }
+      }
+      if (frame < 60) raf = requestAnimationFrame(tick)
+      else clearTarget()
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [target, clearTarget])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -145,6 +200,16 @@ export function CustomizePanel() {
           <h2 className="text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground/80">
             {PANEL_SECTIONS.find(p => p.id === activeSection)?.label}
           </h2>
+          <button
+            type="button"
+            onClick={() => openSearch(true)}
+            aria-label="Search settings"
+            className="ml-auto flex items-center gap-1.5 h-6 px-2 rounded-md text-[10px] text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+          >
+            <Search size={11} />
+            Search
+            <kbd className="font-mono text-[9px] border border-border rounded px-1 py-px">{settingsSearchShortcut()}</kbd>
+          </button>
         </header>
 
         <div 
