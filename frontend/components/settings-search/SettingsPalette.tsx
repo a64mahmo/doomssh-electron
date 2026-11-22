@@ -110,18 +110,24 @@ export function SettingsPalette({ resume }: { resume: Pick<Resume, 'kind' | 'sec
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex justify-center items-start pt-[12vh] bg-black/20 dark:bg-black/40"
+      className="fixed inset-0 z-[100] flex justify-center items-start pt-[12vh] bg-black/10 dark:bg-black/30 backdrop-blur-[2px] animate-in fade-in-0 duration-150"
       onMouseDown={(e) => { if (e.target === e.currentTarget) close() }}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Search settings"
-        className="w-[560px] max-w-[calc(100vw-32px)] rounded-xl border border-border bg-popover text-popover-foreground shadow-2xl overflow-hidden animate-in fade-in-0 zoom-in-95 duration-100"
+        className={cn(
+          'w-[580px] max-w-[calc(100vw-32px)] overflow-hidden text-foreground',
+          // Frosted glass, like the app's other floating surfaces.
+          'rounded-2xl border border-border/50 bg-background/70 dark:bg-background/60 backdrop-blur-2xl backdrop-saturate-150',
+          'shadow-[0_24px_80px_-20px_rgba(0,0,0,0.35)] dark:shadow-[0_24px_80px_-20px_rgba(0,0,0,0.7)] ring-1 ring-white/10',
+          'animate-in fade-in-0 zoom-in-[0.98] slide-in-from-top-1 duration-150',
+        )}
         onKeyDown={onKeyDown}
       >
-        <div className="flex items-center gap-2 px-3 h-11 border-b border-border">
-          <Search size={15} className="text-muted-foreground shrink-0" />
+        <div className="flex items-center gap-2.5 px-4 h-12 border-b border-border/40">
+          <Search size={16} className="text-muted-foreground shrink-0" />
           <input
             ref={inputRef}
             value={query}
@@ -130,18 +136,18 @@ export function SettingsPalette({ resume }: { resume: Pick<Resume, 'kind' | 'sec
             aria-label="Search settings"
             aria-controls="settings-search-results"
             aria-activedescendant={results[index] ? `setting-${results[index].entry.id}` : undefined}
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground/60"
+            className="flex-1 bg-transparent text-[14px] outline-none placeholder:text-muted-foreground/60"
             spellCheck={false}
             autoComplete="off"
           />
-          <kbd className="text-[10px] font-mono text-muted-foreground border border-border rounded px-1.5 py-0.5">esc</kbd>
+          <kbd className="text-[10px] font-mono text-muted-foreground bg-muted/50 border border-border/50 rounded-md px-1.5 py-0.5">esc</kbd>
         </div>
 
         <div
           ref={listRef}
           id="settings-search-results"
           role="listbox"
-          className="max-h-[360px] overflow-y-auto py-1 custom-scrollbar"
+          className="max-h-[380px] overflow-y-auto p-1.5 custom-scrollbar"
         >
           {results.length === 0 ? (
             <p className="px-4 py-6 text-center text-xs text-muted-foreground">No settings match “{query}”.</p>
@@ -157,8 +163,8 @@ export function SettingsPalette({ resume }: { resume: Pick<Resume, 'kind' | 'sec
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => choose(i)}
                 className={cn(
-                  'mx-1 px-3 py-1.5 rounded-md flex items-center gap-3 cursor-pointer',
-                  i === index ? 'bg-accent text-accent-foreground' : 'text-muted-foreground',
+                  'px-3 py-2 rounded-xl flex items-center gap-3 cursor-pointer transition-colors',
+                  i === index ? 'bg-foreground/[0.07] dark:bg-foreground/10' : 'text-muted-foreground',
                 )}
               >
                 <span className="text-[13px] text-foreground/90 truncate">
@@ -169,7 +175,7 @@ export function SettingsPalette({ resume }: { resume: Pick<Resume, 'kind' | 'sec
                   {r.entry.group && r.entry.group !== r.entry.label ? ` › ${r.entry.group}` : ''}
                 </span>
                 {r.entry.note && (
-                  <span className="ml-auto shrink-0 text-[10px] text-muted-foreground/70 border border-border rounded px-1.5 py-0.5">
+                  <span className="ml-auto shrink-0 text-[10px] text-muted-foreground/80 bg-muted/50 border border-border/50 rounded-md px-1.5 py-0.5">
                     {r.entry.note}
                   </span>
                 )}
@@ -181,7 +187,7 @@ export function SettingsPalette({ resume }: { resume: Pick<Resume, 'kind' | 'sec
           )}
         </div>
 
-        <div className="flex items-center gap-4 px-3 h-8 border-t border-border text-[10px] text-muted-foreground/70">
+        <div className="flex items-center gap-4 px-4 h-9 border-t border-border/40 text-[10px] text-muted-foreground/70">
           <span><kbd className="font-mono">↑↓</kbd> to move</span>
           <span><kbd className="font-mono">↵</kbd> to open</span>
           <span className="ml-auto">{settingsSearchShortcut()} to toggle</span>

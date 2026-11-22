@@ -11,6 +11,11 @@ export interface WhatsNewEntry {
   id: string
   /** Shown as written, e.g. "September 2026". */
   date: string
+  /**
+   * When the entry went out (ISO date). A returning user whose last look at
+   * What's New is older than the newest `publishedAt` gets a prompt.
+   */
+  publishedAt?: string
   title: string
   items: { tag: WhatsNewTag; text: string }[]
 }
@@ -19,9 +24,11 @@ export const WHATS_NEW: WhatsNewEntry[] = [
   {
     id: '2026-11-22-real-pages',
     date: 'November 2026',
+    publishedAt: '2026-11-22',
     title: 'Real pages, and a faster way to find settings',
     items: [
-      { tag: 'new', text: 'Search every setting: press ⌘P (Ctrl+P on Windows) in the builder, type, and press Enter to jump straight to it.' },
+      { tag: 'new', text: 'Search the builder: press ⌘P (Ctrl+P on Windows), type a section, field or setting, and press Enter to jump straight to it.' },
+      { tag: 'new', text: 'Show names in the builder’s side navigation: use the button at the bottom of the icon column to expand it.' },
       { tag: 'new', text: 'Keep entries together (Style › Layout › Page Breaks): a job, degree or project that does not fit moves to the next page as a whole instead of splitting.' },
       { tag: 'improved', text: 'The preview shows real pages, the same ones your PDF gets, with a margin at the top and bottom of every page.' },
       { tag: 'improved', text: 'Two-column resumes: the header sits at the top of the left or right column, and both columns and the sidebar colour run the full height of every page.' },
@@ -35,6 +42,7 @@ export const WHATS_NEW: WhatsNewEntry[] = [
   {
     id: '2026-09-14-builder-polish',
     date: 'September 2026',
+    publishedAt: '2026-09-14',
     title: 'A friendlier start',
     items: [
       { tag: 'new', text: 'Start from an example resume (product manager, designer or new grad) on the Resumes page.' },
@@ -120,4 +128,110 @@ export function markWhatsNewSeen(): void {
   } catch {
     // Unavailable storage just means the dot may show again next visit.
   }
+}
+
+// ── "New since your last visit" ─────────────────────────────────────────────
+
+/**
+ * When this browser last looked at What's New, as epoch ms. Kept in a cookie
+ * (as asked for: it survives clearing site storage in some browsers and is easy
+ * to inspect) and mirrored to localStorage, which also works where cookies do
+ * not stick (the desktop app's app:// pages).
+ */
+export const WHATS_NEW_SEEN_AT_COOKIE = 'doomssh_whats_new_seen_at'
+const SEEN_AT_STORAGE_KEY = 'doomssh:whats-new-seen-at'
+/** The release a returning user was last prompted about, so the toast shows once per release. */
+const PROMPTED_STORAGE_KEY = 'doomssh:whats-new-prompted'
+const TWO_YEARS_S = 60 * 60 * 24 * 365 * 2
+
+/** Epoch ms of the newest entry with a `publishedAt`, or 0. */
+export function latestWhatsNewAt(): number {
+  const at = WHATS_NEW.find((e) => e.publishedAt)?.publishedAt
+  return at ? Date.parse(at) : 0
+}
+
+export function readSeenAt(): number | null {
+  try {
+    const m = document.cookie.match(new RegExp(`(?:^|;\\s*)${WHATS_NEW_SEEN_AT_COOKIE}=(\\d+)`))
+    if (m) return Number(m[1])
+  } catch {}
+  try {
+    const v = window.localStorage.getItem(SEEN_AT_STORAGE_KEY)
+    if (v && /^\d+$/.test(v)) return Number(v)
+  } catch {}
+  return null
+}
+
+export function writeSeenAt(at: number = Date.now()): void {
+  try {
+    document.cookie = `${WHATS_NEW_SEEN_AT_COOKIE}=${at}; max-age=${TWO_YEARS_S}; path=/; SameSite=Lax`
+  } catch {}
+  try {
+    window.localStorage.setItem(SEEN_AT_STORAGE_KEY, String(at))
+  } catch {}
+}
+
+export function readPromptedId(): string | null {
+  try {
+    return window.localStorage.getItem(PROMPTED_STORAGE_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function markPrompted(): void {
+  try {
+    window.localStorage.setItem(PROMPTED_STORAGE_KEY, latestWhatsNewId())
+  } catch {}
+}
+
+export interface WhatsNewState {
+  /** Epoch ms from the cookie, or null when this browser has none. */
+  seenAt: number | null
+  /** The older localStorage marker (the id of the last entry opened), if any. */
+  legacySeenId: string | null
+  /** Whether this browser already holds resumes or cover letters. */
+  hasExistingData: boolean
+  /** The release the user was last prompted about. */
+  promptedId: string | null
+}
+
+export interface WhatsNewDecision {
+  /** Show the dot on "What's New". */
+  unread: boolean
+  /** Show the "see what's new" toast now. */
+  prompt: boolean
+  /** Store this timestamp now (a new user starts caught up). */
+  initSeenAt: number | null
+}
+
+/**
+ * What a visit should show. A new user (no timestamp, no old marker, no
+ * documents) starts caught up and is never prompted. A returning user whose
+ * timestamp is older than the newest notes sees the dot, and the toast once
+ * per release. Someone who opened the latest notes before the timestamp
+ * existed counts as caught up.
+ */
+export function decideWhatsNew(state: WhatsNewState, now: number = Date.now()): WhatsNewDecision {
+  const latestAt = latestWhatsNewAt()
+  const latestId = latestWhatsNewId()
+  let seenAt = state.seenAt
+  let initSeenAt: number | null = null
+
+  if (seenAt === null) {
+    if (state.legacySeenId === latestId) {
+      // Opened the latest notes under the old marker: caught up.
+      return { unread: false, prompt: false, initSeenAt: now }
+    }
+    if (state.legacySeenId === null && !state.hasExistingData) {
+      // Brand new: nothing to catch up on.
+      return { unread: false, prompt: false, initSeenAt: now }
+    }
+    // Used the app before the timestamp existed and has not seen these notes.
+    seenAt = 0
+    initSeenAt = null
+  }
+
+  const unread = seenAt < latestAt
+  return { unread, prompt: unread && state.promptedId !== latestId, initSeenAt }
 }

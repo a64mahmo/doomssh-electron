@@ -19,6 +19,11 @@ export function findSettingElement(root: HTMLElement, group: string | undefined,
   return null
 }
 
+/** Wait this long after opening a tab or section before looking (its animation). */
+const SETTLE_MS = 220
+/** Stop looking after this long. */
+const GIVE_UP_MS = 1500
+
 /** What a person edits; preferred over buttons (a field's Remove button sits by its label). */
 const FIELD_CONTROLS = 'input:not([type="hidden"]), textarea, select, [role="switch"], [role="slider"], [contenteditable="true"]'
 const CONTROLS = `${FIELD_CONTROLS}, button, [tabindex="0"]`
@@ -78,26 +83,38 @@ export function useRevealSetting(
   useEffect(() => {
     if (!target || !accepts(target)) return
     open(target)
-    let frame = 0
+    const started = performance.now()
     let raf = 0
-    const tick = () => {
-      frame++
+    const find = (settled: boolean) => {
       const root = scrollRef.current
-      if (root) {
+      return root ? findSettingElement(root, target.group, target.label, settled) : null
+    }
+    const tick = () => {
+      const elapsed = performance.now() - started
+      const root = scrollRef.current
+      // Tabs and sections animate out before the new one mounts (about 150ms),
+      // so anything found sooner may be the outgoing copy.
+      if (root && elapsed >= SETTLE_MS) {
         if (!target.group) {
           root.scrollTo({ top: 0, behavior: 'smooth' })
           clearTarget()
           return
         }
-        const el = findSettingElement(root, target.group, target.label, frame > 45)
+        const el = find(elapsed > GIVE_UP_MS * 0.75)
         if (el) {
           highlight(el)
           clearTarget()
+          // If the panel still swapped the content after all, find it again.
+          // Not cancelled on cleanup: clearing the target re-runs this effect.
+          window.setTimeout(() => {
+            if (el.isConnected) return
+            const again = find(true)
+            if (again) highlight(again)
+          }, 400)
           return
         }
       }
-      // The tab or panel change animates in; keep looking for about a second.
-      if (frame < 60) raf = requestAnimationFrame(tick)
+      if (elapsed < GIVE_UP_MS) raf = requestAnimationFrame(tick)
       else clearTarget()
     }
     raf = requestAnimationFrame(tick)

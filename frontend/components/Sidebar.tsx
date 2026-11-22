@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useSyncExternalStore } from "react";
+import { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useResumeStore } from "@/lib/store/resumeStore";
@@ -31,8 +31,12 @@ import { Logo } from "@/components/Logo";
 import { WhatsNewDialog } from "@/components/WhatsNewDialog";
 import { getAllCoverLetters, getAllResumes } from "@/lib/db/database";
 import {
-  hasUnseenWhatsNew,
-  latestWhatsNewId,
+  decideWhatsNew,
+  readSeenAt,
+  writeSeenAt,
+  readPromptedId,
+  markPrompted,
+  WHATS_NEW,
   markWhatsNewSeen,
   readSeenWhatsNew,
 } from "@/lib/whatsNew";
@@ -219,29 +223,46 @@ export function Sidebar() {
     }
   }, [setGlobalDebugMode]);
 
+  // What's New: a returning user whose last look is older than the newest
+  // notes sees the dot, and once per release a toast pointing at them. A new
+  // user starts caught up (see decideWhatsNew).
   useEffect(() => {
     let cancelled = false;
+    let toastTimer: number | undefined;
     (async () => {
-      const seen = readSeenWhatsNew();
-      if (seen === latestWhatsNewId()) return;
-      let hasData = false;
-      if (seen === null) {
+      const seenAt = readSeenAt();
+      const legacySeenId = readSeenWhatsNew();
+      let hasExistingData = false;
+      if (seenAt === null && legacySeenId === null) {
         try {
           const [resumes, letters] = await Promise.all([getAllResumes(), getAllCoverLetters()]);
-          hasData = resumes.length + letters.length > 0;
+          hasExistingData = resumes.length + letters.length > 0;
         } catch {
           // No vault yet (desktop) or storage blocked: treat as a new user.
         }
-        // A brand-new user has nothing to catch up on; start them at the latest notes.
-        if (!hasData) {
-          markWhatsNewSeen();
-          return;
-        }
       }
-      if (!cancelled) setWhatsNewUnread(hasUnseenWhatsNew(seen, hasData));
+      if (cancelled) return;
+      const decision = decideWhatsNew({ seenAt, legacySeenId, hasExistingData, promptedId: readPromptedId() });
+      if (decision.initSeenAt !== null) {
+        writeSeenAt(decision.initSeenAt);
+        markWhatsNewSeen();
+      }
+      setWhatsNewUnread(decision.unread);
+      if (decision.prompt) {
+        // Let the page settle first so the toast is noticed, not lost in the load.
+        toastTimer = window.setTimeout(() => {
+          markPrompted();
+          toast("There’s something new in DoomSSH", {
+            description: WHATS_NEW[0]?.title,
+            duration: 12000,
+            action: { label: "See what’s new", onClick: () => openWhatsNewRef.current() },
+          });
+        }, 1500);
+      }
     })();
     return () => {
       cancelled = true;
+      window.clearTimeout(toastTimer);
     };
   }, []);
 
@@ -249,7 +270,11 @@ export function Sidebar() {
     setWhatsNewOpen(true);
     setWhatsNewUnread(false);
     markWhatsNewSeen();
+    writeSeenAt();
   }
+  // The toast's button outlives the render that created it.
+  const openWhatsNewRef = useRef(openWhatsNew);
+  openWhatsNewRef.current = openWhatsNew;
 
   async function saveSettings() {
     if (window.electron) {
