@@ -26,9 +26,9 @@ Breaks never cut a line of text or an image. These attributes add keep-together 
 | `data-entry-desc` | Entry description | Each line / bullet kept whole |
 | `data-keep` | Skills, languages, references | Kept whole |
 
-With a sidebar, the two columns (`data-column="main"` / `"sidebar"`) are paginated separately: each breaks where it suits and continues on the next page from there, and each page shows them through one window per column. The header never spans both columns: it heads one of them (`resolveHeaderPlacement`; the Customize panel offers Left / Right), so both columns, the sidebar panel and the divider run the full height of every page.
+With a sidebar, the two columns (`data-column="main"` / `"sidebar"`) are paginated separately: each breaks where it suits and continues on the next page from there, and each page shows them through one window per column. The header never spans both columns: it heads one of them (`resolveHeaderPlacement`; the Customize panel offers Left / Right), so both columns and the sidebar panel run the full height of every page.
 
-`MasterTemplate`'s `paged` prop renders the flow without page height, fill, sidebar panel, divider colour, border or footer; `getPageChrome` gives the frames those, and the frames draw the divider from the top margin to the footer on every page.
+`MasterTemplate`'s `paged` prop renders the flow without page height, fill, sidebar panel, border or footer; `getPageChrome` gives the frames those. There is no column divider and the footer has no rule. With columns, the footer sits under the main column only, and only the main column keeps space for it.
 
 ## File Map
 

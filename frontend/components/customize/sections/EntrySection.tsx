@@ -135,12 +135,6 @@ export function EntrySection({ s, upd }: EntrySectionProps) {
 
           {s.columnLayout !== 'one' && (
             <div>
-              <ToggleRow
-                id="column-divider"
-                label="Column divider line"
-                checked={s.columnDivider !== false}
-                onCheckedChange={(v) => upd({ columnDivider: v })}
-              />
               <FieldLabel>Sidebar Fill</FieldLabel>
               <VisualSegmentGroup
                 columns={3}

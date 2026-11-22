@@ -272,14 +272,8 @@ export function getPageChrome(resume: Resume) {
   const { s, colors } = ctx;
   const padH = `${s.marginHorizontal}mm`;
   let sidebarPanel: React.CSSProperties | null = null;
-  let dividerColor: string | null = null;
   if (resume.kind !== 'coverLetter' && s.columnLayout !== "one") {
     const { sidebarSections } = splitColumns(resume);
-    // The column divider, drawn by each page frame from the top margin to the
-    // footer so it never stops where a column's text happens to end.
-    if (sidebarSections.length > 0 && !isSolidSidebar(s) && s.columnDivider !== false) {
-      dividerColor = s.applyAccentDotsBarsBubbles ? colors.accent : (s.colorMode === 'basic' ? colors.text : colors.heading);
-    }
     const fill = sidebarFillFor(ctx);
     const sidebarWidth = s.columnWidthMode === "manual" ? s.columnWidth : 32;
     if (sidebarSections.length > 0 && fill !== "transparent") {
@@ -298,8 +292,6 @@ export function getPageChrome(resume: Resume) {
   return {
     background: pageBackground(ctx),
     sidebarPanel,
-    /** Divider colour, or null for none. It sits where the columns meet, on the main column's side. */
-    divider: dividerColor ? { color: dividerColor, mainOnLeft: !s.columnReverse } : null,
     borderColor: s.themeColorStyle === 'border' ? colors.accent : null,
   };
 }
@@ -624,7 +616,6 @@ export function MasterTemplate({
   const sidebarWidth = s.columnWidthMode === "manual" ? s.columnWidth : 32;
   const mainWidth = 100 - sidebarWidth;
 
-  const dividerColor = s.applyAccentDotsBarsBubbles ? colors.accent : (s.colorMode === 'basic' ? colors.text : colors.heading);
   // Honour sidebarTheme, tinting a dark
   // pick instead of filling it so the sidebar text stays legible. Must resolve
   // to a real colour or the literal "transparent": the old `${tint}05` form
@@ -633,14 +624,12 @@ export function MasterTemplate({
   // both columns (and the sidebar panel) run the full height of the page.
   // Details always stack in the sidebar.
   const hasSidebarColumn = s.columnLayout !== "one" && sidebarSections.length > 0;
-  const showDivider = hasSidebarColumn && !isSolidSidebar(s) && s.columnDivider !== false;
   const headerPlacement = resolveHeaderPlacement(s, sidebarSections.length > 0);
   const headerInSidebar = headerPlacement === "sidebar";
   const headerInMain = headerPlacement === "main";
 
   // Contact details always stack in the narrow sidebar column.
   const sCtx = sidebarCtx(ctx);
-  const solidSidebar = isSolidSidebar(s);
   const sidebarHeaderCtx = { ...sCtx, s: { ...s, detailsArrangement: "column" as const, detailsPosition: "below" as const } };
 
   const sidebarFill = sidebarFillFor(ctx);
@@ -1116,16 +1105,6 @@ export function MasterTemplate({
                 : 0,
             paddingTop: "5pt",
             paddingBottom: 0,
-            // Paged, the page frames draw the divider the full height of every
-            // page; the border keeps its width so the columns don't move.
-            borderRight:
-              !s.columnReverse && showDivider
-                ? `0.5pt solid ${paged ? "transparent" : dividerColor}`
-                : "none",
-            borderLeft:
-              s.columnReverse && showDivider
-                ? `0.5pt solid ${paged ? "transparent" : dividerColor}`
-                : "none",
           }}
         >
           {headerInMain && headerEl}
@@ -1288,16 +1267,14 @@ export function TemplateFooter({
 
   if (!s.footerPageNumbers && !s.footerEmail && !s.footerName) return null;
 
-  const dividerColor = s.applyAccentDotsBarsBubbles ? colors.accent : (s.colorMode === 'basic' ? colors.text : colors.heading);
 
   return (
     <div
       data-footer-fixed
       style={{
         marginTop: "auto",
-        paddingTop: "10pt",
+        paddingTop: "4pt",
         paddingBottom: "4pt",
-        borderTop: `0.5pt solid ${dividerColor}`,
         display: "flex",        justifyContent: "space-between",
         alignItems: "center",
         fontSize: pt(base * 0.75),

@@ -302,6 +302,7 @@ export interface ResumeSettings {
   /** Section types that go in the sidebar, replacing the built-in split. Per-section drags still win. */
   sidebarSectionTypes?: SectionType[]
   /** Hairline between the main column and the sidebar. Default on. */
+  /** No longer drawn; kept so saved resumes still type-check. */
   columnDivider?: boolean
   sidebarTextColor?: string
   columnReverse: boolean

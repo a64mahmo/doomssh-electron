@@ -28,6 +28,11 @@ export interface Page {
 export interface Region {
   left: number
   right: number
+  /** The column in this strip, if the page is split into columns. */
+  column?: string
+  /** That column's content box (inside its padding and border). */
+  contentLeft?: number
+  contentRight?: number
 }
 
 /** What each page shows: one slice per region, in region order; null once that column has run out. */
@@ -218,12 +223,13 @@ export function readInsets(root: HTMLElement): Insets {
 /**
  * Pages for the flow rooted at `root` (a `data-resume-page` element laid out
  * with no page height). `footerReserve` is the space a page keeps above its
- * bottom margin for the footer. Returns the regions each page is cut into
+ * bottom margin for the footer; with columns, only `footerColumn` keeps it
+ * (the footer sits under that column alone) and the others run to the margin. Returns the regions each page is cut into
  * (the full width, or one strip per column) and each page's slice of each.
  */
 export function paginate(
   root: HTMLElement,
-  { pageHeight, footerReserve }: { pageHeight: number; footerReserve: number },
+  { pageHeight, footerReserve, footerColumn = 'main' }: { pageHeight: number; footerReserve: number; footerColumn?: string },
 ): { pages: PageLayout[]; regions: Region[]; insets: Insets } {
   const insets = readInsets(root)
   const contentEnd = root.offsetHeight - insets.bottom
@@ -243,13 +249,21 @@ export function paginate(
   const placed = columns
     .map((el) => ({ el, rect: el.getBoundingClientRect() }))
     .sort((a, b) => a.rect.left - b.rect.left)
-  const regions: Region[] = placed.map((c, i) => ({
-    left: i === 0 ? 0 : m.x(c.rect.left),
-    right: i === placed.length - 1 ? root.offsetWidth : m.x(placed[i + 1].rect.left),
-  }))
+  const px = (v: string) => parseFloat(v) || 0
+  const regions: Region[] = placed.map((c, i) => {
+    const cs = root.ownerDocument.defaultView?.getComputedStyle(c.el)
+    return {
+      left: i === 0 ? 0 : m.x(c.rect.left),
+      right: i === placed.length - 1 ? root.offsetWidth : m.x(placed[i + 1].rect.left),
+      column: c.el.dataset.column,
+      contentLeft: m.x(c.rect.left) + px(cs?.paddingLeft ?? '') + px(cs?.borderLeftWidth ?? ''),
+      contentRight: m.x(c.rect.right) - px(cs?.paddingRight ?? '') - px(cs?.borderRightWidth ?? ''),
+    }
+  })
   const perColumn = placed.map((c) => {
     const end = Math.min(contentEnd, m.y(c.rect.bottom))
-    return splitPages(collectIntervals(root, c.el), end, firstCapacity, capacity)
+    const reserve = c.el.dataset.column === footerColumn ? footerReserve : 0
+    return splitPages(collectIntervals(root, c.el), end, firstCapacity + footerReserve - reserve, capacity + footerReserve - reserve)
   })
   const count = Math.max(...perColumn.map((p) => p.length))
   const pages: PageLayout[] = Array.from({ length: count }, (_, i) => ({

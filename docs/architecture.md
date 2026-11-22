@@ -112,8 +112,8 @@ sequenceDiagram
 
 **Pages** (`frontend/components/web/PagedResume.tsx`, `frontend/lib/pdf/paginate.ts`):
 - The template is laid out once, hidden, as one flow. Page breaks are chosen from its measured lines and keep-together blocks: no line or image is ever cut, `[data-section-heading]` stays with what follows, an `[data-entry]` head stays with its first line, and `[data-entry-desc] > div` and `[data-keep]` stay whole unless taller than a page.
-- Each page is a frame of exact paper size that paints its own background, sidebar panel, column divider, border and numbered footer, and shows its slice of the flow through a clipped window inset by the margins.
-- Two columns are paginated separately (one window per column per page), and the header heads one column rather than spanning both, so the columns, sidebar panel and divider run the full height of every page. Every page gets its margin on all four sides; full-bleed bands and panels still reach the paper edge.
+- Each page is a frame of exact paper size that paints its own background, sidebar panel, border and numbered footer, and shows its slice of the flow through a clipped window inset by the margins.
+- Two columns are paginated separately (one window per column per page), and the header heads one column rather than spanning both, so the columns and sidebar panel run the full height of every page. There is no column divider and no footer rule. Every page gets its margin on all four sides; full-bleed bands and panels still reach the paper edge.
 - Print CSS is only `@page { size: letter | A4; margin: 0 }` plus `break-after: page` between frames. Frames use `contain: strict` so Chromium prints each as one sheet.
 - Desktop export lays the pages out in an offscreen window (device scale 1). A normal hidden window takes the display's scale (2 on Retina), where text metrics round differently from print, and the measured breaks drift a pixel or so per entry until they cut lines.
 - The live preview renders the same pages. It measures at the screen's scale, so on a Retina display a break can occasionally land one line differently from the exported PDF.

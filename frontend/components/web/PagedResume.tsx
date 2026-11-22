@@ -116,7 +116,12 @@ export function PagedResume({
   const pages = layout?.pages ?? [{ slices: [{ start: 0, end: paper.height }] }]
   const regions = layout?.regions ?? [{ left: 0, right: paper.width }]
   const insets = layout?.insets ?? { top: 0, bottom: 0, left: 0, right: 0 }
-  const footerReserve = layout?.footerReserve ?? 0
+  // Across the text width; with columns, under the main column only, so its
+  // rule never crosses the sidebar panel or the divider.
+  const mainRegion = regions.find((r) => r.column === 'main')
+  const footerBox = mainRegion?.contentLeft !== undefined && mainRegion.contentRight !== undefined
+    ? { left: mainRegion.contentLeft, width: mainRegion.contentRight - mainRegion.contentLeft }
+    : { left: insets.left, width: paper.width - insets.left - insets.right }
 
   return (
     <div data-paged-resume style={{ display: 'flex', flexDirection: 'column', gap: pageGap }}>
@@ -128,7 +133,7 @@ export function PagedResume({
         <div ref={measureRef}>
           <MasterTemplate resume={resume} showPlaceholders={showPlaceholders} paged />
         </div>
-        <div ref={footerRef} style={{ width: paper.width - insets.left - insets.right }}>
+        <div ref={footerRef} style={{ width: footerBox.width }}>
           <TemplateFooter resume={resume} pageNumber={1} paged />
         </div>
       </div>
@@ -153,23 +158,6 @@ export function PagedResume({
         >
           {chrome.sidebarPanel && <div aria-hidden style={chrome.sidebarPanel} />}
 
-          {/* Full height on every page: from the top margin (where the columns
-              start) to just above the footer. Under the content, so a header
-              band heading the main column covers it. */}
-          {chrome.divider && regions.length > 1 && (
-            <div
-              aria-hidden
-              style={{
-                position: 'absolute',
-                top: insets.top,
-                bottom: insets.bottom + footerReserve,
-                left: regions[1].left,
-                width: '0.5pt',
-                transform: chrome.divider.mainOnLeft ? 'translateX(-100%)' : undefined,
-                backgroundColor: chrome.divider.color,
-              }}
-            />
-          )}
 
           {/* One window per region: the full width, or one per column so each
               column continues from wherever it broke. */}
@@ -199,7 +187,7 @@ export function PagedResume({
             )
           })}
 
-          <div style={{ position: 'absolute', left: insets.left, right: insets.right, bottom: insets.bottom }}>
+          <div style={{ position: 'absolute', left: footerBox.left, width: footerBox.width, bottom: insets.bottom }}>
             <TemplateFooter resume={resume} pageNumber={i + 1} paged />
           </div>
 

@@ -65,7 +65,7 @@ Every template is a **settings preset** applied on top of the resume's current s
 
 | Template | Structure | Photo |
 |----------|-----------|-------|
-| Modern | Two columns, right sidebar with divider | Beside the name, L circle |
+| Modern | Two columns, right sidebar | Beside the name, L circle |
 | Classic | Centred black serif, hairline rules | Above the name, M circle |
 | Minimal | Light name, no heading rules, stacked entries | Beside, square, top-aligned |
 | Crisp | Name left, contact details stacked on the right, bar headings | Beside, rounded |
