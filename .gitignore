@@ -69,3 +69,7 @@ next-env.d.ts
 # Misc
 *.pem
 .vercel/
+
+# Local agent notes
+AGENT.md
+GEMINI.md
