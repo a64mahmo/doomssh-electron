@@ -156,3 +156,22 @@ export function RailDivider() {
   const expanded = useRail((s) => s.expanded)
   return <div className={cn('h-px bg-border/60 shrink-0 my-1', expanded ? 'mx-1' : 'w-6 self-center')} />
 }
+
+/**
+ * The two-line collapsed tooltip every rail uses: the name, and under it a
+ * short description of what the item holds.
+ */
+export function RailTooltipBody({ label, description, note }: {
+  label: ReactNode
+  description: ReactNode
+  /** An extra muted line, e.g. that a section is hidden. */
+  note?: ReactNode
+}) {
+  return (
+    <span className="flex flex-col gap-0.5 max-w-[160px]">
+      <span className="font-semibold text-xs">{label}</span>
+      <span className="text-[10px] text-muted-foreground leading-relaxed">{description}</span>
+      {note && <span className="text-[10px] text-muted-foreground/70 italic leading-relaxed">{note}</span>}
+    </span>
+  )
+}

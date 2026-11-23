@@ -189,6 +189,23 @@ export const DEFAULT_HEADER: HeaderData = {
   github: '',
 }
 
+/** One line on what each section holds, for the Content panel's tooltips. */
+export const SECTION_DESCRIPTIONS: Record<SectionType, string> = {
+  header: 'Name, photo and contact details',
+  summary: 'Free text, like an introduction or a list of points',
+  experience: 'Jobs, roles and what you achieved',
+  education: 'Schools, degrees and dates',
+  skills: 'Skills, grouped or with levels',
+  projects: 'Things you built, with links',
+  certifications: 'Certificates and licences',
+  languages: 'Languages you speak, and how well',
+  awards: 'Awards and honours',
+  volunteering: 'Volunteer roles and causes',
+  publications: 'Papers, articles and books',
+  references: 'People who can vouch for you',
+  custom: 'A section of your own',
+}
+
 export const SECTION_LABELS: Record<SectionType, string> = {
   header: 'Header',
   summary: 'Summary',

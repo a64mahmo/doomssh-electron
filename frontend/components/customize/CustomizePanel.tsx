@@ -1,6 +1,6 @@
 'use client'
 import { useRef, useState, useMemo } from 'react'
-import { RailNav, RailItem } from '@/components/ui/rail-nav'
+import { RailNav, RailItem, RailTooltipBody } from '@/components/ui/rail-nav'
 import { useResume } from '@/hooks/useResume'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -126,12 +126,7 @@ export function CustomizePanel() {
             key={section.id}
             icon={section.icon}
             label={section.label}
-            tooltip={
-              <span className="flex flex-col gap-0.5 max-w-[160px]">
-                <span className="font-semibold text-xs">{section.label}</span>
-                <span className="text-[10px] text-muted-foreground leading-relaxed">{section.description}</span>
-              </span>
-            }
+            tooltip={<RailTooltipBody label={section.label} description={section.description} />}
             testId={`nav-${section.id}`}
             active={activeSection === section.id}
             onClick={() => {

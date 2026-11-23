@@ -3,7 +3,7 @@ import { useRef, useState } from 'react'
 import { useResumeStore } from '@/lib/store/resumeStore'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { RailNav, RailItem } from '@/components/ui/rail-nav'
+import { RailNav, RailItem, RailTooltipBody } from '@/components/ui/rail-nav'
 import { SearchButton } from '@/components/settings-search/SettingsPalette'
 import { useRevealSetting } from '@/components/settings-search/useRevealSetting'
 import {
@@ -23,12 +23,12 @@ import { SignatureCard } from './sections/SignatureCard'
 
 type CLSection = 'target' | 'letterhead' | 'recipient' | 'body' | 'signature'
 
-const SECTIONS: { id: CLSection; title: string; icon: LucideIcon }[] = [
-  { id: 'target',     title: 'Target Job',   icon: Briefcase },
-  { id: 'letterhead', title: 'Letterhead',    icon: User },
-  { id: 'recipient',  title: 'Recipient',     icon: Building },
-  { id: 'body',       title: 'Letter Body',   icon: FileText },
-  { id: 'signature',  title: 'Signature',     icon: PenLine },
+const SECTIONS: { id: CLSection; title: string; description: string; icon: LucideIcon }[] = [
+  { id: 'target',     title: 'Target Job',  description: 'The job this letter is for',          icon: Briefcase },
+  { id: 'letterhead', title: 'Letterhead',  description: 'Your name and contact details',       icon: User },
+  { id: 'recipient',  title: 'Recipient',   description: 'Who the letter goes to',              icon: Building },
+  { id: 'body',       title: 'Letter Body', description: 'The text of your letter',             icon: FileText },
+  { id: 'signature',  title: 'Signature',   description: 'Sign-off, name and signature image',  icon: PenLine },
 ]
 
 export function CoverLetterEditorPanel() {
@@ -56,6 +56,7 @@ export function CoverLetterEditorPanel() {
             key={section.id}
             icon={section.icon}
             label={section.title}
+            tooltip={<RailTooltipBody label={section.title} description={section.description} />}
             active={activeSectionId === section.id}
             onClick={() => setActiveSectionId(section.id)}
           />

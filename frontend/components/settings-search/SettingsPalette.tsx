@@ -119,7 +119,7 @@ export function SettingsPalette({ resume }: { resume: Pick<Resume, 'kind' | 'sec
       <div
         aria-hidden
         className="absolute inset-0 bg-black/10 dark:bg-black/40 backdrop-blur-[2px]"
-        onMouseDown={close}
+        onMouseDown={() => close()}
       />
       <div
         role="dialog"

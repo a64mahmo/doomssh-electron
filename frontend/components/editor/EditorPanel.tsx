@@ -3,7 +3,8 @@ import { useRef, useState } from 'react'
 import { useResume } from '@/hooks/useResume'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { RailNav, RailItem, RailDivider } from '@/components/ui/rail-nav'
+import { RailNav, RailItem, RailDivider, RailTooltipBody } from '@/components/ui/rail-nav'
+import { SECTION_DESCRIPTIONS } from '@/lib/store/types'
 import { SearchButton } from '@/components/settings-search/SettingsPalette'
 import { useRevealSetting } from '@/components/settings-search/useRevealSetting'
 import {
@@ -98,6 +99,7 @@ export function EditorPanel() {
         <RailItem
           icon={LayoutList}
           label="Manage Sections"
+          tooltip={<RailTooltipBody label="Manage Sections" description="Reorder, add, hide or remove sections" />}
           active={activeSectionId === 'list'}
           onClick={() => setActiveSectionId('list')}
         />
@@ -112,6 +114,13 @@ export function EditorPanel() {
               key={section.id}
               icon={Icon}
               label={section.title}
+              tooltip={
+                <RailTooltipBody
+                  label={section.title}
+                  description={SECTION_DESCRIPTIONS[section.type]}
+                  note={section.visible === false ? 'Hidden on your resume' : undefined}
+                />
+              }
               active={activeSectionId === section.id}
               muted={!section.visible}
               onClick={() => setActiveSectionId(section.id)}
