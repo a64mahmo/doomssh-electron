@@ -1,6 +1,5 @@
 'use client'
 import { useRef, useState, useMemo } from 'react'
-import { cn } from '@/lib/utils'
 import { RailNav, RailItem } from '@/components/ui/rail-nav'
 import { useResume } from '@/hooks/useResume'
 import { motion, AnimatePresence } from 'framer-motion'

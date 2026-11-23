@@ -54,7 +54,8 @@ export function PagedResume({
   const measureRef = useRef<HTMLDivElement | null>(null)
   const footerRef = useRef<HTMLDivElement | null>(null)
   const [layout, setLayout] = useState<Layout | null>(null)
-  const [fontsReady, setFontsReady] = useState(false)
+  // Without the Font Loading API there is nothing to wait for.
+  const [fontsReady, setFontsReady] = useState(() => typeof document === 'undefined' || !document.fonts?.ready)
   /** Bumped when an image in the flow settles, so readiness is re-checked. */
   const [imagesSettled, setImagesSettled] = useState(0)
   const paper = paperSizePx(resume)
@@ -76,8 +77,11 @@ export function PagedResume({
     setLayout((prev) => (prev && JSON.stringify(prev) === JSON.stringify(next) ? prev : next))
   }, [paper.height, keepEntries, footerFullWidth])
 
-  // Re-measure after every render: any edit can move a break.
+  // Re-measure after every render: any edit can move a break. Measuring the
+  // DOM after it renders is what a layout effect is for; measure() only sets
+  // state when the pages actually change, so this settles in one pass.
   useLayoutEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     measure()
   })
 
@@ -96,15 +100,11 @@ export function PagedResume({
     host.addEventListener('load', onLoad, true)
     host.addEventListener('error', onLoad, true)
     const fonts = typeof document !== 'undefined' ? document.fonts : undefined
-    if (fonts?.ready) {
-      fonts.ready.then(() => {
-        if (cancelled) return
-        measure()
-        setFontsReady(true)
-      })
-    } else {
+    fonts?.ready?.then(() => {
+      if (cancelled) return
+      measure()
       setFontsReady(true)
-    }
+    })
     return () => {
       cancelled = true
       observer?.disconnect()

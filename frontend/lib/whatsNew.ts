@@ -22,6 +22,24 @@ export interface WhatsNewEntry {
 
 export const WHATS_NEW: WhatsNewEntry[] = [
   {
+    id: '2026-11-22-history-and-footer',
+    date: 'November 2026',
+    // A time, not just a day: the notes above went out earlier the same day.
+    publishedAt: '2026-11-23T04:45:00Z',
+    title: 'Version history, a new footer, and your whole vault in one file',
+    items: [
+      { tag: 'new', text: 'Version history: press History in the builder to see earlier versions of a resume or cover letter, preview them page by page, and restore one. Restoring keeps the version you replaced, and you can undo it.' },
+      { tag: 'new', text: 'A version is kept when you start editing, every 10 minutes while you edit, each time you download a PDF, and whenever you press Save version.' },
+      { tag: 'new', text: 'Thumbnails: the Resumes and Cover Letters pages show each document’s real pages. Hover a card and use the arrows, swipe sideways, or press ← → to flip through them.' },
+      { tag: 'new', text: 'Footer tab in Style: pick a layout (page number, name and page, name · email · page, centered, or your own), a page number style (2, 2 / 3 or Page 2 of 3) and an optional line above the footer.' },
+      { tag: 'new', text: 'Custom footer: write your own left, center and right text with {{name}}, {{phone}}, {{email}}, {{page}} and {{pages}}.' },
+      { tag: 'new', text: 'Export your whole vault (resumes, cover letters and job applications) to one file in Settings, and import it on another computer. Imports are added next to what you have, and are checked for scripts, unsafe links and unsafe images first.' },
+      { tag: 'improved', text: 'On two-column resumes the footer runs across the whole page, so the page number sits at the right edge.' },
+      { tag: 'improved', text: 'Section Placement only lists sections that are switched on and have content.' },
+      { tag: 'fixed', text: 'Links in your documents only open web, email and phone addresses.' },
+    ],
+  },
+  {
     id: '2026-11-22-real-pages',
     date: 'November 2026',
     publishedAt: '2026-11-22',

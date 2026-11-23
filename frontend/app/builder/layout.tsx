@@ -5,14 +5,20 @@ import { Database } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import { Sidebar } from '@/components/Sidebar'
 import { Button } from '@/components/ui/button'
-import { isElectron } from '@/lib/platform'
 
 type VaultState = 'checking' | 'ready' | 'missing'
 
+const BUILT_FOR_ELECTRON = process.env.NEXT_PUBLIC_APP_PLATFORM === 'electron'
+
 export default function BuilderLayout({ children }: { children: React.ReactNode }) {
   // The browser build has no vault, so it renders the app straight away (also in
-  // the static HTML). Only the desktop app waits to learn whether a vault is set.
-  const [vault, setVault] = useState<VaultState>(() => (isElectron() ? 'checking' : 'ready'))
+  // the static HTML). Only the desktop build waits to learn whether a vault is set.
+  // The first state must be the same on the server and in the window, or
+  // hydration fails and React rebuilds the whole tree: so it comes from the
+  // build-time platform only, never from window.electron. (In `npm run dev` the
+  // platform is unset, the app renders at once, and the check below still
+  // switches to the folder picker if no vault is set.)
+  const [vault, setVault] = useState<VaultState>(() => (BUILT_FOR_ELECTRON ? 'checking' : 'ready'))
 
   useEffect(() => {
     if (!window.electron) return

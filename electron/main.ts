@@ -162,8 +162,17 @@ async function createWindow(): Promise<void> {
 
   mainWindow.once('ready-to-show', () => mainWindow?.show())
 
+  // Links that open a new window go to the system browser or mail app, and
+  // only web, mail and phone links: never file:, custom app protocols or
+  // anything else a crafted link could use to launch a program.
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url)
+    try {
+      const { protocol } = new URL(url)
+      if (['http:', 'https:', 'mailto:', 'tel:'].includes(protocol)) shell.openExternal(url)
+      else console.warn('[electron] blocked opening a link with protocol', protocol)
+    } catch {
+      console.warn('[electron] blocked opening an invalid link')
+    }
     return { action: 'deny' }
   })
 
@@ -279,7 +288,15 @@ async function readVaultDir(): Promise<string | null> {
   } catch { return null }
 }
 
+/**
+ * Ids come from the renderer (and, through import, from files the user picks),
+ * so they are checked before they become file names: letters, digits, "_" and
+ * "-" only, so "../" can never reach outside the vault.
+ */
+const SAFE_ID = /^[\w-]{1,200}$/
+
 function vaultFile(dir: string, id: string): string {
+  if (typeof id !== 'string' || !SAFE_ID.test(id)) throw new Error('Invalid resume id')
   return path.join(dir, `${id}.json`)
 }
 
@@ -347,7 +364,7 @@ ipcMain.handle('resume:read', async (_event, id: string): Promise<Resume | null>
 ipcMain.handle('resume:write', async (_event, resume: Resume) => {
   const dir = await readVaultDir()
   if (!dir) throw new Error('No vault set')
-  const filePath = vaultFile(dir, resume.id)
+  const filePath = vaultFile(dir, resume?.id)
   try {
     await fsp.mkdir(dir, { recursive: true })
     const content = JSON.stringify(resume)
@@ -363,6 +380,10 @@ ipcMain.handle('resume:delete', async (_event, id: string) => {
   console.log('[electron] deleting resume:', id)
   const dir = await readVaultDir()
   if (!dir) return
+  if (typeof id !== 'string' || !SAFE_ID.test(id)) {
+    console.error('[electron] refused to delete invalid resume id')
+    return
+  }
   const filePath = vaultFile(dir, id)
   try { 
     if (fs.existsSync(filePath)) {
@@ -380,7 +401,6 @@ ipcMain.handle('resume:delete', async (_event, id: string) => {
 // <vault>/_history/<resumeId>/<versionId>.json. resume:list skips "_" entries
 // and anything that isn't a top-level .json file, so history never shows up as
 // a resume. Ids come from the renderer, so they are checked before use in paths.
-const SAFE_ID = /^[\w-]+$/
 
 async function historyDir(resumeId: string): Promise<string> {
   if (!SAFE_ID.test(resumeId)) throw new Error('Invalid resume id')

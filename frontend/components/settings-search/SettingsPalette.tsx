@@ -110,17 +110,27 @@ export function SettingsPalette({ resume }: { resume: Pick<Resume, 'kind' | 'sec
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex justify-center items-start pt-[12vh] bg-black/10 dark:bg-black/30 backdrop-blur-[2px] animate-in fade-in-0 duration-150"
+      className="fixed inset-0 z-[100] flex justify-center items-start pt-[12vh] animate-in fade-in-0 duration-150"
       onMouseDown={(e) => { if (e.target === e.currentTarget) close() }}
     >
+      {/* The dim, lightly blurred page sits beside the panel, not around it: an
+          element with a backdrop-filter limits what its children can blur to its
+          own contents, which would leave the panel's frost with nothing to blur. */}
+      <div
+        aria-hidden
+        className="absolute inset-0 bg-black/10 dark:bg-black/40 backdrop-blur-[2px]"
+        onMouseDown={close}
+      />
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Search settings"
         className={cn(
-          'w-[580px] max-w-[calc(100vw-32px)] overflow-hidden text-foreground',
+          'relative w-[580px] max-w-[calc(100vw-32px)] overflow-hidden text-foreground',
           // Frosted glass, like the app's other floating surfaces.
-          'rounded-2xl border border-border/50 bg-background/70 dark:bg-background/60 backdrop-blur-2xl backdrop-saturate-150',
+          // Opaque enough that a white resume page behind it can't wash out the
+          // list in dark mode; the blur still shows the page as soft colour.
+          'rounded-2xl border border-border/50 bg-popover/80 dark:bg-popover/85 backdrop-blur-2xl backdrop-saturate-150',
           'shadow-[0_24px_80px_-20px_rgba(0,0,0,0.35)] dark:shadow-[0_24px_80px_-20px_rgba(0,0,0,0.7)] ring-1 ring-white/10',
           'animate-in fade-in-0 zoom-in-[0.98] slide-in-from-top-1 duration-150',
         )}

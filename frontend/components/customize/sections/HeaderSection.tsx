@@ -3,7 +3,7 @@ import React from 'react'
 import { cn } from '@/lib/utils'
 import {
   ResumeSettings, HeaderAlignment, NameSize, DetailsArrangement,
-  DetailsTextAlignment, HeaderArrangement, PhotoSize, PhotoShape, 
+  HeaderArrangement, PhotoSize, PhotoShape, 
   PhotoPosition, DetailsPosition, ResumeSection
 } from '@/lib/store/types'
 import { Separator } from '@/components/ui/separator'
@@ -23,9 +23,6 @@ import {
 } from '@/components/editor/EditorPrimitives'
 import { VisualSegmentGroup } from '../CustomizePrimitives'
 import {
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
   Circle,
   SquareDot,
   Square,

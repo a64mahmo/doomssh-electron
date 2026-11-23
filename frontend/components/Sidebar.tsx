@@ -1,4 +1,5 @@
 "use client";
+import { VaultTransfer } from '@/components/VaultTransfer'
 
 import { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
@@ -20,12 +21,11 @@ import {
   RefreshCw,
   Download,
   ArrowUpCircle,
-  FileText,
   ChevronLeft,
   ChevronRight,
   Sparkles,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/Logo";
 import { WhatsNewDialog } from "@/components/WhatsNewDialog";
@@ -160,14 +160,14 @@ const THEME_OPTIONS = [
 
 const NARROW_QUERY = "(max-width: 767px)";
 
-const noopSubscribe = () => () => {};
-
 function subscribeNarrow(onChange: () => void) {
   const mq = window.matchMedia?.(NARROW_QUERY);
   if (!mq) return () => {};
   mq.addEventListener("change", onChange);
   return () => mq.removeEventListener("change", onChange);
 }
+
+const noopSubscribe = () => () => {};
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -181,8 +181,13 @@ export function Sidebar() {
   const [whatsNewUnread, setWhatsNewUnread] = useState(false);
   const [apiKey, setApiKey] = useState("");
   const [appVersion, setAppVersion] = useState("");
-  const [isMac, setIsMac] = useState(false);
-  const [isWin, setIsWin] = useState(false);
+  // macOS desktop app: room for the traffic lights. Read without an effect;
+  // the server (and first client render) say false, so hydration matches.
+  const isMac = useSyncExternalStore(
+    noopSubscribe,
+    () => window.electron?.platform === "darwin",
+    () => false,
+  );
   const isNarrow = useSyncExternalStore(
     subscribeNarrow,
     () => window.matchMedia?.(NARROW_QUERY).matches ?? false,
@@ -218,10 +223,22 @@ export function Sidebar() {
       if (typeof window.electron.getAppVersion === "function") {
         window.electron.getAppVersion().then((v) => setAppVersion(v));
       }
-      setIsMac(window.electron.platform === "darwin");
-      setIsWin(window.electron.platform === "win32");
     }
   }, [setGlobalDebugMode]);
+
+  function openWhatsNew() {
+    setWhatsNewOpen(true);
+    setWhatsNewUnread(false);
+    markWhatsNewSeen();
+    writeSeenAt();
+  }
+
+  // The toast's button outlives the render that created it, so it calls
+  // the latest openWhatsNew through a ref (declared before the effect using it).
+  const openWhatsNewRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    openWhatsNewRef.current = openWhatsNew;
+  });
 
   // What's New: a returning user whose last look is older than the newest
   // notes sees the dot, and once per release a toast pointing at them. A new
@@ -265,16 +282,6 @@ export function Sidebar() {
       window.clearTimeout(toastTimer);
     };
   }, []);
-
-  function openWhatsNew() {
-    setWhatsNewOpen(true);
-    setWhatsNewUnread(false);
-    markWhatsNewSeen();
-    writeSeenAt();
-  }
-  // The toast's button outlives the render that created it.
-  const openWhatsNewRef = useRef(openWhatsNew);
-  openWhatsNewRef.current = openWhatsNew;
 
   async function saveSettings() {
     if (window.electron) {
@@ -542,6 +549,7 @@ export function Sidebar() {
               </p>
             </div>
           )}
+          <VaultTransfer />
           {isElectron() && (
             <div className="grid gap-4 py-4">
               <div className="space-y-3 p-3 rounded-xl bg-accent/30 border border-border/50">

@@ -42,13 +42,14 @@ import {
   defaultDropAnimationSideEffects,
   type DragOverEvent,
   type SensorContext,
+  type useSensors,
 } from '@dnd-kit/core'
 import { DroppableColumn, VisualSegmentGroup } from '../CustomizePrimitives'
 
 interface LayoutSectionProps {
   s: ResumeSettings
   upd: (updates: Partial<ResumeSettings>) => void
-  sensors: any // useSensors return type
+  sensors: ReturnType<typeof useSensors>
   handleDragOver: (event: DragOverEvent) => void
   dragActiveId: string | null
   setDragActiveId: (id: string | null) => void
@@ -135,7 +136,7 @@ export function LayoutSection({
           <ControlGroup title="Visible Blocks">
             <div className="grid grid-cols-1 gap-2">
               {CL_BLOCKS.map((block) => {
-                const isActive = (s as any)[block.id] ?? true
+                const isActive = (s as unknown as Record<string, boolean | undefined>)[block.id] ?? true
                 const Icon = block.icon
                 return (
                   <button

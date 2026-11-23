@@ -23,12 +23,21 @@ export default function CoverLetterDashboard() {
   const [loading, setLoading] = useState(true)
 
   async function load() {
-    setLoading(true)
     setLetters(await getAllCoverLetters())
-    setLoading(false)
   }
 
-  useEffect(() => { load() }, [])
+  // Starts in the loading state; the first read ends it.
+  useEffect(() => {
+    let cancelled = false
+    getAllCoverLetters()
+      .then((all) => { if (!cancelled) setLetters(all) })
+      .catch((err) => {
+        console.error('Failed to load cover letters:', err)
+        toast.error("Couldn't load your cover letters")
+      })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [])
 
   async function handleCreate() {
     const letter = createNewCoverLetter()
