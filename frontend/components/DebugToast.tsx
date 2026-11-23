@@ -1,7 +1,6 @@
 'use client'
 import { useEffect } from 'react'
 import { useUIStore } from '@/lib/store/uiStore'
-import { useResumeStore } from '@/lib/store/resumeStore'
 import { toast } from 'sonner'
 import { AlertCircle, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -10,8 +9,9 @@ export function DebugToast() {
   const errors = useUIStore((state) => state.errors)
   const clearErrors = useUIStore((state) => state.clearErrors)
   const globalDebugMode = useUIStore((state) => state.globalDebugMode)
-  const perResumeDebugMode = useResumeStore((state) => state.resume?.settings.debugMode ?? false)
-  const debugMode = globalDebugMode || perResumeDebugMode
+  // Only the app-wide Bug Mode (desktop Settings). The per-resume toggle was
+  // removed from Customize, so a resume saved with it on must not keep it on.
+  const debugMode = globalDebugMode
 
   useEffect(() => {
     if (debugMode && errors.length > 0) {

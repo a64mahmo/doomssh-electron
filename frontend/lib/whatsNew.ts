@@ -36,6 +36,7 @@ export const WHATS_NEW: WhatsNewEntry[] = [
       { tag: 'improved', text: 'The example resumes are longer, written in plain language, and come with photos.' },
       { tag: 'improved', text: 'A cleaner page: no line between the columns and no line above the footer.' },
       { tag: 'fixed', text: 'Page numbers in the footer now appear in your PDF.' },
+      { tag: 'fixed', text: 'Dropdowns show the same text closed as in their list (“Large (L)”, not “L”), at the same size.' },
       { tag: 'fixed', text: 'Text no longer runs to the bottom edge of the paper or gets cut in half at a page break.' },
     ],
   },

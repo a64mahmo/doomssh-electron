@@ -409,6 +409,7 @@ export interface ResumeSettings {
   clSignatureSize?: 'sm' | 'md' | 'lg'
 
   // Debug
+  /** No longer used: error toasts follow the app-wide Bug Mode only. Kept so saved resumes still type-check. */
   debugMode: boolean
 }
 

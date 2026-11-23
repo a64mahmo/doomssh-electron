@@ -482,15 +482,6 @@ export function LayoutSection({
         </>
       )}
 
-      <Separator className="opacity-30" />
-      <ControlGroup title="Settings">
-        <ToggleRow
-          id="debug-mode"
-          label="Debug Mode (Show Errors)"
-          checked={s.debugMode}
-          onCheckedChange={(v) => upd({ debugMode: v })}
-        />
-      </ControlGroup>
     </>
   )
 }

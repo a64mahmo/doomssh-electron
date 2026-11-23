@@ -64,7 +64,6 @@ export const SETTINGS_INDEX: SettingEntry[] = [
   { id: 'section-spacing', label: 'Section Spacing', tab: 'layout', group: 'Margins & Spacing', scope: 'resume', keywords: ['gap', 'space between sections'] },
   { id: 'keep-entries', label: 'Keep entries together', tab: 'layout', group: 'Page Breaks', scope: 'resume', keywords: ['page break', 'split', 'next page', 'overflow', 'widow', 'orphan'] },
   { id: 'section-placement', label: 'Section Placement', tab: 'layout', group: 'Section Placement', scope: 'resume', note: TWO_COLUMNS, keywords: ['move section', 'sidebar', 'main column', 'drag'] },
-  { id: 'debug', label: 'Debug Mode (Show Errors)', tab: 'layout', group: 'Settings', keywords: ['errors', 'developer'] },
   { id: 'cl-blocks', label: 'Visible Blocks', tab: 'layout', group: 'Visible Blocks', scope: 'coverLetter', keywords: ['letterhead', 'recipient', 'date', 'sincerely', 'sign off'] },
   { id: 'cl-text-align', label: 'Text Alignment', tab: 'layout', group: 'Body Typography', scope: 'coverLetter', keywords: ['justify', 'left', 'body'] },
   { id: 'cl-paragraph-spacing', label: 'Paragraph Spacing', tab: 'layout', group: 'Body Typography', scope: 'coverLetter' },

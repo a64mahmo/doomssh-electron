@@ -6,8 +6,9 @@ describe('MonthYearPicker', () => {
   it('renders initial month and year from value', () => {
     render(<MonthYearPicker value="2023-05" onChange={() => {}} />)
     
-    // Check for numerical values shown in triggers
-    expect(screen.getByText('05')).toBeInTheDocument()
+    // The closed selects show the option labels, the same text as the menus.
+    expect(screen.getByText('May')).toBeInTheDocument()
+    expect(screen.queryByText('05')).not.toBeInTheDocument()
     expect(screen.getByText('2023')).toBeInTheDocument()
   })
 

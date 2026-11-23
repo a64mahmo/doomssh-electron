@@ -47,6 +47,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Dropdown labels and sizes** — `components/ui/select.tsx`: `Select` reads each `SelectItem`'s label and passes them to Base UI's `items`, so the closed trigger shows the option's label instead of its raw value ("Large (L)", not "L"; "March", not "03"). The menu takes the trigger's font size and weight and items inherit it, so an option reads the same open and closed. A `SelectValue` with its own children still wins.
+- **Debug Mode removed from Customize** — The per-resume "Debug Mode (Show Errors)" toggle under Layout is gone; error toasts follow only the app-wide Bug Mode in desktop Settings, so a resume saved with the old toggle on no longer shows them.
+
 - **PDF bottom margin** — Pages could print with no space at the bottom; every page now has its margin on all four sides.
 - **Footer page numbers** — The footer printed an empty page number (Chrome never fills `counter(page)` in a fixed element); each page frame now passes its number.
 - **Lines cut at page breaks** — Fixed by the offscreen export window (see Changed).

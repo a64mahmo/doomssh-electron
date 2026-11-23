@@ -6,7 +6,76 @@ import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
-const Select = SelectPrimitive.Root
+/**
+ * The trigger element, and its font, so the menu can match it (SelectContent).
+ * The font is read when the trigger mounts and again each time the menu opens:
+ * reading it while the menu renders is too early on the first open (the
+ * trigger's element is not attached yet), which made that first menu larger.
+ */
+const SelectTriggerContext = React.createContext<{
+  triggerRef: React.RefObject<HTMLButtonElement | null>
+  font: React.CSSProperties
+} | null>(null)
+
+function readFont(el: HTMLElement | null): React.CSSProperties | null {
+  if (!el || typeof window === "undefined") return null
+  const cs = window.getComputedStyle(el)
+  return { fontSize: cs.fontSize, fontWeight: cs.fontWeight }
+}
+
+/** Every `<SelectItem value>` under `node`, with its children as the label. */
+function collectItems(node: React.ReactNode, out: { value: unknown; label: React.ReactNode }[] = []) {
+  React.Children.forEach(node, (child) => {
+    if (!React.isValidElement(child)) return
+    const props = child.props as { value?: unknown; children?: React.ReactNode }
+    if (child.type === SelectItem) out.push({ value: props.value, label: props.children })
+    else if (props.children) collectItems(props.children, out)
+  })
+  return out
+}
+
+/**
+ * The closed select shows the chosen item's label, the same text as in the
+ * menu (Base UI shows the raw value unless it is given the items). Labels are
+ * read from the `<SelectItem>`s; pass `items` to override, or give
+ * `<SelectValue>` children for a custom display.
+ */
+function Select<Value, Multiple extends boolean | undefined = false>({
+  items,
+  children,
+  onOpenChange,
+  ...props
+}: SelectPrimitive.Root.Props<Value, Multiple>) {
+  const triggerRef = React.useRef<HTMLButtonElement | null>(null)
+  const [font, setFont] = React.useState<React.CSSProperties>({})
+  const derived = React.useMemo(() => (items ? undefined : collectItems(children)), [items, children])
+
+  React.useLayoutEffect(() => {
+    const f = readFont(triggerRef.current)
+    if (f) setFont(f)
+  }, [])
+
+  const handleOpenChange: SelectPrimitive.Root.Props<Value, Multiple>["onOpenChange"] = (open, details) => {
+    if (open) {
+      const f = readFont(triggerRef.current)
+      if (f && (f.fontSize !== font.fontSize || f.fontWeight !== font.fontWeight)) setFont(f)
+    }
+    onOpenChange?.(open, details)
+  }
+
+  const ctx = React.useMemo(() => ({ triggerRef, font }), [font])
+  return (
+    <SelectTriggerContext.Provider value={ctx}>
+      <SelectPrimitive.Root
+        items={items ?? (derived && derived.length ? derived : undefined)}
+        onOpenChange={handleOpenChange}
+        {...props}
+      >
+        {children}
+      </SelectPrimitive.Root>
+    </SelectTriggerContext.Provider>
+  )
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
@@ -36,8 +105,10 @@ function SelectTrigger({
 }: SelectPrimitive.Trigger.Props & {
   size?: "sm" | "default"
 }) {
+  const ctx = React.useContext(SelectTriggerContext)
   return (
     <SelectPrimitive.Trigger
+      ref={ctx?.triggerRef}
       data-slot="select-trigger"
       data-size={size}
       className={cn(
@@ -64,12 +135,16 @@ function SelectContent({
   align = "center",
   alignOffset = 0,
   alignItemWithTrigger = true,
+  style,
   ...props
 }: SelectPrimitive.Popup.Props &
   Pick<
     SelectPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset" | "alignItemWithTrigger"
   >) {
+  // The menu uses the trigger's font size and weight, so an option reads the
+  // same open and closed. (Items inherit it unless they set their own.)
+  const matchTrigger = React.useContext(SelectTriggerContext)?.font ?? {}
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Positioner
@@ -83,7 +158,8 @@ function SelectContent({
         <SelectPrimitive.Popup
           data-slot="select-content"
           data-align-trigger={alignItemWithTrigger}
-          className={cn("relative isolate z-50 max-h-(--available-height) w-(--anchor-width) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className )}
+          style={typeof style === "function" ? style : { ...matchTrigger, ...style }}
+          className={cn("relative isolate z-50 text-sm max-h-(--available-height) w-(--anchor-width) min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=inline-end]:slide-in-from-left-2 data-[side=inline-start]:slide-in-from-right-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95", className )}
           {...props}
         >
           <SelectScrollUpButton />
@@ -117,7 +193,7 @@ function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "relative flex w-full cursor-pointer items-center gap-1.5 rounded-md py-1 pr-8 pl-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+        "relative flex w-full cursor-pointer items-center gap-1.5 rounded-md py-1 pr-8 pl-1.5 outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className
       )}
       {...props}
