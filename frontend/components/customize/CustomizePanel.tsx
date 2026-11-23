@@ -12,6 +12,7 @@ import {
   Type as TypeIcon,
   LayoutTemplate,
   FileText,
+  PanelBottom,
 } from 'lucide-react'
 import {
   PointerSensor,
@@ -28,6 +29,8 @@ import { TypographySection } from './sections/TypographySection'
 import { EntrySection } from './sections/EntrySection'
 import { ColorsSection } from './sections/ColorsSection'
 import { HeaderSection } from './sections/HeaderSection'
+import { sectionHasContent } from '@/lib/resume-utils'
+import { FooterSection } from './sections/FooterSection'
 import { SectionsSection } from './sections/SectionsSection'
 import { useRevealSetting } from '@/components/settings-search/useRevealSetting'
 import { SearchButton } from '@/components/settings-search/SettingsPalette'
@@ -40,6 +43,7 @@ const PANEL_SECTIONS = [
   { id: 'entry',     label: 'Entry',      description: 'Entry styles & order', icon: FileText },
   { id: 'colors',    label: 'Colors',     description: 'Color palette', icon: Palette },
   { id: 'header',    label: 'Header',     description: 'Name, photo, contact info', icon: HeaderIcon },
+  { id: 'footer',    label: 'Footer',     description: 'Page numbers, name, divider', icon: PanelBottom },
   { id: 'sections',  label: 'Sections',   description: 'Add, remove, reorder sections', icon: Settings2 },
 ] as const
 
@@ -52,7 +56,7 @@ export function CustomizePanel() {
   
   const filteredSections = useMemo(() => {
     if (!isCoverLetter) return PANEL_SECTIONS
-    return PANEL_SECTIONS.filter(s => ['templates', 'layout', 'typography', 'colors', 'header'].includes(s.id))
+    return PANEL_SECTIONS.filter(s => ['templates', 'layout', 'typography', 'colors', 'header', 'footer'].includes(s.id))
   }, [isCoverLetter])
 
   const [activeSection, setActiveSection] = useState<PanelSectionId>('templates')
@@ -74,24 +78,26 @@ export function CustomizePanel() {
 
   const sidebarTypes = useMemo(() => ['skills', 'education', 'languages', 'certifications', 'awards', 'references'], [])
   const sections = useMemo(() => resume?.sections.filter(sec => sec.type !== 'header') || [], [resume?.sections])
+  // Section Placement lists only sections that show on the page.
+  const placeable = useMemo(() => sections.filter(sectionHasContent), [sections])
 
   const mainIds = useMemo(() => {
     if (!resume) return []
     const s = resume.settings
-    return sections.filter(sec => {
+    return placeable.filter(sec => {
       const col = s.sectionColumns?.[sec.id]
       return col ? col === 'main' : !sidebarTypes.includes(sec.type)
     }).map(sec => sec.id)
-  }, [sections, resume, sidebarTypes])
+  }, [placeable, resume, sidebarTypes])
 
   const sidebarIds = useMemo(() => {
     if (!resume) return []
     const s = resume.settings
-    return sections.filter(sec => {
+    return placeable.filter(sec => {
       const col = s.sectionColumns?.[sec.id]
       return col ? col === 'sidebar' : sidebarTypes.includes(sec.type)
     }).map(sec => sec.id)
-  }, [sections, resume, sidebarTypes])
+  }, [placeable, resume, sidebarTypes])
 
   if (!resume) return null
   const s = resume.settings
@@ -198,6 +204,10 @@ export function CustomizePanel() {
 
                 {activeSection === 'header' && (
                   <HeaderSection s={s} upd={upd} sections={sections} />
+                )}
+
+                {activeSection === 'footer' && (
+                  <FooterSection s={s} upd={upd} />
                 )}
 
                 {activeSection === 'sections' && !isCoverLetter && (

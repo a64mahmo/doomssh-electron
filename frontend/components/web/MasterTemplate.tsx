@@ -1,4 +1,5 @@
 import React from "react";
+import { fillFooterTemplate, formatPageNumber } from "@/lib/utils/footer";
 import type { Resume, ResumeSection, ResumeSettings, SectionType, HeaderData } from "@/lib/store/types";
 import { buildCtx, sidebarCtx, isSolidSidebar } from "@/lib/pdf/templateCtx";
 import { SectionRenderer, ContactLine } from "./sections";
@@ -1252,10 +1253,13 @@ export function MasterTemplate({
 export function TemplateFooter({
   resume,
   pageNumber,
+  totalPages,
   paged,
 }: {
   resume: Resume;
   pageNumber?: number;
+  /** Known once the flow is paginated; shown as "2 / 3" when footerPageFormat is "of-total". */
+  totalPages?: number;
   /** Placed by a page frame: nothing scrolls under it, so no fill over the sidebar panel. */
   paged?: boolean;
 }) {
@@ -1265,7 +1269,20 @@ export function TemplateFooter({
   const h = header?.items as HeaderData | undefined;
   const padH = `${s.marginHorizontal}mm`;
 
-  if (!s.footerPageNumbers && !s.footerEmail && !s.footerName) return null;
+  const custom = s.footerCustom === true;
+  const values = { name: h?.fullName, phone: h?.phone, email: h?.email, page: pageNumber, pages: totalPages };
+  const columns = custom
+    ? [s.footerLeft, s.footerCenter, s.footerRight].map((t) => fillFooterTemplate(t ?? "", values))
+    : [
+        s.footerName ? h?.fullName ?? "" : "",
+        s.footerEmail ? h?.email ?? "" : "",
+        s.footerPageNumbers && pageNumber !== undefined
+          ? formatPageNumber(s.footerPageFormat, pageNumber, totalPages)
+          : "",
+      ];
+
+  if (custom ? ![s.footerLeft, s.footerCenter, s.footerRight].some((t) => t?.trim())
+             : !s.footerPageNumbers && !s.footerEmail && !s.footerName) return null;
 
 
   return (
@@ -1273,26 +1290,26 @@ export function TemplateFooter({
       data-footer-fixed
       style={{
         marginTop: "auto",
-        paddingTop: "4pt",
+        paddingTop: s.footerDivider ? "5pt" : "4pt",
+        borderTop: s.footerDivider ? `0.5pt solid ${colors.subtitle}` : undefined,
         paddingBottom: "4pt",
-        display: "flex",        justifyContent: "space-between",
+        // Name left, email centred, page number right. Each keeps its slot
+        // when the others are off, so the footer reads the same on every page.
+        display: "grid",
+        gridTemplateColumns: "1fr auto 1fr",
+        columnGap: "12pt",
         alignItems: "center",
         fontSize: pt(base * 0.75),
         color: colors.subtitle,
         backgroundColor: paged ? "transparent" : colors.background,
       }}
     >
-      <div>
-        {s.footerName && (
-          <span style={{ marginRight: "12pt" }}>{h?.fullName}</span>
-        )}
-        {s.footerEmail && <span>{h?.email}</span>}
-      </div>
-      {s.footerPageNumbers && (
-        <div style={{ fontVariantNumeric: "tabular-nums" }}>
-          {pageNumber !== undefined ? pageNumber : ""}
+      {(["left", "center", "right"] as const).map((align, i) => (
+        // pre-line: a line break typed in a custom column starts a new line.
+        <div key={align} style={{ textAlign: align, whiteSpace: "pre-line", fontVariantNumeric: "tabular-nums", minWidth: 0 }}>
+          {columns[i]}
         </div>
-      )}
+      ))}
     </div>
   );
 }

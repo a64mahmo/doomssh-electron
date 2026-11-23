@@ -13,6 +13,8 @@ import { SettingsPalette } from '@/components/settings-search/SettingsPalette'
 import { useSettingsSearch } from '@/lib/store/settingsSearchStore'
 import { useResumeStore } from '@/lib/store/resumeStore'
 import { getResume } from '@/lib/db/database'
+import { beginSession, endSession } from '@/lib/store/historyTracker'
+import { HistoryDialog } from '@/components/history/HistoryDialog'
 import { downloadResumePDF } from '@/lib/utils/export'
 import { cn } from '@/lib/utils'
 
@@ -60,10 +62,14 @@ export function BuilderClient() {
         router.replace('/builder')
         return
       }
+      beginSession(r)
       setResume(r, true)
     }
     load()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+      endSession(resumeId)
+    }
   }, [resumeId]) // Only depend on resumeId
 
   // ── Resize drag ──────────────────────────────────────────────────
@@ -224,7 +230,8 @@ export function BuilderClient() {
             </div>
 
             {/* Actions */}
-            <div className="no-drag">
+            <div className="no-drag flex items-center gap-2">
+              <HistoryDialog resume={resume} />
               <Button
                 size="sm"
                 onClick={() => downloadResumePDF(resume)}

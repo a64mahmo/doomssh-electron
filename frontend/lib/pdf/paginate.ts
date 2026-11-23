@@ -238,7 +238,8 @@ export function readInsets(root: HTMLElement): Insets {
  * Pages for the flow rooted at `root` (a `data-resume-page` element laid out
  * with no page height). `footerReserve` is the space a page keeps above its
  * bottom margin for the footer; with columns, only `footerColumn` keeps it
- * (the footer sits under that column alone) and the others run to the margin. Returns the regions each page is cut into
+ * (the footer sits under that column alone) and the others run to the margin,
+ * or every column keeps it when `footerColumn` is '*' (a full-width footer). Returns the regions each page is cut into
  * (the full width, or one strip per column) and each page's slice of each.
  */
 export function paginate(
@@ -281,7 +282,7 @@ export function paginate(
   })
   const perColumn = placed.map((c) => {
     const end = Math.min(contentEnd, m.y(c.rect.bottom))
-    const reserve = c.el.dataset.column === footerColumn ? footerReserve : 0
+    const reserve = footerColumn === '*' || c.el.dataset.column === footerColumn ? footerReserve : 0
     return splitPages(collectIntervals(root, c.el, { keepEntries }), end, firstCapacity + footerReserve - reserve, capacity + footerReserve - reserve)
   })
   const count = Math.max(...perColumn.map((p) => p.length))

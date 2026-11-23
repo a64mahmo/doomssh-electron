@@ -322,15 +322,6 @@ export function HeaderSection({ s, upd, sections }: HeaderSectionProps) {
         )}
       </ControlGroup>
 
-      <Separator className="opacity-30" />
-
-      <ControlGroup title="Footer Settings">
-        <div className="space-y-1">
-          <ToggleRow id="f-pages" label="Show Page Numbers" checked={s.footerPageNumbers} onCheckedChange={(v) => upd({ footerPageNumbers: v })} />
-          <ToggleRow id="f-name"  label="Show Name in Footer" checked={s.footerName} onCheckedChange={(v) => upd({ footerName: v })} />
-          <ToggleRow id="f-email" label="Show Email in Footer" checked={s.footerEmail}      onCheckedChange={(v) => upd({ footerEmail: v })} />
-        </div>
-      </ControlGroup>
     </>
   )
 }

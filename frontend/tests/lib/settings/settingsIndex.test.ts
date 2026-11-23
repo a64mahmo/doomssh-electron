@@ -10,6 +10,7 @@ const TAB_FILES: Record<string, string> = {
   entry: 'EntrySection.tsx',
   colors: 'ColorsSection.tsx',
   header: 'HeaderSection.tsx',
+  footer: 'FooterSection.tsx',
   sections: 'SectionsSection.tsx',
 }
 const source = (tab: string) =>

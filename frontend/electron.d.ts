@@ -30,6 +30,12 @@ interface ElectronAPI {
     delete:  (id: string) => Promise<void>
     readJobs:  () => Promise<unknown | null>
     writeJobs: (data: unknown) => Promise<void>
+    // Version history (absent in desktop builds before it existed)
+    listVersions?:   (resumeId: string) => Promise<string[]>
+    readVersion?:    (resumeId: string, versionId: string) => Promise<unknown | null>
+    writeVersion?:   (resumeId: string, versionId: string, resume: unknown) => Promise<void>
+    /** One version, or every version of the document when versionId is omitted. */
+    deleteVersions?: (resumeId: string, versionId?: string) => Promise<void>
   }
 
   // Updates

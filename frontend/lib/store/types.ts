@@ -145,6 +145,7 @@ export const DEFAULT_SETTINGS: ResumeSettings = {
   footerPageNumbers: false,
   footerEmail: false,
   footerName: false,
+  footerPageFormat: 'of-total',
 
   // Per-section display
   skillDisplay: 'compact',

@@ -2,6 +2,7 @@
 import type { Resume } from '@/lib/store/types'
 import { generateId } from '@/lib/utils/ids'
 import { browserDb } from '@/lib/db/browserDb'
+import { deleteAllVersions } from '@/lib/db/history'
 import { DEFAULT_SETTINGS, DEFAULT_HEADER, SECTION_LABELS } from '@/lib/store/types'
 import {
   createSampleResumeProductManager,
@@ -80,9 +81,11 @@ export async function saveResume(resume: Resume): Promise<void> {
 export async function deleteResume(id: string): Promise<void> {
   if (!window.electron) {
     await browserDb().resumes.delete(id)
-    return
+  } else {
+    await window.electron.vault.delete(id)
   }
-  await window.electron.vault.delete(id)
+  // Its history goes with it; a failure here must not undo the delete.
+  await deleteAllVersions(id).catch((err) => console.warn('[history] could not delete versions:', err))
 }
 
 export async function duplicateResume(id: string): Promise<Resume> {

@@ -30,7 +30,7 @@ With **Keep entries together** (`settings.keepEntriesTogether`, Customize → La
 
 With a sidebar, the two columns (`data-column="main"` / `"sidebar"`) are paginated separately: each breaks where it suits and continues on the next page from there, and each page shows them through one window per column. The header never spans both columns: it heads one of them (`resolveHeaderPlacement`; the Customize panel offers Left / Right), so both columns and the sidebar panel run the full height of every page.
 
-`MasterTemplate`'s `paged` prop renders the flow without page height, fill, sidebar panel, border or footer; `getPageChrome` gives the frames those. There is no column divider and the footer has no rule. With columns, the footer sits under the main column only, and only the main column keeps space for it.
+`MasterTemplate`'s `paged` prop renders the flow without page height, fill, sidebar panel, border or footer; `getPageChrome` gives the frames those. There is no column divider and the footer has no rule. With columns, the footer spans both columns (from one column's outer text edge to the other's) and every column keeps space for it; on a solid sidebar panel (`isSolidSidebar`) it sits under the main column only, and only that column keeps space.
 
 ## File Map
 

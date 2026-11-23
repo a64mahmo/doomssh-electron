@@ -28,3 +28,16 @@ describe('formatSalary', () => {
     expect(formatSalary(85500)).toBe('85.5k')
   })
 })
+
+import { sectionHasContent } from '@/lib/resume-utils'
+
+describe('sectionHasContent', () => {
+  const sec = (type: string, items: unknown, visible = true) => ({ id: 'x', type, title: 'T', visible, items }) as never
+  it('needs the section on and something in it', () => {
+    expect(sectionHasContent(sec('experience', [{ id: '1' }]))).toBe(true)
+    expect(sectionHasContent(sec('experience', []))).toBe(false)
+    expect(sectionHasContent(sec('experience', [{ id: '1' }], false))).toBe(false)
+    expect(sectionHasContent(sec('summary', { text: 'Hello' }))).toBe(true)
+    expect(sectionHasContent(sec('summary', { text: '  ' }))).toBe(false)
+  })
+})

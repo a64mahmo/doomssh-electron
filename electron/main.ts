@@ -376,6 +376,58 @@ ipcMain.handle('resume:delete', async (_event, id: string) => {
   }
 })
 
+// ── IPC: Version history ─────────────────────────────────────────────────────
+// <vault>/_history/<resumeId>/<versionId>.json. resume:list skips "_" entries
+// and anything that isn't a top-level .json file, so history never shows up as
+// a resume. Ids come from the renderer, so they are checked before use in paths.
+const SAFE_ID = /^[\w-]+$/
+
+async function historyDir(resumeId: string): Promise<string> {
+  if (!SAFE_ID.test(resumeId)) throw new Error('Invalid resume id')
+  const dir = await readVaultDir()
+  if (!dir) throw new Error('No vault set')
+  return path.join(dir, '_history', resumeId)
+}
+
+ipcMain.handle('history:list', async (_event, resumeId: string): Promise<string[]> => {
+  try {
+    const dir = await historyDir(resumeId)
+    if (!fs.existsSync(dir)) return []
+    return (await fsp.readdir(dir)).filter(f => f.endsWith('.json')).map(f => f.slice(0, -5))
+  } catch (err) {
+    console.error('[electron] history:list failed:', err)
+    return []
+  }
+})
+
+ipcMain.handle('history:read', async (_event, resumeId: string, versionId: string): Promise<Resume | null> => {
+  if (!SAFE_ID.test(versionId)) return null
+  try {
+    const file = path.join(await historyDir(resumeId), `${versionId}.json`)
+    return JSON.parse(await fsp.readFile(file, 'utf8')) as Resume
+  } catch (err) {
+    console.error('[electron] history:read failed:', err)
+    return null
+  }
+})
+
+ipcMain.handle('history:write', async (_event, resumeId: string, versionId: string, resume: Resume) => {
+  if (!SAFE_ID.test(versionId)) throw new Error('Invalid version id')
+  const dir = await historyDir(resumeId)
+  await fsp.mkdir(dir, { recursive: true })
+  await fsp.writeFile(path.join(dir, `${versionId}.json`), JSON.stringify(resume), 'utf8')
+})
+
+ipcMain.handle('history:delete', async (_event, resumeId: string, versionId?: string) => {
+  const dir = await historyDir(resumeId)
+  if (versionId === undefined) {
+    await fsp.rm(dir, { recursive: true, force: true })
+    return
+  }
+  if (!SAFE_ID.test(versionId)) throw new Error('Invalid version id')
+  await fsp.rm(path.join(dir, `${versionId}.json`), { force: true })
+})
+
 // ── IPC: Jobs ────────────────────────────────────────────────────────────────
 ipcMain.handle('jobs:read', async (): Promise<JobsVaultFile | null> => {
   const dir = await readVaultDir()

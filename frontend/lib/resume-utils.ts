@@ -1,4 +1,4 @@
-import type { 
+import type { ResumeSection, 
   ExperienceItem, 
   EducationItem, 
   ResumeSettings 
@@ -41,4 +41,17 @@ export function transformEducationItem(item: EducationItem, settings: ResumeSett
     date: formatDateRange(item.startDate, item.endDate, item.present, settings.dateFormat),
     description: item.description,
   }
+}
+
+/**
+ * Whether a section shows on the resume: switched on, with something in it (a
+ * summary with text, or at least one entry). Hidden or empty sections are left
+ * out of lists like Section Placement, where there is nothing to place.
+ */
+export function sectionHasContent(section: ResumeSection): boolean {
+  if (section.visible === false) return false
+  const items = section.items as unknown
+  if (Array.isArray(items)) return items.length > 0
+  if (section.type === 'summary') return Boolean((items as { text?: string })?.text?.trim())
+  return items != null
 }

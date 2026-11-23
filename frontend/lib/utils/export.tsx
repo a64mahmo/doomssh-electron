@@ -1,4 +1,5 @@
 import type { Resume } from '@/lib/store/types'
+import { recordDownload } from '@/lib/store/historyTracker'
 
 /**
  * Exports through the HTML print page (app/print) — the same MasterTemplate
@@ -11,6 +12,10 @@ import type { Resume } from '@/lib/store/types'
  *
  * Both hand the in-memory resume to the page rather than re-reading storage,
  * so edits made in the last debounce window are included.
+ *
+ * Each download is kept in version history ("Downloaded as PDF"). On desktop
+ * only once the file is saved; in the browser once the print dialog has been
+ * shown, since the page can't tell a save from a cancel there.
  */
 export async function downloadResumePDF(resume: Resume): Promise<void> {
   const isCL = resume.kind === 'coverLetter'
@@ -19,12 +24,15 @@ export async function downloadResumePDF(resume: Resume): Promise<void> {
   try {
     if (typeof window !== 'undefined' && window.electron?.exportPdf) {
       const result = await window.electron.exportPdf({ resume, fileName: `${baseName}.pdf` })
-      if (!result.success && !result.cancelled) {
+      if (result.success) {
+        await recordDownload(resume)
+      } else if (!result.cancelled) {
         console.error('Export failed:', result.error)
       }
       return
     }
     await printInIframe(resume, baseName)
+    await recordDownload(resume)
   } catch (err) {
     console.error('PDF export error:', err)
   }

@@ -13,7 +13,7 @@ import { SECTION_LABELS } from '@/lib/store/types'
  * Add an entry here when you add a control to the panel.
  */
 
-export type CustomizeTab = 'templates' | 'layout' | 'typography' | 'entry' | 'colors' | 'header' | 'sections'
+export type CustomizeTab = 'templates' | 'layout' | 'typography' | 'entry' | 'colors' | 'header' | 'footer' | 'sections'
 
 /** 'content' is the Content panel; the rest are Customize tabs in the Style panel. */
 export type SearchTab = CustomizeTab | 'content'
@@ -26,6 +26,7 @@ export const TAB_LABELS: Record<SearchTab, string> = {
   entry: 'Entry',
   colors: 'Colors',
   header: 'Header',
+  footer: 'Footer',
   sections: 'Sections',
 }
 
@@ -119,9 +120,12 @@ export const SETTINGS_INDEX: SettingEntry[] = [
   { id: 'photo-shape', label: 'Shape', tab: 'header', group: 'Photo Settings', keywords: ['photo shape', 'circle', 'square', 'rounded'] },
   { id: 'photo-position', label: 'Position', tab: 'header', group: 'Photo Settings', keywords: ['photo position', 'beside', 'top'] },
   { id: 'photo-gap', label: 'Photo Gap', tab: 'header', group: 'Photo Settings', keywords: ['photo spacing'] },
-  { id: 'page-numbers', label: 'Show Page Numbers', tab: 'header', group: 'Footer Settings', keywords: ['footer', 'page number'] },
-  { id: 'footer-name', label: 'Show Name in Footer', tab: 'header', group: 'Footer Settings', keywords: ['footer'] },
-  { id: 'footer-email', label: 'Show Email in Footer', tab: 'header', group: 'Footer Settings', keywords: ['footer'] },
+  { id: 'footer-layout', label: 'Footer Layout', tab: 'footer', group: 'Footer Layout', keywords: ['footer', 'custom', 'centered', 'placeholder', 'template', 'phone', 'left', 'center', 'right', 'off'] },
+  { id: 'footer-name', label: 'Show Name in Footer', tab: 'footer', group: 'Footer Layout', keywords: ['footer'] },
+  { id: 'footer-email', label: 'Show Email in Footer', tab: 'footer', group: 'Footer Layout', keywords: ['footer'] },
+  { id: 'page-numbers', label: 'Show Page Numbers', tab: 'footer', group: 'Footer Layout', keywords: ['footer', 'page number'] },
+  { id: 'footer-page-format', label: 'Page Number Style', tab: 'footer', group: 'Page Numbers', keywords: ['footer', 'page number', 'total pages', 'of'], note: 'Shown when page numbers are on' },
+  { id: 'footer-divider', label: 'Footer Divider', tab: 'footer', group: 'Footer Style', keywords: ['footer', 'line', 'rule', 'border'], note: 'Shown when the footer is on' },
 
   // ── Sections ──
   { id: 'section-labels', label: 'Show section labels', tab: 'sections', group: 'Section Headings', scope: 'resume', keywords: ['headings', 'titles'] },

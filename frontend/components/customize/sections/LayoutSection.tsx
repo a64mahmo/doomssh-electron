@@ -478,6 +478,14 @@ export function LayoutSection({
                 </DragOverlay>
               </DndContext>
             )}
+            {s.columnLayout !== 'one' && (() => {
+              const hidden = sections.length - mainIds.length - sidebarIds.length
+              return hidden > 0 ? (
+                <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+                  {hidden} hidden or empty section{hidden === 1 ? '' : 's'} not shown. Add content or turn {hidden === 1 ? 'it' : 'them'} on in Content to place {hidden === 1 ? 'it' : 'them'} here.
+                </p>
+              ) : null
+            })()}
           </ControlGroup>
         </>
       )}

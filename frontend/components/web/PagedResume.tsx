@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from
 import type { Resume } from '@/lib/store/types'
 import { MasterTemplate, TemplateFooter, getPageChrome } from './MasterTemplate'
 import { paginate, type Insets, type PageLayout, type Region } from '@/lib/pdf/paginate'
+import { isSolidSidebar } from '@/lib/pdf/templateCtx'
 
 const MM_TO_PX = 96 / 25.4
 /** Space kept between the last line of a page and its footer, in px (8pt). */
@@ -60,15 +61,20 @@ export function PagedResume({
   const chrome = getPageChrome(resume)
 
   const keepEntries = resume.settings.keepEntriesTogether === true
+  // The footer runs across both columns, like a one-column page, so name,
+  // email and page number reach the page edges. On a solid (dark) sidebar
+  // panel its grey text wouldn't read, so it stays under the main column.
+  const footerFullWidth = !isSolidSidebar(resume.settings)
 
   const measure = useCallback(() => {
     const host = measureRef.current
     const root = host?.querySelector<HTMLElement>('[data-resume-page]')
     if (!root) return
     const footerReserve = footerRef.current?.offsetHeight ? footerRef.current.offsetHeight + FOOTER_GAP : 0
-    const next = { ...paginate(root, { pageHeight: paper.height, footerReserve, keepEntries }), footerReserve }
+    const footerColumn = footerFullWidth ? '*' : 'main'
+    const next = { ...paginate(root, { pageHeight: paper.height, footerReserve, footerColumn, keepEntries }), footerReserve }
     setLayout((prev) => (prev && JSON.stringify(prev) === JSON.stringify(next) ? prev : next))
-  }, [paper.height, keepEntries])
+  }, [paper.height, keepEntries, footerFullWidth])
 
   // Re-measure after every render: any edit can move a break.
   useLayoutEffect(() => {
@@ -118,12 +124,19 @@ export function PagedResume({
   const pages = layout?.pages ?? [{ slices: [{ start: 0, end: paper.height }] }]
   const regions = layout?.regions ?? [{ left: 0, right: paper.width }]
   const insets = layout?.insets ?? { top: 0, bottom: 0, left: 0, right: 0 }
-  // Across the text width; with columns, under the main column only, so its
-  // rule never crosses the sidebar panel or the divider.
+  // Across the text width. With columns: from the outer text edge of one
+  // column to the other's, or under the main column alone on a solid sidebar.
   const mainRegion = regions.find((r) => r.column === 'main')
-  const footerBox = mainRegion?.contentLeft !== undefined && mainRegion.contentRight !== undefined
-    ? { left: mainRegion.contentLeft, width: mainRegion.contentRight - mainRegion.contentLeft }
-    : { left: insets.left, width: paper.width - insets.left - insets.right }
+  const textEdges = regions.filter((r) => r.contentLeft !== undefined && r.contentRight !== undefined)
+  const footerBox = footerFullWidth && textEdges.length > 1
+    ? (() => {
+        const left = Math.min(...textEdges.map((r) => r.contentLeft!))
+        const right = Math.max(...textEdges.map((r) => r.contentRight!))
+        return { left, width: right - left }
+      })()
+    : mainRegion?.contentLeft !== undefined && mainRegion.contentRight !== undefined
+      ? { left: mainRegion.contentLeft, width: mainRegion.contentRight - mainRegion.contentLeft }
+      : { left: insets.left, width: paper.width - insets.left - insets.right }
 
   return (
     <div data-paged-resume style={{ display: 'flex', flexDirection: 'column', gap: pageGap }}>
@@ -136,7 +149,7 @@ export function PagedResume({
           <MasterTemplate resume={resume} showPlaceholders={showPlaceholders} paged />
         </div>
         <div ref={footerRef} style={{ width: footerBox.width }}>
-          <TemplateFooter resume={resume} pageNumber={1} paged />
+          <TemplateFooter resume={resume} pageNumber={1} totalPages={1} paged />
         </div>
       </div>
 
@@ -190,7 +203,7 @@ export function PagedResume({
           })}
 
           <div style={{ position: 'absolute', left: footerBox.left, width: footerBox.width, bottom: insets.bottom }}>
-            <TemplateFooter resume={resume} pageNumber={i + 1} paged />
+            <TemplateFooter resume={resume} pageNumber={i + 1} totalPages={pages.length} paged />
           </div>
 
           {chrome.borderColor && (

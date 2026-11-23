@@ -62,6 +62,10 @@ contextBridge.exposeInMainWorld('electron', {
     delete:  (id: string): Promise<void>           => ipcRenderer.invoke('resume:delete', id),
     readJobs:  (): Promise<JobsVaultFile | null>   => ipcRenderer.invoke('jobs:read'),
     writeJobs: (data: JobsVaultFile): Promise<void>      => ipcRenderer.invoke('jobs:write', data),
+    listVersions:   (resumeId: string): Promise<string[]> => ipcRenderer.invoke('history:list', resumeId),
+    readVersion:    (resumeId: string, versionId: string): Promise<Resume | null> => ipcRenderer.invoke('history:read', resumeId, versionId),
+    writeVersion:   (resumeId: string, versionId: string, resume: Resume): Promise<void> => ipcRenderer.invoke('history:write', resumeId, versionId, resume),
+    deleteVersions: (resumeId: string, versionId?: string): Promise<void> => ipcRenderer.invoke('history:delete', resumeId, versionId),
   },
 
   // ── AI streaming ───────────────────────────────────────────────────────────

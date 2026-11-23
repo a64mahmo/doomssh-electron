@@ -378,6 +378,18 @@ export interface ResumeSettings {
   footerPageNumbers: boolean
   footerEmail: boolean
   footerName: boolean
+  /** number: "2". of-total: "2 / 3". page-of: "Page 2 of 3". Missing (older files) reads as number. */
+  footerPageFormat?: 'number' | 'of-total' | 'page-of'
+  /** A hairline above the footer. */
+  footerDivider?: boolean
+  /**
+   * Custom footer: three free-text columns with {{name}}, {{phone}},
+   * {{email}}, {{page}} and {{pages}} placeholders. Replaces the toggles above.
+   */
+  footerCustom?: boolean
+  footerLeft?: string
+  footerCenter?: string
+  footerRight?: string
 
   // Per-section display
   skillDisplay: SkillDisplayOption
