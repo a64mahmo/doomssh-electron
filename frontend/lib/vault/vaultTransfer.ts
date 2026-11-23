@@ -11,6 +11,11 @@ export interface VaultFile {
   version: typeof VAULT_VERSION
   app: 'DoomSSH'
   exportedAt: string
+  /**
+   * The order the lists were shown in when exported (ids, first shown first).
+   * The arrays below are already in this order; this records it explicitly.
+   */
+  order: { resumes: string[]; coverLetters: string[]; jobs: string[] }
   resumes: Resume[]
   coverLetters: Resume[]
   jobs: JobApplication[]
@@ -24,6 +29,11 @@ export async function buildVaultFile(): Promise<VaultFile> {
     version: VAULT_VERSION,
     app: 'DoomSSH',
     exportedAt: new Date().toISOString(),
+    order: {
+      resumes: resumes.map((r) => r.id),
+      coverLetters: coverLetters.map((r) => r.id),
+      jobs: jobs.map((j) => j.id),
+    },
     resumes,
     coverLetters,
     jobs,
@@ -60,6 +70,21 @@ export interface ImportResult {
  * nothing already here is overwritten, and links between them (a job's
  * resume, a cover letter's job) are carried over to the new ids.
  */
+/**
+ * Edit times that reproduce the exported order: lists show the most recently
+ * edited first, so each document must be strictly older than the one before
+ * it. Original times are kept where they already do that; otherwise a time is
+ * moved just below its neighbour (by a millisecond), which no one will see.
+ */
+export function orderedUpdatedAt(times: number[]): number[] {
+  const out: number[] = []
+  for (const t of times) {
+    const prev = out[out.length - 1]
+    out.push(prev !== undefined && !(t < prev) ? prev - 1 : t)
+  }
+  return out
+}
+
 export async function importVault(vault: SanitizedVault): Promise<ImportResult> {
   const docIds = new Map<string, string>()
   const jobIds = new Map<string, string>()
@@ -67,7 +92,14 @@ export async function importVault(vault: SanitizedVault): Promise<ImportResult> 
   for (const j of vault.jobs) if (j.id) jobIds.set(j.id, generateId())
   const docId = (old: string | null | undefined) => (old ? docIds.get(old) ?? null : null)
 
-  for (const d of [...vault.resumes, ...vault.coverLetters]) {
+  // Keep each list in its exported order (see orderedUpdatedAt).
+  const docs: Resume[] = []
+  for (const list of [vault.resumes, vault.coverLetters]) {
+    const times = orderedUpdatedAt(list.map((d) => d.updatedAt))
+    list.forEach((d, i) => docs.push({ ...d, updatedAt: times[i] }))
+  }
+
+  for (const d of docs) {
     const next: Resume = { ...d, id: docIds.get(d.id) ?? generateId() }
     if (next.coverLetter) {
       next.coverLetter = {
@@ -76,7 +108,7 @@ export async function importVault(vault: SanitizedVault): Promise<ImportResult> 
         linkedJobId: next.coverLetter.linkedJobId ? jobIds.get(next.coverLetter.linkedJobId) ?? null : null,
       }
     }
-    await saveResume(next)
+    await saveResume(next, { keepUpdatedAt: true })
   }
 
   if (vault.jobs.length) {

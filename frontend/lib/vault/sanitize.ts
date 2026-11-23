@@ -71,7 +71,7 @@ class Cleaner {
       .replace(/<\s*(script|style|iframe|object|embed)\b[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
       .replace(/<\/?[a-z][^>]*>/gi, '')
       // Control characters other than tab and newline.
-      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '') // eslint-disable-line no-control-regex
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')  
     if (s !== v) this.flag(where, 'removed HTML or script')
     if (s.length > max) {
       s = s.slice(0, max)
@@ -108,7 +108,7 @@ class Cleaner {
       this.flag(where, 'removed an unsafe link')
       return ''
     }
-    if (s.length > MAX_URL || /[\s<>"'`\\\u0000-\u001F]/.test(s)) return unsafe() // eslint-disable-line no-control-regex
+    if (s.length > MAX_URL || /[\s<>"'`\\\u0000-\u001F]/.test(s)) return unsafe()  
     const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(s)?.[1]?.toLowerCase()
     if (scheme) {
       if (!['http', 'https', 'mailto', 'tel'].includes(scheme)) return unsafe()
@@ -481,6 +481,22 @@ function cleanJob(k: Cleaner, o: Obj, index: number): JobApplication {
 // ─── Entry point ─────────────────────────────────────────────────────────────
 
 /**
+ * Puts entries in the order the file recorded (a list of ids). Entries the
+ * list doesn't mention keep their place after the listed ones; a missing or
+ * malformed list leaves the array as it is (exports write it in order anyway).
+ */
+function inOrder(items: Obj[], ids: unknown): Obj[] {
+  if (!Array.isArray(ids)) return items
+  const rank = new Map<string, number>()
+  ids.forEach((id, i) => { if (typeof id === 'string' && !rank.has(id)) rank.set(id, i) })
+  return items
+    .map((item, i) => ({ item, i, r: typeof item.id === 'string' && rank.has(item.id) ? rank.get(item.id)! : ids.length + i }))
+    .sort((a, b) => a.r - b.r)
+    .map((x) => x.item)
+}
+
+
+/**
  * Parses and cleans an exported vault. Also accepts a single resume or cover
  * letter saved with "Export JSON". Throws VaultImportError for anything else.
  */
@@ -506,8 +522,9 @@ export function sanitizeVault(text: string): SanitizedVault {
   if (top.format !== VAULT_FORMAT) throw new VaultImportError('This file is not a DoomSSH vault.')
   if (top.version !== VAULT_VERSION) throw new VaultImportError('This vault was made by a newer version of DoomSSH. Update the app, then try again.')
 
-  const resumes = k.list(top.resumes, 'Resumes', MAX_DOCUMENTS).map((d, i) => cleanDocument(k, d, 'resume', i))
-  const coverLetters = k.list(top.coverLetters, 'Cover letters', MAX_DOCUMENTS).map((d, i) => cleanDocument(k, d, 'coverLetter', i))
-  const jobs = k.list(top.jobs, 'Jobs', MAX_JOBS).map((j, i) => cleanJob(k, j, i))
+  const order = k.obj(top.order)
+  const resumes = inOrder(k.list(top.resumes, 'Resumes', MAX_DOCUMENTS), order?.resumes).map((d, i) => cleanDocument(k, d, 'resume', i))
+  const coverLetters = inOrder(k.list(top.coverLetters, 'Cover letters', MAX_DOCUMENTS), order?.coverLetters).map((d, i) => cleanDocument(k, d, 'coverLetter', i))
+  const jobs = inOrder(k.list(top.jobs, 'Jobs', MAX_JOBS), order?.jobs).map((j, i) => cleanJob(k, j, i))
   return { resumes, coverLetters, jobs, report: k.report }
 }

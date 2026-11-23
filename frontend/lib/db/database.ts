@@ -12,9 +12,19 @@ import {
 
 // ─── CRUD Operations ──────────────────────────────────────────────────────────
 
+/**
+ * Most recently edited first, on desktop and in the browser alike (IndexedDB
+ * returns rows by id, i.e. creation order). Ties keep a stable order by id.
+ */
+export function byRecentEdit(a: Resume, b: Resume): number {
+  return (b.updatedAt ?? 0) - (a.updatedAt ?? 0) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+}
+
 async function listAll(): Promise<Resume[]> {
-  if (!window.electron) return browserDb().resumes.toArray()
-  return (await window.electron.vault.list()) as Resume[]
+  const all = window.electron
+    ? ((await window.electron.vault.list()) as Resume[])
+    : await browserDb().resumes.toArray()
+  return all.sort(byRecentEdit)
 }
 
 export async function getAllResumes(): Promise<Resume[]> {
@@ -69,8 +79,12 @@ export async function getResume(id: string): Promise<Resume | undefined> {
   return (await window.electron.vault.read(id)) as Resume | undefined
 }
 
-export async function saveResume(resume: Resume): Promise<void> {
-  const updated = { ...resume, updatedAt: Date.now() }
+/**
+ * Saves a document, stamping it as edited now. `keepUpdatedAt` saves the
+ * timestamp as given instead (imports, so the vault keeps its order).
+ */
+export async function saveResume(resume: Resume, { keepUpdatedAt = false } = {}): Promise<void> {
+  const updated = keepUpdatedAt ? resume : { ...resume, updatedAt: Date.now() }
   if (!window.electron) {
     await browserDb().resumes.put(updated)
     return

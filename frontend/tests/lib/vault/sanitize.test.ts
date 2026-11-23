@@ -180,3 +180,41 @@ describe('vault export → import', () => {
     expect(jobCopy.coverLetterId).toBe(letterCopy.id)
   })
 })
+
+import { orderedUpdatedAt } from '@/lib/vault/vaultTransfer'
+
+describe('vault order', () => {
+  beforeEach(async () => {
+    delete (window as { electron?: unknown }).electron
+    await browserDb().resumes.clear()
+    await browserDb().kv.clear()
+  })
+
+  it('keeps original times where they already give the order, nudging only ties and inversions', () => {
+    expect(orderedUpdatedAt([500, 400, 300])).toEqual([500, 400, 300])
+    expect(orderedUpdatedAt([500, 500, 500])).toEqual([500, 499, 498])
+    expect(orderedUpdatedAt([300, 400, 100])).toEqual([300, 299, 100])
+  })
+
+  it('imports in exactly the exported order', async () => {
+    const names = ['First', 'Second', 'Third', 'Fourth']
+    // Same edit time for two of them, to check ties keep their order too.
+    const times = [4000, 3000, 3000, 1000]
+    for (const [i, n] of names.entries()) {
+      const r = createNewResume(n)
+      await browserDb().resumes.put({ ...r, updatedAt: times[i] })
+    }
+    const exported = await buildVaultFile()
+    // The order the dashboard showed (ties broken by id, so either of the two may lead).
+    const shown = exported.resumes.map((r) => r.name)
+    expect(shown[0]).toBe('First')
+    expect(shown[3]).toBe('Fourth')
+    expect(exported.order.resumes).toEqual(exported.resumes.map((r) => r.id))
+
+    // Into an empty vault; the file's arrays are shuffled, the recorded order wins.
+    await browserDb().resumes.clear()
+    const shuffled = { ...exported, resumes: [...exported.resumes].reverse() }
+    await importVault(sanitizeVault(JSON.stringify(shuffled)))
+    expect((await getAllResumes()).map((r) => r.name)).toEqual(shown)
+  })
+})

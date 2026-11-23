@@ -23,7 +23,11 @@ function DialogOverlay({ className, ...props }: DialogPrimitive.Backdrop.Props) 
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-black/80 data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        // A soft dim that fades both ways. Base UI marks the first and last
+        // frames with data-starting-style / data-ending-style and waits for the
+        // transition before unmounting; the old 80% black with keyframe
+        // classes faded in but vanished in one frame on close (a white flash).
+        "fixed inset-0 z-50 bg-black/40 dark:bg-black/60 transition-opacity duration-200 ease-out data-[starting-style]:opacity-0 data-[ending-style]:opacity-0",
         className
       )}
       {...props}
