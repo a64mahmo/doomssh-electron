@@ -25,18 +25,25 @@ export function DocumentThumbnail({
   onPageChange,
   onPageCount,
   className,
+  eager = false,
 }: {
   resume: Resume
   page: number
   onPageChange: (page: number) => void
   onPageCount?: (count: number) => void
   className?: string
+  /**
+   * Draw straight away instead of waiting to scroll into view. For a single
+   * preview the user is already looking at (the History dialog), where the
+   * on-screen check only adds a way to stay blank.
+   */
+  eager?: boolean
 }) {
   const boxRef = useRef<HTMLDivElement | null>(null)
   const sheetRef = useRef<HTMLDivElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
   // No IntersectionObserver (old engines, tests): render straight away.
-  const [visible, setVisible] = useState(() => typeof IntersectionObserver === 'undefined')
+  const [visible, setVisible] = useState(() => eager || typeof IntersectionObserver === 'undefined')
   const [boxWidth, setBoxWidth] = useState(0)
   const [pageCount, setPageCount] = useState(1)
   const paper = paperOf(resume)

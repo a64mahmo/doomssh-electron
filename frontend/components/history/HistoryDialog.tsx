@@ -199,7 +199,7 @@ export function HistoryDialog({ resume }: { resume: Resume }) {
                 <div className="h-full aspect-[8.5/11] max-w-full">
                   {shown ? (
                     <div className="rounded-md overflow-hidden border border-border shadow-sm">
-                      <DocumentThumbnail key={selected} resume={shown} page={page} onPageChange={setPage} />
+                      <DocumentThumbnail key={selected} eager resume={shown} page={page} onPageChange={setPage} />
                     </div>
                   ) : (
                     <div className="h-full flex items-center justify-center">
