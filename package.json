@@ -1,7 +1,7 @@
 {
   "name": "doomssh",
   "version": "1.5.2",
-  "description": "The AI-Powered, Local-First, Privacy-Focused Resume Builder",
+  "description": "A resume builder that keeps your files on your computer",
   "author": "Abdallh Mahmood",
   "private": true,
   "main": "electron/dist/main.js",
